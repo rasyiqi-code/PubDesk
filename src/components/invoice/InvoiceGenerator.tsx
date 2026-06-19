@@ -4,7 +4,7 @@ import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { InvoiceItem } from '../../types';
 
 const InvoiceGenerator: React.FC = () => {
-  const { services, addInvoice, addFile, showToast } = useAppContext();
+  const { services, addInvoice, addFile, showToast, rightPanelVisible } = useAppContext();
   const {
     customer, setCustomer,
     items, addItem, removeItem,
@@ -328,7 +328,7 @@ const InvoiceGenerator: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>No. Invoice</label>
             <input
@@ -351,7 +351,7 @@ const InvoiceGenerator: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Hal (Perihal)</label>
             <input
@@ -374,7 +374,7 @@ const InvoiceGenerator: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '1fr 1fr', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Status Akhir Pembayaran</label>
             <select

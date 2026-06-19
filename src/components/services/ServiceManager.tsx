@@ -3,7 +3,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import { Service } from '../../types';
 
 const ServiceManager: React.FC = () => {
-  const { services, addService, updateService, deleteService, showToast, selectedServiceId, setSelectedServiceId, addFile, files, showConfirm } = useAppContext();
+  const { services, addService, updateService, deleteService, showToast, selectedServiceId, setSelectedServiceId, addFile, files, showConfirm, rightPanelVisible } = useAppContext();
 
   // State untuk form input tambah / edit
   const [isEditing, setIsEditing] = useState(false);
@@ -168,7 +168,7 @@ const ServiceManager: React.FC = () => {
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '2fr 1fr', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Layanan</label>
               <input
