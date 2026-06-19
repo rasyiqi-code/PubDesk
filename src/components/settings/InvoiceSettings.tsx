@@ -1027,7 +1027,7 @@ const InvoiceSettings: React.FC = () => {
                       </div>
 
                       {/* Detail baris */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr', gap: '8px', padding: '10px 10px', alignItems: 'start', background: 'var(--bg-dark)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr', gap: '8px', padding: '10px 10px', alignItems: 'start', background: 'var(--bg-card)' }}>
                         {/* Kunci */}
                         <div>
                           <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>Kunci</div>
