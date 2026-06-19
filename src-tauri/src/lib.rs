@@ -382,6 +382,7 @@ fn open_file_location_physically(path: String) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState {
             db: Mutex::new(None),
         })

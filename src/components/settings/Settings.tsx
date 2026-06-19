@@ -3,6 +3,7 @@ import InvoiceSettings from './InvoiceSettings';
 import ServiceManager from '../services/ServiceManager';
 import { useAppContext } from '../../contexts/AppContext';
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 
 const Settings: React.FC = () => {
   const {
@@ -351,6 +352,22 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleSelectFolder = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        directory: true,
+        title: 'Pilih Folder untuk Dipantau'
+      });
+      if (selected && typeof selected === 'string') {
+        setLocalPathInput(selected);
+      }
+    } catch (err: any) {
+      console.error('Error selecting directory:', err);
+      showToast('Gagal membuka dialog pemilihan folder', 'error');
+    }
+  };
+
   const handleAddLocalFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!localPathInput.trim()) {
@@ -571,16 +588,25 @@ const Settings: React.FC = () => {
                       <input
                         type="text"
                         className="compact-input"
-                        placeholder="Contoh: /home/user/Penerbitan/Naskah..."
+                        placeholder="Klik Pilih Folder..."
                         value={localPathInput}
-                        onChange={(e) => setLocalPathInput(e.target.value)}
-                        style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                        readOnly
+                        onClick={handleSelectFolder}
+                        style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}
                       />
                       <button
+                        type="button"
+                        onClick={handleSelectFolder}
+                        className="btn-secondary compact-btn"
+                        style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                      >
+                        📂 Pilih Folder
+                      </button>
+                      <button
                         type="submit"
-                        disabled={addingFolder}
+                        disabled={addingFolder || !localPathInput.trim()}
                         className="btn-primary compact-btn"
-                        style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
+                        style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', cursor: 'pointer' }}
                       >
                         {addingFolder ? 'Menambah...' : '➕ Tambah'}
                       </button>
