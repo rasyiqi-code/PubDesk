@@ -92,7 +92,7 @@ fn delete_file(state: State<'_, AppState>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn create_physical_file(app_handle: tauri::AppHandle, filename: String) -> Result<String, String> {
+fn create_physical_file(app_handle: tauri::AppHandle, filename: String, bytes: Vec<u8>) -> Result<String, String> {
     use tauri::Manager;
     use std::fs::File as StdFile;
     use std::io::Write;
@@ -108,8 +108,7 @@ fn create_physical_file(app_handle: tauri::AppHandle, filename: String) -> Resul
     let file_path = invoices_dir.join(&filename);
     
     let mut file = StdFile::create(&file_path).map_err(|e| e.to_string())?;
-    // Tulis byte minimal PDF yang valid agar pdf viewer sistem tidak crash saat dibuka
-    file.write_all(b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 4 0 R >>\nendobj\n4 0 obj\n<< /Length 48 >>\nstream\nBT\n/F1 14 Tf\n50 750 Td\n(PubDesk - Pratinjau Invoice Fisik) Tj\nET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000113 00000 n\n0000000244 00000 n\ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n341\n%%EOF").map_err(|e| e.to_string())?;
+    file.write_all(&bytes).map_err(|e| e.to_string())?;
     
     Ok(file_path.to_string_lossy().to_string())
 }

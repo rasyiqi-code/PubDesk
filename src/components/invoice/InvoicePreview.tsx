@@ -165,6 +165,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
         }}>
         <div 
           ref={contentRef}
+          id="invoice-preview-content"
           style={{
             position: 'absolute',
             top: '50%',
