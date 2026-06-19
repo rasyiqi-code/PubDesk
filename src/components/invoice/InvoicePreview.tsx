@@ -109,30 +109,30 @@ const InvoicePreview: React.FC = () => {
             fontFamily: '"Montserrat", "Segoe UI", sans-serif'
           }}>
           
-          {/* Header Geometris Eksak sesuai Close-up */}
-          <div style={{ display: 'flex', position: 'relative', height: '95px', width: '100%', overflow: 'hidden', background: '#ffffff', flexShrink: 0 }}>
+          {/* Header Geometris - Semua elemen full-size absolute di koordinat space yang sama (595×95px) */}
+          <div style={{ position: 'relative', height: '95px', width: '100%', overflow: 'hidden', background: '#ffffff', flexShrink: 0 }}>
             {/* Garis vertikal biru di tepi paling kiri */}
             <div style={{ position: 'absolute', top: 0, left: 0, width: '6px', height: '100%', background: '#1e70cd', zIndex: 3 }} />
             
-            {/* Garis horizontal biru di tepi kiri atas (berakhir tepat saat menyentuh stripe tengah) */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '187px', height: '6px', background: '#1e70cd', zIndex: 3 }} />
+            {/* Garis horizontal biru di tepi kiri atas (berakhir di titik awal stripe) */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '245px', height: '6px', background: '#1e70cd', zIndex: 3 }} />
 
-            {/* Kartu Biru Utama (Floating dengan margin 15px atas/bawah, logo digeser ke kiri) */}
+            {/* Kartu Biru Utama - Floating (15px gap atas/bawah), diagonal menyempit ke kiri bawah */}
             <div style={{ 
               background: '#1e70cd', 
               width: '100%',
-              height: '65px',
+              height: '100%',
               position: 'absolute',
-              top: '15px',
+              top: 0,
               left: 0,
-              clipPath: 'polygon(21px 0, 190px 0, 245px 100%, 21px 100%)',
+              clipPath: 'polygon(21px 15px, 230px 15px, 192px 80px, 21px 80px)',
               display: 'flex',
               alignItems: 'center',
-              paddingLeft: '20px', // Digeser mendekat ke kiri agar persis seperti gambar
+              paddingLeft: '30px',
               zIndex: 2
             }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                {/* Hexagon Outline Logo Icon dengan cutout biru berbentuk jam pasir (hourglass) */}
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: '15px' }}>
+                {/* Hexagonal Logo Icon */}
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style={{ marginRight: '10px' }}>
                   <path d="M12 2L21 7v10l-9 5-9-5V7l9-5z" fill="white" />
                   <path d="M9 8h6l-3 4 3 4H9l3-4-3-4z" fill="#1e70cd" />
@@ -144,7 +144,7 @@ const InvoicePreview: React.FC = () => {
               </div>
             </div>
 
-            {/* Stripe Tengah Biru (Menembus margin, menyentuh tepi atas & bawah) */}
+            {/* Stripe Tengah Biru - Full height, diagonal menyempit ke kiri bawah */}
             <div style={{ 
               background: '#1e70cd', 
               width: '100%',
@@ -152,26 +152,26 @@ const InvoicePreview: React.FC = () => {
               position: 'absolute',
               top: 0,
               left: 0,
-              clipPath: 'polygon(187px 0, 212px 0, 293px 100%, 268px 100%)',
+              clipPath: 'polygon(245px 0px, 268px 0px, 213px 95px, 190px 95px)',
               zIndex: 2
             }} />
 
-            {/* Kartu Abu-abu Gelap INVOICE (Floating dengan margin 15px atas/bawah) */}
+            {/* Kartu Abu-abu Gelap INVOICE - Floating, diagonal menyempit ke kiri bawah */}
             <div style={{ 
               background: '#23252a', 
               width: '100%',
-              height: '65px',
+              height: '100%',
               position: 'absolute',
-              top: '15px',
+              top: 0,
               left: 0,
-              clipPath: 'polygon(235px 0, 580px 0, 580px 100%, 290px 100%)',
+              clipPath: 'polygon(278px 15px, 580px 15px, 580px 80px, 240px 80px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
               paddingRight: '30px',
               zIndex: 1
             }}>
-              <div style={{ color: '#ffffff', fontFamily: '"Montserrat", "Segoe UI", sans-serif', fontSize: '36px', fontWeight: '900', letterSpacing: '5px', lineHeight: '1' }}>INVOICE</div>
+              <div style={{ color: '#ffffff', fontFamily: '"Montserrat", "Segoe UI", sans-serif', fontSize: '36px', fontWeight: '900', letterSpacing: '5px', lineHeight: '1', marginTop: '15px' }}>INVOICE</div>
             </div>
           </div>
 
@@ -399,7 +399,7 @@ const InvoicePreview: React.FC = () => {
               width: '100%', 
               height: '100%', 
               background: '#1e70cd', 
-              clipPath: 'polygon(240px 0, 265px 0, 280px 100%, 255px 100%)' 
+              clipPath: 'polygon(265px 0, 285px 0, 274px 18px, 254px 18px)' 
             }} />
             {/* Stripe 2 */}
             <div style={{ 
@@ -409,7 +409,7 @@ const InvoicePreview: React.FC = () => {
               width: '100%', 
               height: '100%', 
               background: '#1e70cd', 
-              clipPath: 'polygon(275px 0, 290px 0, 305px 100%, 290px 100%)' 
+              clipPath: 'polygon(295px 0, 308px 0, 297px 18px, 284px 18px)' 
             }} />
           </div>
 
