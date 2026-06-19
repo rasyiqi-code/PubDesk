@@ -100,4 +100,5 @@ export interface InvoiceProfile {
   bankAccountNo: string;
   bankAccountOwner: string;
   companyLogo?: string;
+  signatureImg?: string;
 }

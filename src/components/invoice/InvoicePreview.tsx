@@ -418,18 +418,31 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile }) => {
               <div style={{ fontWeight: '600', color: '#4b5563', marginBottom: '6px' }}>{getSignatureLocationDateLabel()}</div>
               <div style={{ fontWeight: '600', fontSize: '8.5px', textTransform: 'uppercase', color: '#6b7280' }}>{getSignatureRoleLabel()}</div>
               
-              {/* Tanda Tangan Visual Placeholder */}
+              {/* Tanda Tangan Visual */}
               <div style={{ 
-                fontFamily: '"Playball", cursive', 
-                fontSize: '22px', 
-                color: accentColor, 
-                height: '30px', 
+                height: '32px', 
                 display: 'flex', 
                 alignItems: 'center',
                 justifyContent: 'center',
-                margin: '3px 0'
+                margin: '3px 0',
+                width: '100%',
+                overflow: 'hidden'
               }}>
-                {getSignatureNameLabel().split(',')[0]}
+                {profile?.signatureImg ? (
+                  <img 
+                    src={profile.signatureImg} 
+                    alt="Tanda Tangan" 
+                    style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} 
+                  />
+                ) : (
+                  <span style={{ 
+                    fontFamily: '"Playball", cursive', 
+                    fontSize: '22px', 
+                    color: accentColor 
+                  }}>
+                    {getSignatureNameLabel().split(',')[0]}
+                  </span>
+                )}
               </div>
               <div style={{ width: '100%', height: '1px', background: '#1f2937', margin: '2px 0' }} />
               <div style={{ fontSize: '8.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>

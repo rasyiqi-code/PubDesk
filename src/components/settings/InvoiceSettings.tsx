@@ -46,6 +46,7 @@ const InvoiceSettings: React.FC = () => {
   const [bankAccountNo, setBankAccountNo] = useState('');
   const [bankAccountOwner, setBankAccountOwner] = useState('');
   const [companyLogo, setCompanyLogo] = useState('');
+  const [signatureImg, setSignatureImg] = useState('');
 
   // Memuat data profil terpilih ke dalam state form
   useEffect(() => {
@@ -76,6 +77,7 @@ const InvoiceSettings: React.FC = () => {
       setBankAccountNo('');
       setBankAccountOwner('');
       setCompanyLogo('');
+      setSignatureImg('');
     } else {
       const profile = profiles.find((p) => p.id === selectedProfileId);
       if (profile) {
@@ -105,6 +107,7 @@ const InvoiceSettings: React.FC = () => {
         setBankAccountNo(profile.bankAccountNo || '');
         setBankAccountOwner(profile.bankAccountOwner || '');
         setCompanyLogo(profile.companyLogo || '');
+        setSignatureImg(profile.signatureImg || '');
       }
     }
   }, [selectedProfileId, isEditingNew, profiles]);
@@ -144,7 +147,8 @@ const InvoiceSettings: React.FC = () => {
     bankName,
     bankAccountNo,
     bankAccountOwner,
-    companyLogo
+    companyLogo,
+    signatureImg
   };
 
   const handleSave = () => {
@@ -720,6 +724,54 @@ const InvoiceSettings: React.FC = () => {
                 onChange={(e) => setSignatureName(e.target.value)}
                 placeholder="Contoh: RUDI HARTONO, M.Kom."
               />
+            </div>
+
+            <div className="compact-form-group">
+              <label className="compact-label">Gambar Tanda Tangan (PNG Transparan)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {signatureImg && (
+                  <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '6px', border: '1px solid var(--border)', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <img src={signatureImg} alt="Tanda Tangan" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    <button 
+                      type="button" 
+                      onClick={() => setSignatureImg('')} 
+                      style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '0 0 0 4px', cursor: 'pointer', fontSize: '8px', padding: '1px 2px' }}
+                      title="Hapus Tanda Tangan"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 1024 * 1024) {
+                          alert('Ukuran berkas tanda tangan terlalu besar (maksimal 1MB)!');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setSignatureImg(event.target?.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                    id="signature-upload-input"
+                  />
+                  <label 
+                    htmlFor="signature-upload-input" 
+                    className="btn-secondary compact-btn" 
+                    style={{ cursor: 'pointer', textAlign: 'center', display: 'block', height: '32px', lineHeight: '20px' }}
+                  >
+                    {signatureImg ? 'Ubah Gambar' : 'Unggah Gambar'}
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
