@@ -177,6 +177,9 @@ const InvoicePreview: React.FC = () => {
                 <filter id="drop-shadow" x="-10%" y="-10%" width="120%" height="130%">
                   <feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#000000" floodOpacity="0.3" />
                 </filter>
+                <filter id="drop-shadow-middle" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#000000" floodOpacity="0.5" />
+                </filter>
               </defs>
 
               {/* Grup shape background horizontal dengan efek timbul (drop shadow) */}
@@ -189,7 +192,7 @@ const InvoicePreview: React.FC = () => {
               </g>
 
               {/* Grup shape miring tengah dengan efek timbul (drop shadow) di atas shape horizontal */}
-              <g filter="url(#drop-shadow)">
+              <g filter="url(#drop-shadow-middle)">
                 {/* Pemisah putih agar warna hitam tidak menyelip - Diperpanjang membungkus */}
                 <polygon points="214.3,44 230.3,44 284.5,139 268.5,139" fill="#ffffff" />
 
