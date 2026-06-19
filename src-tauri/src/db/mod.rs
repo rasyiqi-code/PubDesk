@@ -290,6 +290,7 @@ impl Database {
     }
 
     // Watch Folders
+    #[allow(dead_code)]
     pub fn add_watch_folder(&self, path: &str) -> Result<i64, DbError> {
         let created_at = chrono::Local::now().to_rfc3339();
         self.conn.execute(
@@ -299,6 +300,7 @@ impl Database {
         Ok(self.conn.last_insert_rowid())
     }
 
+    #[allow(dead_code)]
     pub fn get_watch_folders(&self) -> Result<Vec<WatchFolder>, DbError> {
         let mut stmt = self.conn.prepare("SELECT id, path, created_at FROM watch_folders")?;
         let folders = stmt.query_map([], |row| {
@@ -316,16 +318,19 @@ impl Database {
         Ok(result)
     }
 
+    #[allow(dead_code)]
     pub fn delete_watch_folder(&self, id: i64) -> Result<(), DbError> {
         self.conn.execute("DELETE FROM watch_folders WHERE id = ?1", params![id])?;
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn delete_files_by_prefix(&self, prefix: &str) -> Result<(), DbError> {
         self.conn.execute("DELETE FROM files WHERE path LIKE ?1", params![format!("{}%", prefix)])?;
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_file_by_path(&self, path: &str) -> Result<Option<File>, DbError> {
         let mut stmt = self.conn.prepare("SELECT id, path, filename, type, project_id, status, version_label, last_modified, modified_by, is_readonly FROM files WHERE path = ?1")?;
         let mut rows = stmt.query(params![path])?;
@@ -347,6 +352,7 @@ impl Database {
         }
     }
 
+    #[allow(dead_code)]
     pub fn delete_file_by_path(&self, path: &str) -> Result<(), DbError> {
         self.conn.execute("DELETE FROM files WHERE path = ?1", params![path])?;
         Ok(())
