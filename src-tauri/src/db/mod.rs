@@ -219,6 +219,24 @@ impl Database {
         Ok(())
     }
 
+    pub fn update_file(&self, file: &File) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE files SET filename = ?1, type = ?2, project_id = ?3, status = ?4, version_label = ?5, last_modified = ?6, modified_by = ?7, is_readonly = ?8 WHERE path = ?9",
+            params![
+                file.filename,
+                file.r#type,
+                file.project_id,
+                file.status,
+                file.version_label,
+                file.last_modified,
+                file.modified_by,
+                file.is_readonly,
+                file.path
+            ]
+        )?;
+        Ok(())
+    }
+
     // Services CRUD
     pub fn add_service(&self, service: &Service) -> Result<i64, DbError> {
         self.conn.execute(

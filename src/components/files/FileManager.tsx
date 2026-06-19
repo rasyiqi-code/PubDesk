@@ -7,17 +7,89 @@ interface FileManagerProps {
 }
 
 export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
-  const { files, deleteFile, selectedFileId, setSelectedFileId, showToast, fileCategory, showConfirm } = useAppContext();
+  const { files, deleteFile, updateFile, selectedFileId, setSelectedFileId, showToast, fileCategory, showConfirm } = useAppContext();
 
   // Handler Buka Berkas Fisik via Rust Backend
-  const handleOpenFile = async (e: React.MouseEvent, path: string) => {
+  const handleOpenFile = async (e: React.MouseEvent, file: any) => {
     e.stopPropagation();
-    try {
-      await invoke('open_file_physically', { path });
-      showToast('Membuka berkas...', 'info');
-    } catch (error) {
-      console.error('Gagal membuka berkas:', error);
-      showToast('Gagal membuka berkas (pastikan file fisik ada)', 'error');
+    const path = file.path;
+    if (path.startsWith('gdrive://')) {
+      const fileId = path.replace('gdrive://', '');
+      const token = localStorage.getItem('gdrive_token');
+      if (!token) {
+        showToast('Google Drive belum dikonfigurasi. Atur token di Pengaturan.', 'error');
+        return;
+      }
+
+      showToast('Mengunduh berkas dari Google Drive...', 'info');
+      try {
+        const mimeType = file.version_label || '';
+        const isGoogleDoc = mimeType.startsWith('application/vnd.google-apps.');
+        
+        let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+        let filename = file.filename;
+        
+        if (isGoogleDoc) {
+          let exportMime = 'application/pdf';
+          let ext = '.pdf';
+          
+          if (mimeType === 'application/vnd.google-apps.document') {
+            exportMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            ext = '.docx';
+          } else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
+            exportMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            ext = '.xlsx';
+          } else if (mimeType === 'application/vnd.google-apps.presentation') {
+            exportMime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            ext = '.pptx';
+          }
+          
+          url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${encodeURIComponent(exportMime)}`;
+          
+          if (!filename.toLowerCase().endsWith(ext)) {
+            filename = filename + ext;
+          }
+        }
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+
+        const localPath = await invoke<string>('create_physical_file', {
+          filename: filename,
+          bytes: Array.from(bytes),
+          folder: 'gdrive_cache'
+        });
+
+        // Update status di DB
+        await updateFile({
+          ...file,
+          status: 'Tersimpan'
+        });
+
+        showToast('Membuka berkas...', 'info');
+        await invoke('open_file_physically', { path: localPath });
+      } catch (error) {
+        console.error('Gagal mengunduh/membuka berkas Drive:', error);
+        showToast('Gagal mengunduh berkas dari Google Drive', 'error');
+      }
+    } else {
+      try {
+        await invoke('open_file_physically', { path });
+        showToast('Membuka berkas...', 'info');
+      } catch (error) {
+        console.error('Gagal membuka berkas:', error);
+        showToast('Gagal membuka berkas (pastikan file fisik ada)', 'error');
+      }
     }
   };
 
@@ -69,13 +141,13 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
     }
   };
 
-  // Filter berkas berdasarkan kategori aktif dan query pencarian
   const filteredFiles = files.filter((file) => {
     const matchesCategory =
       fileCategory === 'all' ||
       (fileCategory === 'invoice' && file.type === 'invoice') ||
       (fileCategory === 'service' && file.type === 'service') ||
-      (fileCategory === 'other' && file.type !== 'invoice' && file.type !== 'service');
+      (fileCategory === 'gdrive' && file.type === 'gdrive') ||
+      (fileCategory === 'other' && file.type !== 'invoice' && file.type !== 'service' && file.type !== 'gdrive');
 
     const matchesSearch = file.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
       file.path.toLowerCase().includes(searchQuery.toLowerCase());
@@ -128,7 +200,8 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
                       <span style={{ fontSize: '16px' }}>
                         {file.type === 'invoice' && '📄'}
                         {file.type === 'service' && '🛠️'}
-                        {file.type !== 'invoice' && file.type !== 'service' && '📁'}
+                        {file.type === 'gdrive' && '☁️'}
+                        {file.type !== 'invoice' && file.type !== 'service' && file.type !== 'gdrive' && '📁'}
                       </span>
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {file.filename}
@@ -159,7 +232,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                         {/* Tombol Buka Berkas */}
                         <button
-                          onClick={(e) => handleOpenFile(e, file.path)}
+                          onClick={(e) => handleOpenFile(e, file)}
                           title="Buka berkas"
                           style={{
                             border: 'none',
@@ -189,35 +262,37 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
                           </svg>
                         </button>
 
-                        {/* Tombol Buka Lokasi Berkas */}
-                        <button
-                          onClick={(e) => handleOpenFileLocation(e, file.path)}
-                          title="Buka lokasi berkas"
-                          style={{
-                            border: 'none',
-                            background: 'transparent',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'background 0.15s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
-                            e.currentTarget.style.color = 'var(--text-primary)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                          }}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                          </svg>
-                        </button>
+                        {/* Tombol Buka Lokasi Berkas (Hanya untuk berkas lokal) */}
+                        {!file.path.startsWith('gdrive://') && (
+                          <button
+                            onClick={(e) => handleOpenFileLocation(e, file.path)}
+                            title="Buka lokasi berkas"
+                            style={{
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'background 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+                              e.currentTarget.style.color = 'var(--text-primary)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = 'var(--text-secondary)';
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                          </button>
+                        )}
 
                         {/* Tombol Hapus */}
                         <button

@@ -24,8 +24,8 @@ interface AppContextType {
   selectedFileId: number | null;
   setSelectedFileId: (id: number | null) => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
-  fileCategory: 'all' | 'invoice' | 'service' | 'other';
-  setFileCategory: (category: 'all' | 'invoice' | 'service' | 'other') => void;
+  fileCategory: 'all' | 'invoice' | 'service' | 'other' | 'gdrive';
+  setFileCategory: (category: 'all' | 'invoice' | 'service' | 'other' | 'gdrive') => void;
   loadBooks: () => Promise<void>;
   loadContacts: () => Promise<void>;
   loadInvoices: () => Promise<void>;
@@ -38,6 +38,7 @@ interface AppContextType {
   addInvoice: (invoice: Invoice) => Promise<number>;
   addFile: (file: File) => Promise<number>;
   deleteFile: (id: number) => Promise<void>;
+  updateFile: (file: File) => Promise<void>;
   addService: (service: Service) => Promise<number>;
   updateService: (service: Service) => Promise<void>;
   deleteService: (id: number) => Promise<void>;
@@ -68,7 +69,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [services, setServices] = useState<Service[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
-  const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'service' | 'other'>('all');
+  const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'service' | 'other' | 'gdrive'>('all');
   const [rightPanelVisible, setRightPanelVisible] = useState(true);
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
@@ -194,6 +195,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const updateFile = async (file: File) => {
+    await invoke('update_file', { file });
+    await loadFiles();
+  };
+
   const loadServices = async () => {
     try {
       const data = await invoke<Service[]>('get_services');
@@ -249,6 +255,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addInvoice,
       addFile,
       deleteFile,
+      updateFile,
       addService,
       updateService,
       deleteService,

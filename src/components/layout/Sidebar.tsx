@@ -77,6 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                     { cat: 'all' as const, label: 'Semua Berkas', icon: '📂' },
                     { cat: 'invoice' as const, label: 'Dokumen Invoice', icon: '📄' },
                     { cat: 'service' as const, label: 'Katalog Layanan', icon: '🛠️' },
+                    { cat: 'gdrive' as const, label: 'Google Drive', icon: '☁️' },
                     { cat: 'other' as const, label: 'Berkas Lainnya', icon: '📁' },
                   ].map((sub) => {
                     const isSubActive = isActive && fileCategory === sub.cat;

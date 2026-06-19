@@ -136,6 +136,13 @@ fn delete_file(state: State<'_, AppState>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn update_file(state: State<'_, AppState>, file: File) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.update_file(&file).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn create_physical_file(app_handle: tauri::AppHandle, filename: String, bytes: Vec<u8>, folder: String) -> Result<String, String> {
     use tauri::Manager;
     use std::fs::File as StdFile;
@@ -219,6 +226,7 @@ pub fn run() {
             get_files,
             add_file,
             delete_file,
+            update_file,
             create_physical_file,
             open_file_physically,
             open_file_location_physically
