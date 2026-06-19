@@ -15,6 +15,7 @@ export interface Book {
   po_price: number;
   weight_grams: number;
   author_id?: number;
+  cover_path?: string;
 }
 
 export interface Project {

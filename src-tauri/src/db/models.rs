@@ -33,6 +33,7 @@ pub struct Book {
     pub po_price: f64,
     pub weight_grams: i64,
     pub author_id: Option<i64>,
+    pub cover_path: Option<String>,
 }
 
 impl Default for Book {
@@ -45,6 +46,7 @@ impl Default for Book {
             po_price: 0.0,
             weight_grams: 0,
             author_id: None,
+            cover_path: None,
         }
     }
 }

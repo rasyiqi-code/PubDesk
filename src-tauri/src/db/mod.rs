@@ -72,21 +72,22 @@ impl Database {
     // Books
     pub fn add_book(&self, book: &Book) -> Result<i64, DbError> {
         self.conn.execute(
-            "INSERT INTO books (title, isbn, regular_price, po_price, weight_grams, author_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO books (title, isbn, regular_price, po_price, weight_grams, author_id, cover_path) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 book.title,
                 book.isbn,
                 book.regular_price,
                 book.po_price,
                 book.weight_grams,
-                book.author_id
+                book.author_id,
+                book.cover_path
             ]
         )?;
         Ok(self.conn.last_insert_rowid())
     }
 
     pub fn get_books(&self) -> Result<Vec<Book>, DbError> {
-        let mut stmt = self.conn.prepare("SELECT id, title, isbn, regular_price, po_price, weight_grams, author_id FROM books")?;
+        let mut stmt = self.conn.prepare("SELECT id, title, isbn, regular_price, po_price, weight_grams, author_id, cover_path FROM books")?;
         let books = stmt.query_map([], |row| {
             Ok(Book {
                 id: row.get(0)?,
@@ -96,6 +97,7 @@ impl Database {
                 po_price: row.get(4)?,
                 weight_grams: row.get(5)?,
                 author_id: row.get(6)?,
+                cover_path: row.get(7)?,
             })
         })?;
         
@@ -113,7 +115,7 @@ impl Database {
 
     pub fn update_book(&self, book: &Book) -> Result<(), DbError> {
         self.conn.execute(
-            "UPDATE books SET title = ?1, isbn = ?2, regular_price = ?3, po_price = ?4, weight_grams = ?5, author_id = ?6 WHERE id = ?7",
+            "UPDATE books SET title = ?1, isbn = ?2, regular_price = ?3, po_price = ?4, weight_grams = ?5, author_id = ?6, cover_path = ?7 WHERE id = ?8",
             params![
                 book.title,
                 book.isbn,
@@ -121,6 +123,7 @@ impl Database {
                 book.po_price,
                 book.weight_grams,
                 book.author_id,
+                book.cover_path,
                 book.id
             ]
         )?;

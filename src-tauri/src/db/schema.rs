@@ -23,10 +23,14 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
             regular_price REAL NOT NULL,
             po_price REAL NOT NULL,
             weight_grams INTEGER NOT NULL DEFAULT 0,
-            author_id INTEGER REFERENCES contacts(id)
+            author_id INTEGER REFERENCES contacts(id),
+            cover_path TEXT
         )",
         [],
     )?;
+
+    // Migrasi ad-hoc untuk menambahkan kolom cover_path jika database sudah terlanjur dibuat sebelumnya
+    let _ = conn.execute("ALTER TABLE books ADD COLUMN cover_path TEXT", []);
 
     // Projects table
     conn.execute(
