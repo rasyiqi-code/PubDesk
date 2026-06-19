@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSettingsForm } from './SettingsFormContext';
+import { useAppContext } from '../../../contexts/AppContext';
 
 const DesignSection: React.FC = () => {
   const {
@@ -19,12 +20,11 @@ const DesignSection: React.FC = () => {
     setHeaderBgColor
   } = useSettingsForm();
 
+  const { rightPanelVisible } = useAppContext();
+
   return (
     <>
-      <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        1. Desain & Identitas Profil
-      </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
         <div className="compact-form-group">
           <label className="compact-label">Nama Profil (Internal)</label>
           <input

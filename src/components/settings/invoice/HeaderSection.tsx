@@ -16,14 +16,11 @@ const HeaderSection: React.FC = () => {
     setHeaderType
   } = useSettingsForm();
 
-  const { showToast } = useAppContext();
+  const { showToast, rightPanelVisible } = useAppContext();
 
   return (
     <>
-      <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        2. Kop Surat & Judul (Header)
-      </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
         <div className="compact-form-group">
           <label className="compact-label">Nama Perusahaan</label>
           <input

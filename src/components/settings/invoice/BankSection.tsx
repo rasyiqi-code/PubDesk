@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSettingsForm } from './SettingsFormContext';
+import { useAppContext } from '../../../contexts/AppContext';
 
 const BankSection: React.FC = () => {
   const {
@@ -13,11 +14,10 @@ const BankSection: React.FC = () => {
     setBankAccountOwner
   } = useSettingsForm();
 
+  const { rightPanelVisible } = useAppContext();
+
   return (
     <>
-      <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        6. Informasi Rekening Bank
-      </h3>
       <div style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
           <input
@@ -33,7 +33,7 @@ const BankSection: React.FC = () => {
         </div>
 
         {showBankInfo && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '1fr 1fr', gap: '12px' }}>
             <div className="compact-form-group">
               <label className="compact-label">Nama Bank / Layanan</label>
               <input

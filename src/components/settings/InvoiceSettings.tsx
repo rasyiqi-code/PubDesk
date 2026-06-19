@@ -58,6 +58,44 @@ const InvoiceSettings: React.FC = () => {
   const [headerType, setHeaderType] = useState<'logo_only' | 'logo_text' | 'text_only'>('logo_text');
   const [tableColumns, setTableColumns] = useState<InvoiceTableColumn[]>([]);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<number | null>(1);
+
+  const renderAccordionSection = (index: number, title: string, component: React.ReactNode) => {
+    const isOpen = expandedSection === index;
+    return (
+      <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-card)', marginBottom: '4px' }}>
+        <button
+          type="button"
+          onClick={() => setExpandedSection(isOpen ? null : index)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '12px 16px',
+            background: isOpen ? 'var(--bg-panel)' : 'transparent',
+            border: 'none',
+            color: isOpen ? 'var(--accent)' : 'var(--text-primary)',
+            fontSize: '12px',
+            fontWeight: '700',
+            textAlign: 'left',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            outline: 'none'
+          }}
+        >
+          <span>{title}</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{isOpen ? '▲' : '▼'}</span>
+        </button>
+        {isOpen && (
+          <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
+            {component}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Memuat data profil terpilih ke dalam state form
   useEffect(() => {
@@ -466,13 +504,15 @@ const InvoiceSettings: React.FC = () => {
               setTableColumns
             }}
           >
-            <DesignSection />
-            <HeaderSection />
-            <ContentSection />
-            <NotesSection />
-            <SignatureSection />
-            <BankSection />
-            <ColumnsSection />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {renderAccordionSection(1, '1. Desain & Identitas Profil', <DesignSection />)}
+              {renderAccordionSection(2, '2. Kop Surat & Judul (Header)', <HeaderSection />)}
+              {renderAccordionSection(3, '3. Detail Konten Surat', <ContentSection />)}
+              {renderAccordionSection(4, '4. Spesifikasi & Catatan (Notes)', <NotesSection />)}
+              {renderAccordionSection(5, '5. Tanda Tangan Penutup', <SignatureSection />)}
+              {renderAccordionSection(6, '6. Informasi Rekening Bank', <BankSection />)}
+              {renderAccordionSection(7, '7. Kolom Tabel Rincian Invoice', <ColumnsSection />)}
+            </div>
           </SettingsFormContext.Provider>
 
           {/* Tombol Simpan Terakhir */}

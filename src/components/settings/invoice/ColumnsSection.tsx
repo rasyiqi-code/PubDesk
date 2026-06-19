@@ -70,9 +70,6 @@ const ColumnsSection: React.FC = () => {
 
   return (
     <>
-      <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        7. Kolom Tabel Rincian Invoice
-      </h3>
       <div style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '500' }}>
