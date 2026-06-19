@@ -192,7 +192,7 @@ const InvoiceGenerator: React.FC = () => {
       // Simpan berkas ke tabel files untuk modul Smart Folders
       const fileData = {
         filename: `Invoice-${invoiceNo || 'DRAF'}.pdf`,
-        path: `invoices/Invoice-${invoiceNo ? invoiceNo.replace(/\//g, '_') : Date.now()}.pdf`,
+        path: `invoices/Invoice-${invoiceNo ? invoiceNo.replace(/\//g, '_') : 'DRAF'}-${Date.now()}.pdf`,
         type: 'invoice',
         project_id: invoiceId,
         status: 'Tersimpan',
