@@ -163,18 +163,7 @@ fn process_created_file(db: &Database, path: &Path) -> Result<bool, String> {
         })
         .unwrap_or_else(|_| chrono::Local::now().to_rfc3339());
 
-    let filename_lower = filename.to_lowercase();
-    let file_type = if filename_lower.contains("bab") || filename_lower.contains("chapter") {
-        "naskah"
-    } else if filename_lower.contains("perjanjian") || filename_lower.contains("pasal") || filename_lower.contains("kontrak") {
-        "kontrak"
-    } else if (extension == "png" || extension == "jpg" || extension == "jpeg")
-        && (filename_lower.contains("cover") || filename_lower.contains("banner") || filename_lower.contains("sampul"))
-    {
-        "aset"
-    } else {
-        "other"
-    };
+    let file_type = "other";
 
     let new_file = File {
         id: None,
@@ -189,7 +178,13 @@ fn process_created_file(db: &Database, path: &Path) -> Result<bool, String> {
         is_readonly: metadata.permissions().readonly(),
     };
 
-    db.add_file(&new_file).map_err(|e| e.to_string())?;
+    let file_id = db.add_file(&new_file).map_err(|e| e.to_string())?;
+    
+    // Jalankan pipeline indexing cerdas secara lokal
+    if let Err(e) = crate::indexing::pipeline::run_indexing_pipeline(db, file_id) {
+        println!("Gagal menjalankan pipeline indeks untuk berkas {}: {}", file_id, e);
+    }
+    
     Ok(true)
 }
 
@@ -215,6 +210,14 @@ fn process_modified_file(db: &Database, path: &Path) -> Result<bool, String> {
         existing_file.is_readonly = metadata.permissions().readonly();
 
         db.update_file(&existing_file).map_err(|e| e.to_string())?;
+        
+        if let Some(file_id) = existing_file.id {
+            // Jalankan pipeline indexing cerdas secara lokal untuk file yang diubah
+            if let Err(e) = crate::indexing::pipeline::run_indexing_pipeline(db, file_id) {
+                println!("Gagal memperbarui indeks untuk berkas {}: {}", file_id, e);
+            }
+        }
+        
         Ok(true)
     } else {
         process_created_file(db, path)

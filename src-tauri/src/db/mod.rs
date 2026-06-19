@@ -25,7 +25,7 @@ pub fn init_db(db_path: &PathBuf) -> Result<(), DbError> {
 }
 
 pub struct Database {
-    conn: Connection,
+    pub(crate) conn: Connection,
 }
 
 impl Database {

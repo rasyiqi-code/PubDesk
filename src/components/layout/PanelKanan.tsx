@@ -1,10 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import InvoicePreview from '../invoice/InvoicePreview';
 import { invoke } from '@tauri-apps/api/core';
 
 const PanelKanan: React.FC = () => {
   const { appState, files, invoices, selectedFileId, services, selectedServiceId, activeSettingsTab, showToast, updateFile, refreshAccessToken, gdriveAccounts, refreshAccountToken } = useAppContext();
+
+  const [fileMetadata, setFileMetadata] = useState<any | null>(null);
+  const [relatedFiles, setRelatedFiles] = useState<any[]>([]);
+  const [loadingMetadata, setLoadingMetadata] = useState(false);
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (appState.activeModule !== 'files' || !selectedFileId) {
+        setFileMetadata(null);
+        setRelatedFiles([]);
+        return;
+      }
+      const file = files.find(f => f.id === selectedFileId);
+      if (!file || file.type === 'invoice' || file.type === 'service') {
+        return;
+      }
+
+      setLoadingMetadata(true);
+      try {
+        const metadata = await invoke<any>('get_file_metadata', { fileId: selectedFileId });
+        const related = await invoke<any[]>('get_related_files', { fileId: selectedFileId });
+        setFileMetadata(metadata);
+        setRelatedFiles(related);
+      } catch (err) {
+        console.error("Gagal memuat metadata berkas:", err);
+      } finally {
+        setLoadingMetadata(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [selectedFileId, appState.activeModule, files]);
 
   const renderPreview = () => {
     switch (appState.activeModule) {
@@ -423,9 +455,156 @@ const PanelKanan: React.FC = () => {
           );
         }
 
+        if (loadingMetadata) {
+          return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '13px' }}>Memuat metadata & analisis berkas...</span>
+            </div>
+          );
+        }
+
+        if (!fileMetadata) {
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>Pratinjau untuk berkas ini tidak tersedia</p>
+            </div>
+          );
+        }
+
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>Pratinjau untuk berkas ini tidak tersedia</p>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', padding: '24px', overflowY: 'auto' }}>
+            {/* Header Inspektur Berkas */}
+            <div style={{ marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                🔍 Inspektur Berkas Cerdas
+              </h3>
+              <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 6px 0', wordBreak: 'break-all' }}>
+                {fileMetadata.filename}
+              </h4>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  background: 'rgba(192, 28, 28, 0.1)',
+                  color: 'var(--accent)',
+                  textTransform: 'uppercase'
+                }}>
+                  {fileMetadata.r#type}
+                </span>
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  background: 'rgba(0, 0, 0, 0.05)',
+                  color: 'var(--text-secondary)',
+                  textTransform: 'uppercase'
+                }}>
+                  {fileMetadata.version_label || 'Lokal'}
+                </span>
+              </div>
+            </div>
+
+            {/* Entitas Terdeteksi */}
+            <div style={{ marginBottom: '20px' }}>
+              <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                Entitas Terdeteksi
+              </h5>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                {fileMetadata.entities.length === 0 ? (
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                    Tidak ada entitas penerbitan khusus yang terdeteksi.
+                  </span>
+                ) : (
+                  fileMetadata.entities.map((ent: any, idx: number) => {
+                    let icon = '📑';
+                    if (ent.entity_type === 'judul') icon = '📖';
+                    if (ent.entity_type === 'penulis') icon = '✍️';
+                    if (ent.entity_type === 'bab') icon = '📑';
+                    if (ent.entity_type === 'ISBN') icon = '🔢';
+                    return (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: idx < fileMetadata.entities.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: idx < fileMetadata.entities.length - 1 ? '6px' : '0' }}>
+                        <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {icon} <span style={{ textTransform: 'capitalize' }}>{ent.entity_type}</span>
+                        </span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{ent.entity_value}</strong>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Ringkasan Otomatis */}
+            <div style={{ marginBottom: '20px' }}>
+              <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                Ringkasan Konten Otomatis
+              </h5>
+              <div style={{
+                background: 'var(--bg-card)',
+                padding: '14px',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                fontSize: '13px',
+                color: 'var(--text-primary)',
+                lineHeight: '1.5',
+                fontStyle: 'italic'
+              }}>
+                "{fileMetadata.summary || 'Tidak ada konten teks untuk dirangkum.'}"
+              </div>
+            </div>
+
+            {/* Berkas Terkait & Garis Waktu Versi */}
+            <div style={{ marginBottom: '20px' }}>
+              <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                Berkas Terkait & Versi
+              </h5>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {relatedFiles.length === 0 ? (
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center' }}>
+                    Tidak ada berkas terkait dengan kemiripan tinggi.
+                  </span>
+                ) : (
+                  relatedFiles.map((rel: any, idx: number) => {
+                    const isVersion = rel.relation_type === 'version_of';
+                    return (
+                      <div key={idx} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: 'var(--bg-card)',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border)',
+                        fontSize: '12px',
+                        gap: '4px'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '9px',
+                            fontWeight: '700',
+                            background: isVersion ? 'rgba(46, 194, 126, 0.15)' : 'rgba(30, 144, 255, 0.15)',
+                            color: isVersion ? '#2ec27e' : '#1e90ff',
+                            textTransform: 'uppercase'
+                          }}>
+                            {isVersion ? `Versi Lain (${Math.round(rel.confidence * 100)}%)` : 'Terkait'}
+                          </span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>
+                            {new Date(rel.last_modified).toLocaleDateString('id-ID')}
+                          </span>
+                        </div>
+                        <span style={{ fontWeight: '600', color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+                          {rel.filename}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
         );
       }

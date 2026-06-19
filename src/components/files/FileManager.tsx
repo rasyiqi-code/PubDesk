@@ -9,6 +9,44 @@ interface FileManagerProps {
 export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
   const { files, deleteFile, updateFile, selectedFileId, setSelectedFileId, showToast, fileCategory, showConfirm, fileLayoutMode, currentFolderId, navigateFolder, refreshAccessToken, gdriveAccounts, refreshAccountToken } = useAppContext();
 
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [isSearching, setIsSearching] = React.useState(false);
+
+  React.useEffect(() => {
+    const performSearch = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const results = await invoke<any[]>('global_semantic_search', { query: searchQuery });
+        const mapped = results.map(res => ({
+          id: res.id,
+          path: res.path,
+          filename: res.filename,
+          type: res.type,
+          status: 'Lokal',
+          version_label: res.version_label,
+          last_modified: res.last_modified,
+          modified_by: '',
+          is_readonly: false
+        }));
+        setSearchResults(mapped);
+      } catch (err) {
+        console.error("Gagal melakukan pencarian semantik:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const delayDebounce = setTimeout(() => {
+      performSearch();
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
   const rootFolderId = localStorage.getItem('gdrive_parent_folder_id') || 'root';
 
   const parseModifiedBy = (modifiedBy?: string) => {
@@ -168,6 +206,15 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
   const handleOpenFile = async (e: React.MouseEvent, file: any) => {
     e.stopPropagation();
     const path = file.path;
+
+    // Catat statistik akses berkas jika berkas lokal (memiliki id valid di DB)
+    if (file.id && file.id > 0) {
+      try {
+        await invoke('record_file_access', { fileId: file.id });
+      } catch (err) {
+        console.error("Gagal mencatat statistik akses berkas:", err);
+      }
+    }
     
     // Navigasi masuk folder Google Drive
     if (file.type === 'gdrive' && file.version_label === 'application/vnd.google-apps.folder') {
@@ -367,16 +414,15 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
     ? getVirtualFolders()
     : files;
 
-  const filteredFiles = allFiles.filter((file) => {
+  const baseFiles = searchQuery.trim() ? searchResults : allFiles;
+
+  const filteredFiles = baseFiles.filter((file) => {
     const matchesCategory =
       (fileCategory === 'all' && file.type !== 'gdrive') ||
       (fileCategory === 'invoice' && file.type === 'invoice') ||
       (fileCategory === 'service' && file.type === 'service') ||
       (fileCategory === 'gdrive' && file.type === 'gdrive') ||
       (fileCategory === 'other' && file.type !== 'invoice' && file.type !== 'service' && file.type !== 'gdrive');
-
-    const matchesSearch = file.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      file.path.toLowerCase().includes(searchQuery.toLowerCase());
 
     const fileParentId = getParentId(file);
     const isShared = getIsShared(file);
@@ -410,7 +456,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
       }
     }
 
-    return matchesCategory && matchesSearch && matchesFolder;
+    return matchesCategory && matchesFolder;
   });
 
   return (

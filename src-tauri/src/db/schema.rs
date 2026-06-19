@@ -118,5 +118,51 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
         [],
     )?;
 
+    // Migrasi ad-hoc untuk menambahkan kolom version_similarity jika database sudah terlanjur dibuat
+    let _ = conn.execute("ALTER TABLE files ADD COLUMN version_similarity REAL", []);
+
+    // file_entities table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS file_entities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_id INTEGER REFERENCES files(id) ON DELETE CASCADE,
+            entity_type TEXT NOT NULL,
+            entity_value TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    // file_embeddings table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS file_embeddings (
+            file_id INTEGER PRIMARY KEY REFERENCES files(id) ON DELETE CASCADE,
+            vector BLOB NOT NULL
+        )",
+        [],
+    )?;
+
+    // file_relations table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS file_relations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_file_id INTEGER REFERENCES files(id) ON DELETE CASCADE,
+            target_file_id INTEGER REFERENCES files(id) ON DELETE CASCADE,
+            relation_type TEXT NOT NULL,
+            confidence REAL NOT NULL
+        )",
+        [],
+    )?;
+
+    // file_stats table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS file_stats (
+            file_id INTEGER PRIMARY KEY REFERENCES files(id) ON DELETE CASCADE,
+            access_count INTEGER NOT NULL DEFAULT 0,
+            last_accessed TEXT,
+            active_project_boost INTEGER NOT NULL DEFAULT 0
+        )",
+        [],
+    )?;
+
     Ok(())
 }

@@ -1,5 +1,6 @@
 mod db;
 mod watcher;
+pub mod indexing;
 
 use db::*;
 use watcher::WatcherManager;
@@ -378,6 +379,46 @@ fn open_file_location_physically(path: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn get_file_metadata(
+    state: State<'_, AppState>,
+    file_id: i64,
+) -> Result<crate::indexing::pipeline::FileMetadataPayload, String> {
+    let db_lock = state.db.lock().unwrap();
+    let db = db_lock.as_ref().ok_or("Database tidak diinisialisasi")?;
+    crate::indexing::pipeline::get_file_metadata(db, file_id)
+}
+
+#[tauri::command]
+async fn get_related_files(
+    state: State<'_, AppState>,
+    file_id: i64,
+) -> Result<Vec<crate::indexing::pipeline::RelatedFileInfo>, String> {
+    let db_lock = state.db.lock().unwrap();
+    let db = db_lock.as_ref().ok_or("Database tidak diinisialisasi")?;
+    crate::indexing::pipeline::get_related_files(db, file_id)
+}
+
+#[tauri::command]
+async fn record_file_access(
+    state: State<'_, AppState>,
+    file_id: i64,
+) -> Result<(), String> {
+    let db_lock = state.db.lock().unwrap();
+    let db = db_lock.as_ref().ok_or("Database tidak diinisialisasi")?;
+    crate::indexing::pipeline::record_file_access(db, file_id)
+}
+
+#[tauri::command]
+async fn global_semantic_search(
+    state: State<'_, AppState>,
+    query: String,
+) -> Result<Vec<crate::indexing::pipeline::SearchResultInfo>, String> {
+    let db_lock = state.db.lock().unwrap();
+    let db = db_lock.as_ref().ok_or("Database tidak diinisialisasi")?;
+    crate::indexing::pipeline::global_semantic_search(db, &query)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -414,7 +455,11 @@ pub fn run() {
             start_oauth_server,
             get_watch_folders,
             add_watch_folder,
-            remove_watch_folder
+            remove_watch_folder,
+            get_file_metadata,
+            get_related_files,
+            record_file_access,
+            global_semantic_search
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
