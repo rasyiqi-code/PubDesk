@@ -85,7 +85,7 @@ const InvoiceSettings: React.FC = () => {
       setSignatureImg('');
       setHeaderType('logo_text');
       setTableColumns([
-        { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+        { key: 'item_title', label: 'Judul', type: 'text', align: 'left' },
         { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '90px' },
         { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
         { key: 'quantity', label: 'Jml. Cetak', type: 'number', align: 'center', width: '80px' },
@@ -228,7 +228,7 @@ const InvoiceSettings: React.FC = () => {
     if (confirm('Apakah Anda yakin ingin mereset kolom ke skema bawaan minimal?')) {
       // Reset ke kolom minimal generik (nama item, qty, harga)
       setTableColumns([
-        { key: 'book_title', label: 'Nama Item', type: 'text', align: 'left' },
+        { key: 'item_title', label: 'Nama Item', type: 'text', align: 'left' },
         { key: 'quantity', label: 'Qty', type: 'number', align: 'center', width: '80px' },
         { key: 'price', label: 'Harga', type: 'currency', align: 'right', width: '110px' },
         { key: 'total', label: 'Total', type: 'formula', align: 'right', width: '110px', formula: '{price} * {quantity}' }
@@ -961,7 +961,7 @@ const InvoiceSettings: React.FC = () => {
                 </div>
               ) : (
                 tableColumns.map((col, idx) => {
-                  const isLocked = col.key === 'book_title' || col.key === 'quantity' || col.key === 'price';
+                  const isLocked = col.key === 'item_title' || col.key === 'quantity' || col.key === 'price';
 
                   const inputBase: React.CSSProperties = {
                     width: '100%',

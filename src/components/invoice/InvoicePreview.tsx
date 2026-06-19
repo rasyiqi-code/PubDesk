@@ -413,8 +413,8 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                     const rowBg = index % 2 === 0 ? '#fdf2f2' : '#ffffff';
                     const columns = profile?.tableColumns || [];
 
-                    // Kumpulkan kolom detail — semua kecuali book_title, price, quantity, dan formula total
-                    const keysToSkip = new Set(['book_title', 'price', 'quantity', 'total']);
+                    // Kumpulkan kolom detail — semua kecuali item_title, price, quantity, dan formula total
+                    const keysToSkip = new Set(['item_title', 'price', 'quantity', 'total']);
                     const detailParts: string[] = [];
                     columns.forEach(col => {
                       if (keysToSkip.has(col.key)) return;
@@ -455,7 +455,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
 
                         {/* Judul / Detail */}
                         <td style={{ padding: '6px 8px', textAlign: 'left', fontSize: '9.5px', color: '#1f2937', fontWeight: '700', borderBottom: '1px solid #e5e7eb', wordBreak: 'break-word', verticalAlign: 'top' }}>
-                          <div style={{ fontWeight: '700' }}>"{item.book_title || '-'}"</div>
+                          <div style={{ fontWeight: '700' }}>"{item.item_title || '-'}"</div>
                           {detailParts.length > 0 && (
                             <div style={{ fontWeight: '400', color: '#6b7280', fontSize: '8.5px', marginTop: '2px', lineHeight: '1.4' }}>
                               {detailParts.join(' | ')}

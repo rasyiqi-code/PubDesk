@@ -1,28 +1,14 @@
 /**
- * Registry template invoice bawaan.
- *
- * Setiap template adalah InvoiceProfile lengkap yang dapat dimuat ke form
- * pengaturan lalu disimpan sebagai profil baru dengan ID unik.
+ * Loader template invoice — fully dinamis via import.meta.glob.
  *
  * Untuk menambah template baru:
  * 1. Buat file JSON di src/assets/invoice-templates/
- * 2. Import dan daftarkan di array invoiceTemplates di bawah
+ * 2. Pastikan file JSON memiliki field: templateId, label, description, category
+ *    beserta seluruh field InvoiceProfile (tanpa id)
+ * 3. Template akan otomatis tersedia tanpa perlu mendaftar di sini
  */
 
 import { InvoiceProfile } from '../types';
-
-// Template KBM
-import kbmKreatorCetak from '../assets/invoice-templates/kbm_kreator_cetak.json';
-import kbmIndonesiaHaki from '../assets/invoice-templates/kbm_indonesia_haki.json';
-
-// Template SPT Mitra Penerbit
-import univedPress from '../assets/invoice-templates/unived_press.json';
-import undiksha from '../assets/invoice-templates/undiksha_press.json';
-
-// Template generik (pola kolom umum)
-import generikDenganOngkir from '../assets/invoice-templates/kbm_cetak.json';
-import generikLayananTunggal from '../assets/invoice-templates/kbm_creator.json';
-import generikPaket from '../assets/invoice-templates/spt_mitra.json';
 
 export interface InvoiceTemplate {
   /** ID unik template — berbeda dari ID profil yang akan dibuat */
@@ -33,64 +19,37 @@ export interface InvoiceTemplate {
   description: string;
   /** Tag kategori untuk mengelompokkan template dalam modal */
   category: string;
-  /** Data profil lengkap dari file JSON — tanpa field id agar tidak bentrok */
+  /** Data profil lengkap — tanpa field id agar tidak bentrok dengan profil baru */
   profile: Omit<InvoiceProfile, 'id'>;
 }
 
-/** Daftar semua template bawaan yang tersedia, diurutkan per kategori */
-export const invoiceTemplates: InvoiceTemplate[] = [
-  // ─── KBM ───────────────────────────────────────────────────────────────────
-  {
-    templateId: 'kbm_kreator_cetak',
-    label: 'KBM Kreator – Cetak Buku',
-    description: 'Kolom: Judul, Hal, Naskah, Qty, Cetak/pcs, Ongkir, Total',
-    category: 'KBM',
-    profile: kbmKreatorCetak as Omit<InvoiceProfile, 'id'>
-  },
-  {
-    templateId: 'kbm_indonesia_haki',
-    label: 'KBM Indonesia – Pengajuan HAKI',
-    description: 'Kolom: Judul Karya, Pemegang Hak Cipta, Total Biaya',
-    category: 'KBM',
-    profile: kbmIndonesiaHaki as Omit<InvoiceProfile, 'id'>
-  },
+// Muat semua JSON di folder invoice-templates secara otomatis
+const templateModules = import.meta.glob<Record<string, unknown>>(
+  '../assets/invoice-templates/*.json',
+  { eager: true }
+);
 
-  // ─── SPT Mitra Penerbit ────────────────────────────────────────────────────
-  {
-    templateId: 'unived_press',
-    label: 'Unived Press – Penerbitan (+ Ongkir)',
-    description: 'Kolom: Judul, Hal, Naskah, Jml+Paket, Harga Paket, Ongkir, Total',
-    category: 'SPT Mitra',
-    profile: univedPress as Omit<InvoiceProfile, 'id'>
-  },
-  {
-    templateId: 'undiksha_press',
-    label: 'Undiksha Press – Penerbitan (tanpa Ongkir)',
-    description: 'Kolom: Judul, Hal, Naskah, Jml+Paket, Harga Paket',
-    category: 'SPT Mitra',
-    profile: undiksha as Omit<InvoiceProfile, 'id'>
-  },
-
-  // ─── Pola Generik ──────────────────────────────────────────────────────────
-  {
-    templateId: 'generik_dengan_ongkir',
-    label: 'Generik – Item dengan Ongkos Kirim',
-    description: 'Kolom: Nama Item, Qty, Harga Satuan, Ongkir, Total',
-    category: 'Generik',
-    profile: generikDenganOngkir as Omit<InvoiceProfile, 'id'>
-  },
-  {
-    templateId: 'generik_layanan_tunggal',
-    label: 'Generik – Layanan Tunggal (tanpa Qty)',
-    description: 'Kolom: Nama Layanan, Total Biaya',
-    category: 'Generik',
-    profile: generikLayananTunggal as Omit<InvoiceProfile, 'id'>
-  },
-  {
-    templateId: 'generik_paket',
-    label: 'Generik – Pengadaan Paket',
-    description: 'Kolom: Nama Item, Nama Paket, Qty, Harga Paket, Total',
-    category: 'Generik',
-    profile: generikPaket as Omit<InvoiceProfile, 'id'>
-  }
-];
+/**
+ * Daftar semua template bawaan yang tersedia.
+ * Diurutkan berdasarkan category lalu label secara alfabetis.
+ */
+export const invoiceTemplates: InvoiceTemplate[] = Object.values(templateModules)
+  .filter((mod) => {
+    // Validasi field wajib agar JSON yang tidak lengkap tidak menyebabkan error
+    return (
+      typeof mod['templateId'] === 'string' &&
+      typeof mod['label'] === 'string' &&
+      typeof mod['category'] === 'string'
+    );
+  })
+  .map((mod) => ({
+    templateId: mod['templateId'] as string,
+    label: mod['label'] as string,
+    description: (mod['description'] as string) ?? '',
+    category: mod['category'] as string,
+    profile: mod as unknown as Omit<InvoiceProfile, 'id'>,
+  }))
+  .sort((a, b) => {
+    const catDiff = a.category.localeCompare(b.category, 'id');
+    return catDiff !== 0 ? catDiff : a.label.localeCompare(b.label, 'id');
+  });

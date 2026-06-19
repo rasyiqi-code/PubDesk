@@ -1,0 +1,40 @@
+{
+  "templateId": "pengajuan_haki",
+  "label": "Pengajuan HAKI – Layanan Hak Cipta",
+  "description": "Kolom: Judul Karya, Pemegang Hak Cipta, Total Biaya",
+  "category": "Layanan",
+  "name": "Pengajuan HAKI",
+  "companyName": "NAMA LEMBAGA/PERUSAHAAN",
+  "companyTagline": "Tagline Lembaga/Perusahaan",
+  "invoiceTitleText": "INVOICE & TAGIHAN BIAYA PENERBITAN",
+  "accentColor": "#d93838",
+  "accentColorDark": "#991b1b",
+  "headerBgColor": "#222933",
+  "headerPrimaryColor": "#d93838",
+  "headerSecondaryColor": "#d93838",
+  "defaultHal": "Pengajuan HAKI",
+  "defaultLampiran": "-",
+  "salamPembuka": "Bersama surat ini kami memberikan gambaran rincian biaya Pengajuan HAKI dengan ketentuan sebagai berikut:",
+  "actionLabel": "pengajuan HAKI",
+  "tableType": "haki",
+  "notes": [
+    "Jika terkait pajak maka pajak ditanggung penulis atau pemesan.",
+    "Fasilitas sesuai paket yang diambil."
+  ],
+  "showSpesifikasi": false,
+  "defaultSpesifikasi": "",
+  "signatureOffice": "Kantor Administrasi",
+  "signatureLocation": "Kota",
+  "signatureRole": "CEO / Direktur",
+  "signatureName": "Nama Penandatangan",
+  "showBankInfo": true,
+  "bankName": "Nama Bank",
+  "bankAccountNo": "Nomor Rekening",
+  "bankAccountOwner": "Nama Pemilik Rekening",
+  "headerType": "logo_text",
+  "tableColumns": [
+    { "key": "item_title", "label": "Judul Karya", "type": "text", "align": "left" },
+    { "key": "copyright_holder", "label": "Pemegang Hak Cipta", "type": "text", "align": "center" },
+    { "key": "price", "label": "Total Biaya", "type": "currency", "align": "right", "width": "130px" }
+  ]
+}

@@ -55,7 +55,7 @@ export interface InvoiceTableColumn {
 
 export interface InvoiceItem {
   book_id: number;
-  book_title: string;
+  item_title: string;
   quantity: number;
   price: number;
   discount: number;
@@ -106,7 +106,7 @@ export interface InvoiceProfile {
   defaultLampiran: string;
   salamPembuka: string;
   actionLabel: string;
-  tableType: 'kbm_cetak' | 'kbm_creator' | 'spt_mitra';
+  tableType: string;
   notes: string[];
   showSpesifikasi: boolean;
   defaultSpesifikasi: string;

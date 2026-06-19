@@ -38,7 +38,7 @@ const InvoiceGenerator: React.FC = () => {
     
     const initialInputs: Record<string, any> = {};
     activeProfile.tableColumns.forEach(col => {
-      if (col.key === 'book_title') return;
+      if (col.key === 'item_title') return;
       
       let defVal: any = '';
       if (col.key === 'quantity') {
@@ -115,11 +115,11 @@ const InvoiceGenerator: React.FC = () => {
     });
     
     const fields = Array.from(fieldsMap.values());
-    const titleField = fields.find(f => f.key === 'book_title');
+    const titleField = fields.find(f => f.key === 'item_title');
     const priceField = fields.find(f => f.key === 'price');
     const qtyField = fields.find(f => f.key === 'quantity');
     
-    const otherFields = fields.filter(f => f.key !== 'book_title' && f.key !== 'price' && f.key !== 'quantity');
+    const otherFields = fields.filter(f => f.key !== 'item_title' && f.key !== 'price' && f.key !== 'quantity');
     
     const sortedFields = [];
     if (titleField) sortedFields.push(titleField);
@@ -176,7 +176,7 @@ const InvoiceGenerator: React.FC = () => {
 
     const newItem: InvoiceItem = {
       book_id: selectedServiceIdState ? parseInt(selectedServiceIdState) : 0,
-      book_title: finalTitle,
+      item_title: finalTitle,
       quantity: finalQty,
       price: finalPrice,
       discount: 0,
@@ -192,7 +192,7 @@ const InvoiceGenerator: React.FC = () => {
     if (activeProfile?.tableColumns) {
       const initialInputs: Record<string, any> = {};
       activeProfile.tableColumns.forEach(col => {
-        if (col.key === 'book_title') return;
+        if (col.key === 'item_title') return;
         
         let defVal: any = '';
         if (col.key === 'quantity') {
@@ -494,7 +494,7 @@ const InvoiceGenerator: React.FC = () => {
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             {getRequiredFields().map((field) => {
-              if (field.key === 'book_title') return null;
+              if (field.key === 'item_title') return null;
 
               return (
                 <div key={field.key} style={{ flex: field.key === 'copyright_holder' ? 2 : 1, minWidth: '110px' }}>
@@ -534,10 +534,10 @@ const InvoiceGenerator: React.FC = () => {
             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '13px' }}>
               <span style={{ fontWeight: '600', width: '20px', color: 'var(--text-secondary)' }}>{index + 1}.</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>"{item.book_title}"</div>
+                <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>"{item.item_title}"</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                   {/* Tampilkan ringkasan item berdasarkan kolom yang aktif secara dinamis */}
-                  {activeProfile?.tableColumns?.filter(col => col.type !== 'formula' && col.key !== 'book_title').map(col => {
+                  {activeProfile?.tableColumns?.filter(col => col.type !== 'formula' && col.key !== 'item_title').map(col => {
                     const val = item[col.key];
                     if (val === undefined || val === null || val === '') return null;
                     const displayVal = col.type === 'currency' ? `Rp ${formatPrice(Number(val))}` : String(val);

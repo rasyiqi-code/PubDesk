@@ -35,7 +35,7 @@ const defaultProfiles: InvoiceProfile[] = [
     bankAccountOwner: 'Nama Pemilik Rekening',
     headerType: 'logo_text',
     tableColumns: [
-      { key: 'book_title', label: 'Nama Item', type: 'text', align: 'left' },
+      { key: 'item_title', label: 'Nama Item', type: 'text', align: 'left' },
       { key: 'quantity', label: 'Qty', type: 'number', align: 'center', width: '80px' },
       { key: 'price', label: 'Harga Satuan', type: 'currency', align: 'right', width: '110px' },
       { key: 'item_shipping_cost', label: 'Ongkos Kirim', type: 'currency', align: 'right', width: '100px' },
@@ -75,7 +75,7 @@ const defaultProfiles: InvoiceProfile[] = [
     bankAccountOwner: 'Nama Pemilik Rekening',
     headerType: 'logo_text',
     tableColumns: [
-      { key: 'book_title', label: 'Nama Layanan', type: 'text', align: 'left' },
+      { key: 'item_title', label: 'Nama Layanan', type: 'text', align: 'left' },
       { key: 'price', label: 'Total Biaya', type: 'currency', align: 'right', width: '130px' }
     ]
   },
@@ -109,7 +109,7 @@ const defaultProfiles: InvoiceProfile[] = [
     bankAccountOwner: '',
     headerType: 'logo_text',
     tableColumns: [
-      { key: 'book_title', label: 'Nama Item', type: 'text', align: 'left' },
+      { key: 'item_title', label: 'Nama Item', type: 'text', align: 'left' },
       { key: 'package_name', label: 'Nama Paket', type: 'text', align: 'center', width: '120px' },
       { key: 'quantity', label: 'Qty', type: 'number', align: 'center', width: '80px' },
       { key: 'price', label: 'Harga Paket', type: 'currency', align: 'right', width: '110px' },

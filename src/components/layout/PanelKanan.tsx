@@ -62,7 +62,7 @@ const PanelKanan: React.FC = () => {
               items: items,
               shippingCost: invoice.shipping_cost,
               adminFee: invoice.admin_fee,
-              invoiceType: (invoice.export_format as any) || 'kbm_cetak',
+              invoiceType: invoice.export_format || '',
               invoiceNo: metadata.invoiceNo || '',
               invoiceHal: metadata.invoiceHal || '',
               invoiceLampiran: metadata.invoiceLampiran || '',
