@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Local};
+use chrono::Local;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Contact {
@@ -50,6 +50,7 @@ impl Default for Book {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Project {
     pub id: Option<i64>,
     pub title: String,
@@ -73,6 +74,7 @@ pub struct File {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Tag {
     pub id: Option<i64>,
     pub name: String,
@@ -92,6 +94,7 @@ pub struct Invoice {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct InvoiceItem {
     pub book_id: i64,
     pub book_title: String,
