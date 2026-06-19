@@ -5,67 +5,70 @@ const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'invoice' | 'general'>('invoice');
 
   return (
-    <div className="settings-module" style={{ display: 'flex', minHeight: '100%', background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
-      {/* Sidebar Kiri */}
+    <div className="settings-module" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
+      {/* Header & Tab Menu di Bagian Atas */}
       <div style={{
-        width: '260px',
-        borderRight: '1px solid var(--border)',
         background: 'var(--bg-panel)',
-        padding: '24px 16px',
+        borderBottom: '1px solid var(--border)',
+        padding: '20px 32px 0 32px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
+        gap: '16px',
         flexShrink: 0
       }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '24px', paddingLeft: '8px', color: 'var(--text-primary)' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
           ⚙️ Pengaturan
         </h1>
         
-        <button
-          onClick={() => setActiveTab('invoice')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            border: 'none',
-            background: activeTab === 'invoice' ? 'var(--accent)' : 'transparent',
-            color: activeTab === 'invoice' ? '#ffffff' : 'var(--text-primary)',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'all 0.2s ease-in-out'
-          }}
-        >
-          📄 Pengaturan Invoice
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => setActiveTab('invoice')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 16px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: activeTab === 'invoice' ? '3px solid var(--accent)' : '3px solid transparent',
+              color: activeTab === 'invoice' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+              marginBottom: '-1px'
+            }}
+          >
+            📄 Pengaturan Invoice
+          </button>
 
-        <button
-          onClick={() => setActiveTab('general')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            border: 'none',
-            background: activeTab === 'general' ? 'var(--accent)' : 'transparent',
-            color: activeTab === 'general' ? '#ffffff' : 'var(--text-primary)',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'all 0.2s ease-in-out'
-          }}
-        >
-          ⚙️ Pengaturan Umum
-        </button>
+          <button
+            onClick={() => setActiveTab('general')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 16px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: activeTab === 'general' ? '3px solid var(--accent)' : '3px solid transparent',
+              color: activeTab === 'general' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+              marginBottom: '-1px'
+            }}
+          >
+            ⚙️ Pengaturan Umum
+          </button>
+        </div>
       </div>
 
-      {/* Area Konten Utama Sebelah Kanan */}
-      <div style={{ flex: 1, padding: '32px', overflowY: 'auto', height: '100vh' }}>
+      {/* Area Konten Utama */}
+      <div style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
         {activeTab === 'invoice' ? (
           <InvoiceSettings />
         ) : (
@@ -75,6 +78,7 @@ const Settings: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             height: '100%',
+            minHeight: '400px',
             color: 'var(--text-secondary)',
             textAlign: 'center',
             padding: '40px'
