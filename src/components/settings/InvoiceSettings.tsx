@@ -273,19 +273,20 @@ const InvoiceSettings: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(320px, 1fr)', gap: '24px', alignItems: 'start' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.25fr) minmax(300px, 1fr)', gap: '16px', alignItems: 'start' }}>
       {/* Kolom Kiri: Form Editor */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
         {/* Panel Kelola Profil */}
-        <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: 'var(--text-primary)' }}>📁 Kelola Profil Invoice</h2>
+        <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)' }}>📁 Kelola Profil Invoice</h2>
           
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '16px' }}>
-            <div style={{ flex: 1, minWidth: '200px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Pilih Profil untuk Diedit</label>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '12px' }}>
+            <div style={{ flex: 1, minWidth: '180px' }}>
+              <label className="compact-label">Pilih Profil untuk Diedit</label>
               <select
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '14px' }}
+                className="compact-select"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={isEditingNew ? 'new' : selectedProfileId}
                 onChange={(e) => {
                   if (e.target.value === 'new') {
@@ -307,58 +308,60 @@ const InvoiceSettings: React.FC = () => {
               </select>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
               {!isEditingNew ? (
                 <>
-                  <button className="btn-primary" onClick={handleCreateNew}>➕ Buat Baru</button>
-                  <button className="btn-danger" onClick={handleDelete}>🗑️ Hapus</button>
+                  <button className="btn-primary compact-btn" style={{ height: '32px' }} onClick={handleCreateNew}>➕ Buat Baru</button>
+                  <button className="btn-danger compact-btn" style={{ height: '32px' }} onClick={handleDelete}>🗑️ Hapus</button>
                 </>
               ) : (
                 <>
-                  <button className="btn-secondary" onClick={handleCancelNew}>Batal</button>
+                  <button className="btn-secondary compact-btn" style={{ height: '32px' }} onClick={handleCancelNew}>Batal</button>
                 </>
               )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '16px' }}>
-            <button className="btn-secondary" onClick={handleExportBackup}>📥 Ekspor Backup JSON</button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '12px' }}>
+            <button className="btn-secondary compact-btn" style={{ height: '32px' }} onClick={handleExportBackup}>📥 Ekspor Backup JSON</button>
             
-            <label className="btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+            <label className="btn-secondary compact-btn" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', height: '32px' }}>
               📤 Impor Backup JSON
               <input type="file" accept=".json" onChange={handleImportBackup} style={{ display: 'none' }} />
             </label>
 
-            <button className="btn-success" onClick={handleImportKbmOriginal}>✨ Impor KBM Asli</button>
+            <button className="btn-success compact-btn" style={{ height: '32px' }} onClick={handleImportKbmOriginal}>✨ Impor KBM Asli</button>
             
-            <button className="btn-danger" style={{ marginLeft: 'auto' }} onClick={handleResetToDefault}>🔄 Reset Bawaan</button>
+            <button className="btn-danger compact-btn" style={{ marginLeft: 'auto', height: '32px' }} onClick={handleResetToDefault}>🔄 Reset Bawaan</button>
           </div>
         </div>
 
         {/* Form Editor Profil */}
-        <div style={{ background: 'var(--bg-panel)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+        <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)', padding: '16px 20px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '14px', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
             ✏️ {isEditingNew ? 'Buat Profil Invoice Baru' : `Edit Profil: ${profileName}`}
           </h2>
 
           {/* Bagian 1: Informasi Profil & Desain */}
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>1. Desain & Identitas Profil</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Profil (Internal)</label>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>1. Desain & Identitas Profil</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Nama Profil (Internal)</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
                 placeholder="Contoh: Profil Cetak Kustom"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Jenis Format Kolom Tabel</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Jenis Format Kolom Tabel</label>
               <select
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '14px' }}
+                className="compact-select"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={tableType}
                 onChange={(e) => setTableType(e.target.value as any)}
               >
@@ -368,18 +371,19 @@ const InvoiceSettings: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Warna Aksen Utama</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Warna Aksen Utama</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="color"
-                  style={{ width: '42px', height: '42px', padding: '2px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', cursor: 'pointer' }}
+                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
                   value={accentColor}
                   onChange={(e) => setAccentColor(e.target.value)}
                 />
                 <input
                   type="text"
-                  style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  className="compact-input"
+                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   value={accentColor}
                   onChange={(e) => setAccentColor(e.target.value)}
                   placeholder="#1e70cd"
@@ -387,18 +391,19 @@ const InvoiceSettings: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Warna Aksen Gelap</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Warna Aksen Gelap</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="color"
-                  style={{ width: '42px', height: '42px', padding: '2px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', cursor: 'pointer' }}
+                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
                   value={accentColorDark}
                   onChange={(e) => setAccentColorDark(e.target.value)}
                 />
                 <input
                   type="text"
-                  style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  className="compact-input"
+                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   value={accentColorDark}
                   onChange={(e) => setAccentColorDark(e.target.value)}
                   placeholder="#1e3a8a"
@@ -406,18 +411,19 @@ const InvoiceSettings: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Warna Utama Header SVG (Kiri)</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Warna Utama Header SVG (Kiri)</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="color"
-                  style={{ width: '42px', height: '42px', padding: '2px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', cursor: 'pointer' }}
+                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
                   value={headerPrimaryColor}
                   onChange={(e) => setHeaderPrimaryColor(e.target.value)}
                 />
                 <input
                   type="text"
-                  style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  className="compact-input"
+                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   value={headerPrimaryColor}
                   onChange={(e) => setHeaderPrimaryColor(e.target.value)}
                   placeholder="#d93838"
@@ -425,18 +431,19 @@ const InvoiceSettings: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Warna Aksen Header SVG (Tengah)</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Warna Aksen Header SVG (Tengah)</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="color"
-                  style={{ width: '42px', height: '42px', padding: '2px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', cursor: 'pointer' }}
+                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
                   value={headerSecondaryColor}
                   onChange={(e) => setHeaderSecondaryColor(e.target.value)}
                 />
                 <input
                   type="text"
-                  style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  className="compact-input"
+                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   value={headerSecondaryColor}
                   onChange={(e) => setHeaderSecondaryColor(e.target.value)}
                   placeholder="#d93838"
@@ -444,18 +451,19 @@ const InvoiceSettings: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Warna Latar Header SVG (Kanan)</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Warna Latar Header SVG (Kanan)</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   type="color"
-                  style={{ width: '42px', height: '42px', padding: '2px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', cursor: 'pointer' }}
+                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
                   value={headerBgColor}
                   onChange={(e) => setHeaderBgColor(e.target.value)}
                 />
                 <input
                   type="text"
-                  style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  className="compact-input"
+                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   value={headerBgColor}
                   onChange={(e) => setHeaderBgColor(e.target.value)}
                   placeholder="#222933"
@@ -465,51 +473,54 @@ const InvoiceSettings: React.FC = () => {
           </div>
 
           {/* Bagian 2: Kop Surat (Header) */}
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>2. Kop Surat & Judul (Header)</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Perusahaan</label>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>2. Kop Surat & Judul (Header)</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Nama Perusahaan</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="Contoh: CV DUMMY JAYA"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Tagline Perusahaan</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Tagline Perusahaan</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={companyTagline}
                 onChange={(e) => setCompanyTagline(e.target.value)}
                 placeholder="Contoh: DUMMY JAYA ABADI"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Teks Judul Invoice</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Teks Judul Invoice</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={invoiceTitleText}
                 onChange={(e) => setInvoiceTitleText(e.target.value)}
                 placeholder="Contoh: INVOICE"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Logo Kop Surat (PNG/JPG/SVG)</label>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Logo Kop Surat (PNG/JPG/SVG)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 {companyLogo && (
-                  <div style={{ position: 'relative', width: '42px', height: '42px', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '6px', border: '1px solid var(--border)', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <img src={companyLogo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                     <button 
                       type="button" 
                       onClick={() => setCompanyLogo('')} 
-                      style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '0 0 0 4px', cursor: 'pointer', fontSize: '10px', padding: '1px 3px' }}
+                      style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '0 0 0 4px', cursor: 'pointer', fontSize: '8px', padding: '1px 2px' }}
                       title="Hapus Logo"
                     >
                       ✕
@@ -539,8 +550,8 @@ const InvoiceSettings: React.FC = () => {
                   />
                   <label 
                     htmlFor="logo-upload-input" 
-                    className="btn-secondary" 
-                    style={{ cursor: 'pointer', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', textAlign: 'center', display: 'block' }}
+                    className="btn-secondary compact-btn" 
+                    style={{ cursor: 'pointer', textAlign: 'center', display: 'block', height: '32px', lineHeight: '20px' }}
                   >
                     {companyLogo ? 'Ubah Logo' : 'Unggah Logo'}
                   </label>
@@ -550,34 +561,37 @@ const InvoiceSettings: React.FC = () => {
           </div>
 
           {/* Bagian 3: Konten Surat */}
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>3. Detail Konten Surat</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Perihal Bawaan (Default Hal)</label>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>3. Detail Konten Surat</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Perihal Bawaan (Default Hal)</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={defaultHal}
                 onChange={(e) => setDefaultHal(e.target.value)}
                 placeholder="Contoh: Pengadaan Modul Ajar"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Lampiran Bawaan (Default Lampiran)</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Lampiran Bawaan (Default Lampiran)</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={defaultLampiran}
                 onChange={(e) => setDefaultLampiran(e.target.value)}
                 placeholder="Contoh: 1 Lembar"
               />
             </div>
 
-            <div style={{ gridColumn: 'span 2' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Salam Pembuka Bawaan</label>
+            <div style={{ gridColumn: 'span 2' }} className="compact-form-group">
+              <label className="compact-label">Salam Pembuka Bawaan</label>
               <textarea
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', minHeight: '60px', resize: 'vertical' }}
+                className="compact-textarea"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', minHeight: '42px', resize: 'vertical' }}
                 value={salamPembuka}
                 onChange={(e) => setSalamPembuka(e.target.value)}
                 placeholder="Teks salam pembuka..."
@@ -585,11 +599,12 @@ const InvoiceSettings: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Label Aksi Penutup</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Label Aksi Penutup</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={actionLabel}
                 onChange={(e) => setActionLabel(e.target.value)}
                 placeholder="Contoh: penerbitan buku"
@@ -598,26 +613,27 @@ const InvoiceSettings: React.FC = () => {
           </div>
 
           {/* Bagian 4: Spesifikasi & Catatan */}
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>4. Spesifikasi & Catatan (Notes)</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>4. Spesifikasi & Catatan (Notes)</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                 <input
                   type="checkbox"
                   id="showSpesifikasi"
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                   checked={showSpesifikasi}
                   onChange={(e) => setShowSpesifikasi(e.target.checked)}
                 />
-                <label htmlFor="showSpesifikasi" style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>Tampilkan Box Spesifikasi & Fasilitas</label>
+                <label htmlFor="showSpesifikasi" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>Tampilkan Box Spesifikasi & Fasilitas</label>
               </div>
               
               {showSpesifikasi && (
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Teks Spesifikasi Bawaan</label>
+                <div className="compact-form-group">
+                  <label className="compact-label">Teks Spesifikasi Bawaan</label>
                   <input
                     type="text"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                    className="compact-input"
+                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                     value={defaultSpesifikasi}
                     onChange={(e) => setDefaultSpesifikasi(e.target.value)}
                     placeholder="Contoh: Sesuai proposal kerjasama"
@@ -627,26 +643,27 @@ const InvoiceSettings: React.FC = () => {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Daftar Catatan (Note)</label>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <label className="compact-label">Daftar Catatan (Note)</label>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
                 <input
                   type="text"
-                  style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  className="compact-input"
+                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   value={newNoteText}
                   onChange={(e) => setNewNoteText(e.target.value)}
-                  placeholder="Ketik catatan baru di sini..."
+                  placeholder="Ketik catatan baru..."
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNote(); } }}
                 />
-                <button className="btn-primary" onClick={handleAddNote}>Tambah</button>
+                <button className="btn-primary compact-btn" onClick={handleAddNote}>Tambah</button>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', background: 'var(--bg-card)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '100px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px', background: 'var(--bg-card)' }}>
                 {notes.length === 0 ? (
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '4px' }}>Tidak ada catatan.</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '2px' }}>Tidak ada catatan.</div>
                 ) : (
                   notes.map((note, index) => (
-                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', background: 'var(--bg-panel)', padding: '6px 10px', borderRadius: '6px', fontSize: '12px' }}>
+                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', background: 'var(--bg-panel)', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }}>
                       <span style={{ color: 'var(--text-primary)', wordBreak: 'break-all' }}>{index + 1}. {note}</span>
-                      <button style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '14px' }} onClick={() => handleRemoveNote(index)}>✕</button>
+                      <button style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '12px' }} onClick={() => handleRemoveNote(index)}>✕</button>
                     </div>
                   ))
                 )}
@@ -655,46 +672,50 @@ const InvoiceSettings: React.FC = () => {
           </div>
 
           {/* Bagian 5: Tanda Tangan */}
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>5. Tanda Tangan Penutup</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Instansi / Nama Kantor</label>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>5. Tanda Tangan Penutup</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div className="compact-form-group">
+              <label className="compact-label">Instansi / Nama Kantor</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={signatureOffice}
                 onChange={(e) => setSignatureOffice(e.target.value)}
                 placeholder="Contoh: Kantor Penerbit Yogyakarta"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Lokasi Tanda Tangan</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Lokasi Tanda Tangan</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={signatureLocation}
                 onChange={(e) => setSignatureLocation(e.target.value)}
                 placeholder="Contoh: Yogyakarta"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Jabatan Penandatangan</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Jabatan Penandatangan</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={signatureRole}
                 onChange={(e) => setSignatureRole(e.target.value)}
                 placeholder="Contoh: CEO Penerbit"
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Lengkap & Gelar</label>
+            <div className="compact-form-group">
+              <label className="compact-label">Nama Lengkap & Gelar</label>
               <input
                 type="text"
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={signatureName}
                 onChange={(e) => setSignatureName(e.target.value)}
                 placeholder="Contoh: RUDI HARTONO, M.Kom."
@@ -703,48 +724,51 @@ const InvoiceSettings: React.FC = () => {
           </div>
 
           {/* Bagian 6: Informasi Pembayaran */}
-          <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--accent)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>6. Informasi Rekening Bank</h3>
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>6. Informasi Rekening Bank</h3>
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
               <input
                 type="checkbox"
                 id="showBankInfo"
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                 checked={showBankInfo}
                 onChange={(e) => setShowBankInfo(e.target.checked)}
               />
-              <label htmlFor="showBankInfo" style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>Tampilkan Blok Informasi Bank</label>
+              <label htmlFor="showBankInfo" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>Tampilkan Blok Informasi Bank</label>
             </div>
 
             {showBankInfo && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Bank / Layanan</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                <div className="compact-form-group">
+                  <label className="compact-label">Nama Bank / Layanan</label>
                   <input
                     type="text"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                    className="compact-input"
+                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                     placeholder="Contoh: Bank Central Asia (BCA)"
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nomor Rekening</label>
+                <div className="compact-form-group">
+                  <label className="compact-label">Nomor Rekening</label>
                   <input
                     type="text"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                    className="compact-input"
+                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                     value={bankAccountNo}
                     onChange={(e) => setBankAccountNo(e.target.value)}
                     placeholder="Contoh: 876830659"
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Pemilik Rekening</label>
+                <div className="compact-form-group">
+                  <label className="compact-label">Nama Pemilik Rekening</label>
                   <input
                     type="text"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                    className="compact-input"
+                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                     value={bankAccountOwner}
                     onChange={(e) => setBankAccountOwner(e.target.value)}
                     placeholder="Contoh: Mohammad Imam"
@@ -755,12 +779,12 @@ const InvoiceSettings: React.FC = () => {
           </div>
 
           {/* Tombol Simpan Terakhir */}
-          <div style={{ display: 'flex', gap: '12px', borderTop: '1px solid var(--border)', paddingTop: '20px', marginTop: '20px' }}>
-            <button className="btn-primary" style={{ flex: 1, height: '45px', fontSize: '15px', fontWeight: '600' }} onClick={handleSave}>
+          <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '12px' }}>
+            <button className="btn-primary compact-btn" style={{ flex: 1, height: '32px', fontSize: '13px', fontWeight: '600' }} onClick={handleSave}>
               💾 Simpan Pengaturan Profil
             </button>
             {isEditingNew && (
-              <button className="btn-secondary" style={{ width: '150px' }} onClick={handleCancelNew}>
+              <button className="btn-secondary compact-btn" style={{ width: '100px', height: '32px' }} onClick={handleCancelNew}>
                 Batal
               </button>
             )}
@@ -769,11 +793,11 @@ const InvoiceSettings: React.FC = () => {
       </div>
 
       {/* Kolom Kanan: Panel Realtime Preview */}
-      <div style={{ position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', gap: '12px', height: 'calc(100vh - 140px)', minHeight: '500px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+      <div style={{ position: 'sticky', top: '16px', display: 'flex', flexDirection: 'column', gap: '8px', height: 'calc(100vh - 100px)', minHeight: '400px' }}>
+        <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
           👁️ Realtime Preview
         </h3>
-        <div style={{ flex: 1, border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-card)', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-card)', boxShadow: 'var(--shadow-md)', display: 'flex', flexDirection: 'column' }}>
           <InvoicePreview previewProfile={currentEditingProfile} />
         </div>
       </div>

@@ -714,3 +714,35 @@ body {
 .divider.active {
   background: var(--accent);
 }
+
+/* Compact Enterprise Utility Styles */
+.compact-btn {
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+
+.compact-input,
+.compact-select,
+.compact-textarea {
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+}
+
+.compact-form-group {
+  margin-bottom: 10px !important;
+}
+
+.compact-label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
+  display: block;
+}
+
+.compact-panel {
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+}

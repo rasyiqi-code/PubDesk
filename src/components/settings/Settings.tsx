@@ -10,29 +10,29 @@ const Settings: React.FC = () => {
       <div style={{
         background: 'var(--bg-panel)',
         borderBottom: '1px solid var(--border)',
-        padding: '20px 32px 0 32px',
+        padding: '12px 16px 0 16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
+        gap: '8px',
         flexShrink: 0
       }}>
-        <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+        <h1 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
           ⚙️ Pengaturan
         </h1>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '4px' }}>
           <button
             onClick={() => setActiveTab('invoice')}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
+              gap: '6px',
+              padding: '8px 12px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'invoice' ? '3px solid var(--accent)' : '3px solid transparent',
+              borderBottom: activeTab === 'invoice' ? '2px solid var(--accent)' : '2px solid transparent',
               color: activeTab === 'invoice' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -48,13 +48,13 @@ const Settings: React.FC = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
+              gap: '6px',
+              padding: '8px 12px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeTab === 'general' ? '3px solid var(--accent)' : '3px solid transparent',
+              borderBottom: activeTab === 'general' ? '2px solid var(--accent)' : '2px solid transparent',
               color: activeTab === 'general' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
@@ -68,7 +68,7 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Area Konten Utama */}
-      <div style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
         {activeTab === 'invoice' ? (
           <InvoiceSettings />
         ) : (
@@ -78,16 +78,16 @@ const Settings: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             height: '100%',
-            minHeight: '400px',
+            minHeight: '300px',
             color: 'var(--text-secondary)',
             textAlign: 'center',
-            padding: '40px'
+            padding: '24px'
           }}>
-            <span style={{ fontSize: '48px', marginBottom: '16px' }}>⚙️</span>
-            <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
+            <span style={{ fontSize: '36px', marginBottom: '12px' }}>⚙️</span>
+            <h2 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }}>
               Pengaturan Umum
             </h2>
-            <p style={{ fontSize: '14px', maxWidth: '360px', margin: 0 }}>
+            <p style={{ fontSize: '13px', maxWidth: '320px', margin: 0 }}>
               Modul pengaturan dasar aplikasi. Fitur ini akan dikembangkan pada rilis berikutnya.
             </p>
           </div>
