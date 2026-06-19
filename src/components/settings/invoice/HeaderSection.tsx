@@ -108,8 +108,8 @@ const HeaderSection: React.FC = () => {
         <div className="compact-form-group">
           <label className="compact-label">Tipe Kop Surat</label>
           <select
-            className="compact-input"
-            style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', height: '32px', padding: '0 8px', borderRadius: '6px' }}
+            className="compact-select"
+            style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', borderRadius: '6px' }}
             value={headerType}
             onChange={(e) => setHeaderType(e.target.value as any)}
           >
