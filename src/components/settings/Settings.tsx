@@ -539,20 +539,37 @@ const Settings: React.FC = () => {
             {/* Guide Card */}
             <div className="compact-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 20px', textAlign: 'left' }}>
               <details>
-                <summary style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer', outline: 'none', userSelect: 'none' }}>
-                  ℹ️ Cara Mendapatkan Google Drive Access Token
+                <summary style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer', outline: 'none', userSelect: 'none' }}>
+                  ℹ️ Panduan Mendapatkan Kredensial Google Drive Jangka Panjang (Produksi)
                 </summary>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p>Untuk menghubungkan aplikasi dengan Google Drive API secara aman tanpa server perantara, Anda membutuhkan token akses temporer.</p>
-                  <ol style={{ paddingLeft: '20px' }}>
-                    <li>Buka <a href="https://developers.google.com/oauthplayground" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Google OAuth 2.0 Playground</a> di browser Anda.</li>
-                    <li>Di panel kiri (Step 1), cari dan pilih <strong>Drive API v3</strong>.</li>
-                    <li>Centang scope <code>https://www.googleapis.com/auth/drive.readonly</code> (atau <code>.../auth/drive</code> jika ingin akses penuh).</li>
-                    <li>Klik tombol <strong>Authorize APIs</strong> dan masuk dengan akun Google Anda.</li>
-                    <li>Di Step 2, klik tombol <strong>Exchange authorization code for tokens</strong>.</li>
-                    <li>Salin nilai <strong>Access Token</strong> yang dihasilkan, lalu tempel pada input di atas.</li>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <p style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                    A. Membuat OAuth Credentials di Google Cloud Console:
+                  </p>
+                  <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <li>Buka <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Google Cloud Console</a> dan buat project baru.</li>
+                    <li>Cari <strong>Google Drive API</strong> di kolom pencarian atas dan klik <strong>Enable</strong> (Aktifkan).</li>
+                    <li>Masuk ke menu <strong>OAuth consent screen</strong> di sidebar kiri, pilih User Type <strong>External</strong>, lalu isi form informasi aplikasi Anda. Pada bagian <em>Test Users</em>, tambahkan email Gmail Anda sendiri.</li>
+                    <li>Buka menu <strong>Credentials</strong> di sidebar kiri, klik <strong>Create Credentials</strong> &gt; <strong>OAuth client ID</strong>.</li>
+                    <li>Pilih Application Type: <strong>Desktop app</strong>, beri nama bebas, lalu klik <strong>Create</strong>.</li>
+                    <li>Salin nilai <strong>Client ID</strong> dan <strong>Client Secret</strong> yang didapatkan ke kolom input di atas.</li>
                   </ol>
-                  <p style={{ fontStyle: 'italic', color: 'var(--accent)' }}>Catatan: Token Playground biasanya berlaku selama 1 jam. Untuk penggunaan produksi jangka panjang, Anda dapat membuat Client ID sendiri di Google Cloud Console.</p>
+                  
+                  <p style={{ fontWeight: '600', color: 'var(--text-primary)', marginTop: '10px', marginBottom: '4px' }}>
+                    B. Mendapatkan Refresh Token melalui OAuth Playground:
+                  </p>
+                  <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <li>Buka <a href="https://developers.google.com/oauthplayground" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Google OAuth 2.0 Playground</a>.</li>
+                    <li>Klik ikon <strong>Gear (Settings)</strong> di pojok kanan atas Playground.</li>
+                    <li>Centang opsi <strong>Use your own OAuth credentials</strong>, lalu masukkan <strong>Client ID</strong> and <strong>Client Secret</strong> yang Anda buat di Langkah A.</li>
+                    <li>Di panel kiri (Step 1), cari dan pilih <strong>Drive API v3</strong>, centang scope <code>https://www.googleapis.com/auth/drive.readonly</code> (atau <code>.../auth/drive</code> jika ingin akses penuh), kemudian klik <strong>Authorize APIs</strong>.</li>
+                    <li>Login menggunakan akun Google yang sudah didaftarkan sebagai Test User di Langkah A.</li>
+                    <li>Di Step 2, klik tombol <strong>Exchange authorization code for tokens</strong>.</li>
+                    <li>Salin nilai <strong>Refresh Token</strong> yang tampil di panel kanan Playground, lalu tempel ke kolom input di atas.</li>
+                  </ol>
+                  <p style={{ fontStyle: 'italic', color: 'var(--accent)', marginTop: '6px' }}>
+                    Catatan: Menggunakan kombinasi Client ID, Client Secret, dan Refresh Token akan membuat koneksi Google Drive Anda bertahan selamanya (Access Token akan diperbarui otomatis di latar belakang).
+                  </p>
                 </div>
               </details>
             </div>
