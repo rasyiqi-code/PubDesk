@@ -1027,13 +1027,13 @@ const InvoiceSettings: React.FC = () => {
                       </div>
 
                       {/* Detail baris */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr', gap: '8px', padding: '8px 10px', alignItems: 'center' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr', gap: '8px', padding: '10px 10px', alignItems: 'start', background: 'var(--bg-dark)' }}>
                         {/* Kunci */}
                         <div>
-                          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '3px', letterSpacing: '0.3px' }}>Kunci</div>
+                          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>Kunci</div>
                           <input
                             type="text"
-                            style={{ width: '100%', fontSize: '11px', padding: '3px 7px', border: '1px solid var(--border)', borderRadius: '4px', background: isLocked ? 'var(--bg-dark)' : 'var(--bg-card)', color: 'var(--text-secondary)', outline: 'none' }}
+                            style={{ width: '100%', fontSize: '11px', padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-panel)', color: 'var(--text-secondary)', outline: 'none', boxSizing: 'border-box' }}
                             value={col.key}
                             onChange={(e) => handleUpdateColumn(idx, { key: e.target.value })}
                             disabled={isLocked}
@@ -1043,9 +1043,9 @@ const InvoiceSettings: React.FC = () => {
 
                         {/* Tipe */}
                         <div>
-                          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '3px', letterSpacing: '0.3px' }}>Tipe</div>
+                          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>Tipe</div>
                           <select
-                            style={{ width: '100%', fontSize: '11px', padding: '3px 6px', border: '1px solid var(--border)', borderRadius: '4px', background: isLocked ? 'var(--bg-dark)' : 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', height: '26px' }}
+                            style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-panel)', color: 'var(--text-primary)', outline: 'none', height: '28px', boxSizing: 'border-box' }}
                             value={col.type}
                             onChange={(e) => handleUpdateColumn(idx, { type: e.target.value as any })}
                             disabled={isLocked}
@@ -1059,9 +1059,9 @@ const InvoiceSettings: React.FC = () => {
 
                         {/* Align */}
                         <div>
-                          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '3px', letterSpacing: '0.3px' }}>Rata</div>
+                          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>Rata</div>
                           <select
-                            style={{ width: '100%', fontSize: '11px', padding: '3px 6px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', height: '26px' }}
+                            style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-panel)', color: 'var(--text-primary)', outline: 'none', height: '28px', boxSizing: 'border-box' }}
                             value={col.align || 'left'}
                             onChange={(e) => handleUpdateColumn(idx, { align: e.target.value as any })}
                           >
@@ -1075,10 +1075,10 @@ const InvoiceSettings: React.FC = () => {
                         <div>
                           {col.type === 'formula' ? (
                             <>
-                              <div style={{ fontSize: '9px', color: '#7c3aed', fontWeight: '600', textTransform: 'uppercase', marginBottom: '3px', letterSpacing: '0.3px' }}>Formula</div>
+                              <div style={{ fontSize: '9px', color: '#a78bfa', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>Formula</div>
                               <input
                                 type="text"
-                                style={{ width: '100%', fontSize: '11px', padding: '3px 7px', border: '1px solid #7c3aed55', borderRadius: '4px', background: '#7c3aed0a', color: '#7c3aed', outline: 'none', fontFamily: 'monospace' }}
+                                style={{ width: '100%', fontSize: '11px', padding: '4px 8px', border: '1px solid #7c3aed66', borderRadius: '4px', background: '#2d1b6922', color: '#c4b5fd', outline: 'none', fontFamily: 'monospace', boxSizing: 'border-box' }}
                                 value={col.formula || ''}
                                 onChange={(e) => handleUpdateColumn(idx, { formula: e.target.value })}
                                 placeholder="{price}*{quantity}"
@@ -1086,10 +1086,10 @@ const InvoiceSettings: React.FC = () => {
                             </>
                           ) : (
                             <>
-                              <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '3px', letterSpacing: '0.3px' }}>Lebar</div>
+                              <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>Lebar</div>
                               <input
                                 type="text"
-                                style={{ width: '100%', fontSize: '11px', padding: '3px 7px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }}
+                                style={{ width: '100%', fontSize: '11px', padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg-panel)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
                                 value={col.width || 'auto'}
                                 onChange={(e) => handleUpdateColumn(idx, { width: e.target.value })}
                                 placeholder="auto / 90px"
