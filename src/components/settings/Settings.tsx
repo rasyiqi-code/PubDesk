@@ -615,26 +615,14 @@ const Settings: React.FC = () => {
                       )}
                     </div>
                   )}
-                </div>
 
-                <div>
                   {/* Action Button Row */}
                   <div style={{ display: 'flex', gap: '8px', marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px', flexWrap: 'wrap' }}>
                     <button
                       type="button"
-                      className="btn-secondary compact-btn"
-                      onClick={() => testConnection(token)}
-                      disabled={testingConnection || syncing}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-                    >
-                      {testingConnection ? 'Memeriksa...' : '🔌 Hubungkan / Uji Koneksi'}
-                    </button>
-
-                    <button
-                      type="button"
                       className="btn-primary compact-btn"
                       onClick={handleSync}
-                      disabled={syncing || !token}
+                      disabled={syncing || (gdriveAccounts.length === 0 && !token)}
                       style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
                     >
                       {syncing ? '🔄 Menyinkronkan...' : '🔄 Sinkronisasi Sekarang'}
