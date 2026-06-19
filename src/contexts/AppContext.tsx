@@ -24,6 +24,8 @@ interface AppContextType {
   addInvoice: (invoice: Invoice) => Promise<number>;
   addFile: (file: File) => Promise<number>;
   deleteFile: (id: number) => Promise<void>;
+  rightPanelVisible: boolean;
+  setRightPanelVisible: (visible: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -40,6 +42,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'other'>('all');
+  const [rightPanelVisible, setRightPanelVisible] = useState(true);
 
   useEffect(() => {
     const init = async () => {
@@ -164,6 +167,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addInvoice,
       addFile,
       deleteFile,
+      rightPanelVisible,
+      setRightPanelVisible,
     }}>
       {children}
     </AppContext.Provider>

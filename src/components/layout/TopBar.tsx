@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAppContext } from '../../contexts/AppContext';
 
 interface TopBarProps {
   onToggleSidebar?: () => void;
@@ -7,6 +8,7 @@ interface TopBarProps {
 }
 
 const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, activeModule }) => {
+  const { rightPanelVisible, setRightPanelVisible } = useAppContext();
   const [appWindow, setAppWindow] = useState<any>(null);
 
   useEffect(() => {
@@ -126,7 +128,15 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
 
         {/* Aksi tambahan */}
         <div className="top-bar-gnome-actions">
-          <button className="top-bar-btn" aria-label="Search inside folder">
+          <button 
+            className={`top-bar-btn ${rightPanelVisible ? 'active' : ''}`}
+            onClick={() => setRightPanelVisible(!rightPanelVisible)}
+            style={{
+              color: rightPanelVisible ? 'var(--accent)' : 'var(--text-secondary)',
+              background: rightPanelVisible ? 'var(--bg-card)' : 'transparent',
+            }}
+            aria-label="Toggle right panel"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
               <circle cx="12" cy="13" r="3"></circle>

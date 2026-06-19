@@ -10,7 +10,7 @@ import FileManager from '../files/FileManager';
 
 
 const MainLayout = () => {
-  const { appState } = useAppContext();
+  const { appState, rightPanelVisible } = useAppContext();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
@@ -94,7 +94,7 @@ const MainLayout = () => {
             </div>
 
             {/* Right panel with resizable width */}
-            {appState.activeModule !== 'settings' && (
+            {appState.activeModule !== 'settings' && rightPanelVisible && (
               <div style={{ 
                 width: `${rightPanelWidth}px`, 
                 display: 'flex', 
