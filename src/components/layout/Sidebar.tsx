@@ -20,7 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   ];
 
   return (
-    <div style={{ height: '100%', background: '#2d2720', color: '#a89880', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', background: 'var(--bg-panel)', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column' }}>
       
       {/* Menu */}
       <nav style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
@@ -32,8 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
               padding: collapsed ? '12px' : '10px 12px', 
               border: 'none', 
               borderRadius: '8px',
-              background: appState.activeModule === item.id ? '#f0e0b5' : 'transparent', 
-              color: appState.activeModule === item.id ? '#2d2720' : '#a89880', 
+              background: appState.activeModule === item.id ? 'var(--accent)' : 'transparent', 
+              color: appState.activeModule === item.id ? '#ffffff' : 'var(--text-secondary)', 
               textAlign: 'left', 
               cursor: 'pointer', 
               fontSize: '14px', 
@@ -48,14 +48,14 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
             onClick={() => setActiveModule(item.id)}
             onMouseOver={(e) => {
               if (appState.activeModule !== item.id) {
-                e.currentTarget.style.background = '#3c342a';
-                e.currentTarget.style.color = '#f8f4e9';
+                e.currentTarget.style.background = 'var(--bg-card)';
+                e.currentTarget.style.color = 'var(--text-primary)';
               }
             }}
             onMouseOut={(e) => {
               if (appState.activeModule !== item.id) {
                 e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#a89880';
+                e.currentTarget.style.color = 'var(--text-secondary)';
               }
             }}
           >
@@ -66,15 +66,15 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       </nav>
       
       {/* Bottom Section */}
-      <div style={{ padding: '8px', borderTop: '1px solid #42382d' }}>
+      <div style={{ padding: '8px', borderTop: '1px solid var(--border)' }}>
         {!collapsed && (
-          <div style={{ padding: '10px 12px', color: '#a89880', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '18px' }}>🧑‍💻</span>
             <span>info.rasyiq@gmail.com</span>
           </div>
         )}
         {!collapsed && (
-          <div style={{ padding: '10px 12px', color: '#a89880', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '18px' }}>📂</span>
               <span>PROJECT</span>
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
               border: 'none', 
               borderRadius: '8px',
               background: 'transparent', 
-              color: '#a89880', 
+              color: 'var(--text-secondary)', 
               textAlign: 'left', 
               cursor: 'pointer', 
               fontSize: '14px', 
@@ -104,12 +104,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
             }}
             onClick={() => setActiveModule(item.id)}
             onMouseOver={(e) => {
-              e.currentTarget.style.background = '#3c342a';
-              e.currentTarget.style.color = '#f8f4e9';
+              e.currentTarget.style.background = 'var(--bg-card)';
+              e.currentTarget.style.color = 'var(--text-primary)';
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = '#a89880';
+              e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
             <span style={{ fontSize: '18px' }}>{item.icon}</span>

@@ -94,7 +94,7 @@ const MainLayout = () => {
               width: `${rightPanelWidth}px`, 
               display: 'flex', 
               flexDirection: 'column', 
-              background: '#2d2720', 
+              background: 'var(--bg-panel)', 
               position: 'relative',
               height: '100%'
             }}>
@@ -106,14 +106,14 @@ const MainLayout = () => {
                   bottom: 0,
                   width: '6px',
                   cursor: 'col-resize',
-                  background: isDragging ? '#f0e0b5' : 'transparent',
+                  background: isDragging ? 'var(--accent)' : 'transparent',
                   zIndex: 10,
                   transition: 'background 0.15s ease'
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseOver={(e) => {
                   if (!isDragging) {
-                    e.currentTarget.style.background = '#42382d';
+                    e.currentTarget.style.background = 'var(--border)';
                   }
                 }}
                 onMouseOut={(e) => {

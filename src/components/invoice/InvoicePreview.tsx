@@ -72,7 +72,7 @@ const InvoicePreview: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#2d2720', overflow: 'auto', padding: '20px', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', overflow: 'auto', padding: '20px', alignItems: 'center', justifyContent: 'center' }}>
       {/* Mengimpor font Montserrat dan Playball dari Google Fonts */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Playball&display=swap');

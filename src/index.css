@@ -5,14 +5,14 @@
 }
 
 :root {
-  --bg-dark: #1e1a15;
-  --bg-panel: #2d2720;
-  --bg-card: #3c342a;
-  --text-primary: #f8f4e9;
-  --text-secondary: #a89880;
-  --accent: #f0e0b5;
-  --accent-dark: #c7b488;
-  --border: #42382d;
+  --bg-dark: #f6f5f4;
+  --bg-panel: #eae8e6;
+  --bg-card: #ffffff;
+  --text-primary: #1e1e1e;
+  --text-secondary: #5e5a55;
+  --accent: #c01c1c;
+  --accent-dark: #a01616;
+  --border: #dadada;
 }
 
 body {
@@ -418,7 +418,7 @@ body {
 .form-group select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(240,224,181,0.15);
+  box-shadow: 0 0 0 3px rgba(192, 28, 28, 0.15);
 }
 
 .form-row {
@@ -442,7 +442,7 @@ body {
 
 .btn-primary {
   background: var(--accent);
-  color: #1e1a15;
+  color: #ffffff;
 }
 
 .btn-primary:hover {
@@ -457,7 +457,7 @@ body {
 }
 
 .btn-secondary:hover {
-  background: #4a4136;
+  background: var(--bg-panel);
 }
 
 .btn-success {
