@@ -1,12 +1,44 @@
-import React from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import React, { useEffect, useState } from 'react';
 
 const TopBar: React.FC = () => {
-  const appWindow = getCurrentWindow();
+  const [appWindow, setAppWindow] = useState<any>(null);
 
-  const handleMinimize = () => appWindow.minimize();
-  const handleMaximize = () => appWindow.toggleMaximize();
-  const handleClose = () => appWindow.close();
+  useEffect(() => {
+    // Cek apakah berjalan di lingkungan Tauri
+    if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+      import('@tauri-apps/api/window')
+        .then((m) => {
+          setAppWindow(m.getCurrentWindow());
+        })
+        .catch((err) => {
+          console.error('Gagal memuat Tauri Window API:', err);
+        });
+    }
+  }, []);
+
+  const handleMinimize = () => {
+    if (appWindow) {
+      appWindow.minimize().catch(console.error);
+    } else {
+      console.log('Minimize window (browser mock)');
+    }
+  };
+
+  const handleMaximize = () => {
+    if (appWindow) {
+      appWindow.toggleMaximize().catch(console.error);
+    } else {
+      console.log('Maximize window (browser mock)');
+    }
+  };
+
+  const handleClose = () => {
+    if (appWindow) {
+      appWindow.close().catch(console.error);
+    } else {
+      console.log('Close window (browser mock)');
+    }
+  };
 
   return (
     <div className="top-bar" data-tauri-drag-region>
