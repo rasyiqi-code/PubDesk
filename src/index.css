@@ -91,6 +91,8 @@ body {
   border-right: 1px solid var(--border);
   height: 100%;
   transition: width 0.3s ease;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .top-bar-sidebar-title {
@@ -151,7 +153,6 @@ body {
   border-radius: 6px;
   padding: 0 8px 0 12px;
   height: 32px;
-  max-width: 480px;
   transition: all 0.15s ease;
 }
 
