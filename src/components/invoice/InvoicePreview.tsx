@@ -127,19 +127,19 @@ const InvoicePreview: React.FC = () => {
               {/* Panel hitam di belakang seluruh shape */}
               <rect x="267" y="54" width="390" height="78" fill="#222933" />
 
-              {/* Bidang biru utama */}
-              <polygon points="0,27 204,27 268,138 0,138" fill="#2b71c6" />
+              {/* Bidang merah utama */}
+              <polygon points="0,27 204,27 268,138 0,138" fill="#c01c1c" />
 
               {/* Pemisah putih agar warna hitam tidak menyelip */}
               <polygon points="204,27 220,27 284,138 268,138" fill="#ffffff" />
 
-              {/* Aksen biru kedua */}
-              <polygon points="232,49 268,49 320,138 284,138" fill="#2b71c6" />
+              {/* Aksen merah kedua */}
+              <polygon points="232,49 268,49 320,138 284,138" fill="#c01c1c" />
 
               {/* Logo placeholder */}
               <g transform="translate(40 61)">
                 <path d="M20 0 L38 10 L38 33 L20 44 L2 33 L2 10 Z" fill="#ffffff" />
-                <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill="#2b71c6" />
+                <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill="#c01c1c" />
               </g>
 
               {/* Nama perusahaan */}
@@ -171,7 +171,7 @@ const InvoicePreview: React.FC = () => {
             <div>
               <div style={{ fontSize: '13px', fontWeight: '700', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 <span style={{ color: '#1f2937' }}>Payment </span>
-                <span style={{ color: '#1e70cd' }}>Method</span>
+                <span style={{ color: '#d93838' }}>Method</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '180px', fontSize: '11px' }}>
@@ -195,11 +195,11 @@ const InvoicePreview: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"Montserrat", "Segoe UI", sans-serif' }}>
               <thead>
                 <tr style={{ color: '#ffffff' }}>
-                  <th style={{ background: '#1350a0', width: '45px', textAlign: 'center', padding: '10px 10px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>No</th>
-                  <th style={{ background: '#1e70cd', textAlign: 'left', padding: '10px 12px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>Description</th>
-                  <th style={{ background: '#1e70cd', textAlign: 'center', padding: '10px 10px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', width: '85px', border: 'none' }}>PRICE.</th>
-                  <th style={{ background: '#1e70cd', textAlign: 'center', padding: '10px 10px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', width: '60px', border: 'none' }}>QTY.</th>
-                  <th style={{ background: '#1e70cd', textAlign: 'right', padding: '10px 12px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', width: '100px', border: 'none' }}>TOTAL.</th>
+                  <th style={{ background: '#991b1b', width: '45px', textAlign: 'center', padding: '10px 10px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>No</th>
+                  <th style={{ background: '#d93838', textAlign: 'left', padding: '10px 12px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>Description</th>
+                  <th style={{ background: '#d93838', textAlign: 'center', padding: '10px 10px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', width: '85px', border: 'none' }}>PRICE.</th>
+                  <th style={{ background: '#d93838', textAlign: 'center', padding: '10px 10px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', width: '60px', border: 'none' }}>QTY.</th>
+                  <th style={{ background: '#d93838', textAlign: 'right', padding: '10px 12px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', width: '100px', border: 'none' }}>TOTAL.</th>
                 </tr>
               </thead>
               <tbody>
@@ -213,7 +213,7 @@ const InvoicePreview: React.FC = () => {
                       { desc: 'Product Description Here', price: 150, qty: 2, total: '300.00' },
                       { desc: 'Product Description Here', price: 200, qty: 2, total: '400.00' }
                     ].map((item, idx) => {
-                      const rowBg = idx % 2 === 0 ? '#f2f5fa' : '#ffffff';
+                      const rowBg = idx % 2 === 0 ? '#fdf2f2' : '#ffffff';
                       return (
                         <tr key={idx} style={{ background: rowBg }}>
                           <td style={{ padding: '9px 10px', textAlign: 'center', fontSize: '11px', color: '#1f2937', fontWeight: '500', borderBottom: '1px solid #e5e7eb' }}>{idx + 1}.</td>
@@ -227,7 +227,7 @@ const InvoicePreview: React.FC = () => {
                   </>
                 ) : (
                   items.map((item, index) => {
-                    const rowBg = index % 2 === 0 ? '#f2f5fa' : '#ffffff';
+                    const rowBg = index % 2 === 0 ? '#fdf2f2' : '#ffffff';
                     return (
                       <tr key={index} style={{ background: rowBg }}>
                         <td style={{ padding: '9px 10px', textAlign: 'center', fontSize: '11px', color: '#1f2937', fontWeight: '500', borderBottom: '1px solid #e5e7eb' }}>{index + 1}.</td>
@@ -253,7 +253,7 @@ const InvoicePreview: React.FC = () => {
               
               {/* Telepon */}
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#1e70cd', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
+                <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#d93838', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                   </svg>
@@ -266,7 +266,7 @@ const InvoicePreview: React.FC = () => {
 
               {/* Email / Web */}
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#1e70cd', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
+                <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#d93838', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="2" y1="12" x2="22" y2="12"/>
@@ -281,7 +281,7 @@ const InvoicePreview: React.FC = () => {
 
               {/* Lokasi */}
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#1e70cd', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
+                <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#d93838', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px', flexShrink: 0 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
@@ -309,7 +309,7 @@ const InvoicePreview: React.FC = () => {
                 <span style={{ fontWeight: '600', color: '#1f2937' }}>{items.length === 0 ? '000' : 'Rp 0'}</span>
               </div>
               <div style={{ 
-                background: '#1e70cd', 
+                background: '#d93838', 
                 color: '#ffffff', 
                 padding: '7px 12px', 
                 fontSize: '13px', 
@@ -381,11 +381,11 @@ const InvoicePreview: React.FC = () => {
               {/* Bidang hitam */}
               <path d="M 0 20 H 462 L 499.5 70 H 0 Z" fill="#222933" />
 
-              {/* Bidang biru kanan */}
-              <path d="M 538.25 20 H 1045 V 70 H 575.75 Z" fill="#2b71c6" />
+              {/* Bidang merah kanan */}
+              <path d="M 538.25 20 H 1045 V 70 H 575.75 Z" fill="#c01c1c" />
 
-              {/* Diagonal biru tengah */}
-              <path d="M 470 5 H 509 L 557.75 70 H 518.75 Z" fill="#2b71c6" />
+              {/* Diagonal merah tengah */}
+              <path d="M 470 5 H 509 L 557.75 70 H 518.75 Z" fill="#c01c1c" />
 
               {/* Pemisah putih */}
               <path d="M 509 5 H 527 L 575.75 70 H 557.75 Z" fill="#ffffff" />
