@@ -225,32 +225,74 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                 <polygon points="230.3,44 265.2,44 320.6,139 284.5,139" fill={headerSecondaryColor} />
               </g>
 
-              {/* Logo placeholder / Gambar Logo Kustom */}
-              {profile?.companyLogo ? (
-                <image
-                  href={profile.companyLogo}
-                  x="35"
-                  y="62"
-                  width="180"
-                  height="62"
-                  preserveAspectRatio="xMinYMid meet"
-                />
-              ) : (
-                <>
-                  <g transform="translate(40 61)">
-                    <path d="M20 0 L38 10 L38 33 L20 44 L2 33 L2 10 Z" fill="#ffffff" />
-                    <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill={headerPrimaryColor} />
-                  </g>
+              {/* Render Kop Surat berdasarkan headerType */}
+              {(() => {
+                const headerType = profile?.headerType || 'logo_text';
 
-                  {/* Nama perusahaan */}
-                  <text x="88" y="82" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="15" fontWeight="700" letterSpacing="1.4">
-                    {profile?.companyName || 'CV KBM'}
-                  </text>
-                  <text x="89" y="96" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="7" fontWeight="600" letterSpacing="1.8">
-                    {profile?.companyTagline || 'KARYA BAKTI MAKMUR'}
-                  </text>
-                </>
-              )}
+                // Jika hanya teks atau (jika hanya logo tetapi logo kustom belum diunggah, fallback ke text_only)
+                if (headerType === 'text_only' || (!profile?.companyLogo && headerType === 'logo_only')) {
+                  return (
+                    <>
+                      <text x="120" y="88" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="16" fontWeight="700" letterSpacing="1.4">
+                        {profile?.companyName || 'CV KBM'}
+                      </text>
+                      <text x="120" y="104" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="7.5" fontWeight="600" letterSpacing="1.8">
+                        {profile?.companyTagline || 'KARYA BAKTI MAKMUR'}
+                      </text>
+                    </>
+                  );
+                }
+
+                if (headerType === 'logo_only' && profile?.companyLogo) {
+                  return (
+                    <image
+                      href={profile.companyLogo}
+                      x="55"
+                      y="60"
+                      width="130"
+                      height="66"
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  );
+                }
+
+                // Mode: Logo + Teks (logo_text)
+                return (
+                  <>
+                    {profile?.companyLogo ? (
+                      <>
+                        <image
+                          href={profile.companyLogo}
+                          x="25"
+                          y="67"
+                          width="52"
+                          height="52"
+                          preserveAspectRatio="xMinYMid meet"
+                        />
+                        <text x="90" y="87" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="15" fontWeight="700" letterSpacing="1.4">
+                          {profile?.companyName || 'CV KBM'}
+                        </text>
+                        <text x="90" y="101" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="7" fontWeight="600" letterSpacing="1.8">
+                          {profile?.companyTagline || 'KARYA BAKTI MAKMUR'}
+                        </text>
+                      </>
+                    ) : (
+                      <>
+                        <g transform="translate(40 71)">
+                          <path d="M20 0 L38 10 L38 33 L20 44 L2 33 L2 10 Z" fill="#ffffff" />
+                          <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill={headerPrimaryColor} />
+                        </g>
+                        <text x="88" y="87" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="15" fontWeight="700" letterSpacing="1.4">
+                          {profile?.companyName || 'CV KBM'}
+                        </text>
+                        <text x="89" y="101" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="7" fontWeight="600" letterSpacing="1.8">
+                          {profile?.companyTagline || 'KARYA BAKTI MAKMUR'}
+                        </text>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Judul invoice */}
               <text x="622" y="98" textAnchor="end" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="44" fontWeight="700" letterSpacing="2">

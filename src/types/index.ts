@@ -101,4 +101,5 @@ export interface InvoiceProfile {
   bankAccountOwner: string;
   companyLogo?: string;
   signatureImg?: string;
+  headerType?: 'logo_only' | 'logo_text' | 'text_only';
 }

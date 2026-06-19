@@ -47,6 +47,7 @@ const InvoiceSettings: React.FC = () => {
   const [bankAccountOwner, setBankAccountOwner] = useState('');
   const [companyLogo, setCompanyLogo] = useState('');
   const [signatureImg, setSignatureImg] = useState('');
+  const [headerType, setHeaderType] = useState<'logo_only' | 'logo_text' | 'text_only'>('logo_text');
 
   // Memuat data profil terpilih ke dalam state form
   useEffect(() => {
@@ -78,6 +79,7 @@ const InvoiceSettings: React.FC = () => {
       setBankAccountOwner('');
       setCompanyLogo('');
       setSignatureImg('');
+      setHeaderType('logo_text');
     } else {
       const profile = profiles.find((p) => p.id === selectedProfileId);
       if (profile) {
@@ -108,6 +110,7 @@ const InvoiceSettings: React.FC = () => {
         setBankAccountOwner(profile.bankAccountOwner || '');
         setCompanyLogo(profile.companyLogo || '');
         setSignatureImg(profile.signatureImg || '');
+        setHeaderType(profile.headerType || 'logo_text');
       }
     }
   }, [selectedProfileId, isEditingNew, profiles]);
@@ -148,7 +151,8 @@ const InvoiceSettings: React.FC = () => {
     bankAccountNo,
     bankAccountOwner,
     companyLogo,
-    signatureImg
+    signatureImg,
+    headerType
   };
 
   const handleSave = () => {
@@ -561,6 +565,20 @@ const InvoiceSettings: React.FC = () => {
                   </label>
                 </div>
               </div>
+            </div>
+
+            <div className="compact-form-group">
+              <label className="compact-label">Tipe Kop Surat</label>
+              <select
+                className="compact-input"
+                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', height: '32px', padding: '0 8px', borderRadius: '6px' }}
+                value={headerType}
+                onChange={(e) => setHeaderType(e.target.value as any)}
+              >
+                <option value="logo_text">Logo + Teks</option>
+                <option value="logo_only">Hanya Logo</option>
+                <option value="text_only">Hanya Teks</option>
+              </select>
             </div>
           </div>
 

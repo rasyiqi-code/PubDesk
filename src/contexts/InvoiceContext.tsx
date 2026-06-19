@@ -31,7 +31,8 @@ const defaultProfiles: InvoiceProfile[] = [
     showBankInfo: true,
     bankName: 'Bank Mandiri',
     bankAccountNo: '1234567890123',
-    bankAccountOwner: 'Nama Pemilik Rekening'
+    bankAccountOwner: 'Nama Pemilik Rekening',
+    headerType: 'logo_text'
   },
   {
     id: 'kbm_creator',
@@ -62,7 +63,8 @@ const defaultProfiles: InvoiceProfile[] = [
     showBankInfo: true,
     bankName: 'Bank Central Asia (BCA)',
     bankAccountNo: '9876543210',
-    bankAccountOwner: 'Nama Pemilik Rekening'
+    bankAccountOwner: 'Nama Pemilik Rekening',
+    headerType: 'logo_text'
   },
   {
     id: 'spt_mitra',
@@ -90,7 +92,8 @@ const defaultProfiles: InvoiceProfile[] = [
     showBankInfo: false,
     bankName: '',
     bankAccountNo: '',
-    bankAccountOwner: ''
+    bankAccountOwner: '',
+    headerType: 'logo_text'
   }
 ];
 
