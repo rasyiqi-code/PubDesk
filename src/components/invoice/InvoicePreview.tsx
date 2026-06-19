@@ -179,10 +179,10 @@ const InvoicePreview: React.FC = () => {
               <polygon points="0,10 220,10 264.5,88 0,88" fill={headerPrimaryColor} />
 
               {/* Pemisah putih agar warna hitam tidak menyelip - Diperpanjang membungkus */}
-              <polygon points="214.3,0 230.3,0 283.9,94 267.9,94" fill="#ffffff" />
+              <polygon points="217.2,5 233.2,5 283.9,94 267.9,94" fill="#ffffff" />
 
               {/* Aksen merah kedua (Warna dinamis) - Diperpanjang membungkus */}
-              <polygon points="230.3,0 265.2,0 320,94 283.9,94" fill={headerSecondaryColor} />
+              <polygon points="233.2,5 268.1,5 320,94 283.9,94" fill={headerSecondaryColor} />
 
               {/* Logo placeholder / Gambar Logo Kustom */}
               {activeProfile?.companyLogo ? (
