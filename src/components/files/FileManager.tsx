@@ -7,17 +7,18 @@ interface FileManagerProps {
 }
 
 export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
-  const { files, deleteFile, updateFile, selectedFileId, setSelectedFileId, showToast, fileCategory, showConfirm, fileLayoutMode, currentFolderId, navigateFolder, refreshAccessToken } = useAppContext();
+  const { files, deleteFile, updateFile, selectedFileId, setSelectedFileId, showToast, fileCategory, showConfirm, fileLayoutMode, currentFolderId, navigateFolder, refreshAccessToken, gdriveAccounts, refreshAccountToken } = useAppContext();
 
   const rootFolderId = localStorage.getItem('gdrive_parent_folder_id') || 'root';
 
   const parseModifiedBy = (modifiedBy?: string) => {
-    if (!modifiedBy) return { size: '0', parentId: 'root', shared: '0' };
+    if (!modifiedBy) return { size: '0', parentId: 'root', shared: '0', accountEmail: '' };
     const parts = modifiedBy.split('|');
     return {
       size: parts[0] || '0',
       parentId: parts[1] || 'root',
-      shared: parts[2] || '0'
+      shared: parts[2] || '0',
+      accountEmail: parts[3] || ''
     };
   };
 
@@ -31,34 +32,58 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
     return parseModifiedBy(file.modified_by).shared === '1';
   };
 
-  // Dua folder virtual tingkat atas Google Drive
-  const virtualFolders = [
-    {
-      id: -100,
-      path: 'gdrive://my_drive',
-      filename: 'Drive Saya',
-      type: 'gdrive',
-      status: 'Cloud',
-      version_label: 'application/vnd.google-apps.folder',
-      last_modified: new Date().toISOString(),
-      modified_by: '0|root|0',
-      is_readonly: true
-    },
-    {
-      id: -101,
-      path: 'gdrive://shared_with_me',
-      filename: 'Shared with me',
-      type: 'gdrive',
-      status: 'Cloud',
-      version_label: 'application/vnd.google-apps.folder',
-      last_modified: new Date().toISOString(),
-      modified_by: '0|root|1',
-      is_readonly: true
+  const getVirtualFolders = () => {
+    const list: any[] = [];
+    if (currentFolderId === rootFolderId) {
+      gdriveAccounts.forEach((acc, index) => {
+        list.push({
+          id: -1000 - index,
+          path: `gdrive://ac_${acc.email}`,
+          filename: acc.email,
+          type: 'gdrive',
+          status: 'Cloud',
+          version_label: 'application/vnd.google-apps.folder',
+          last_modified: new Date().toISOString(),
+          modified_by: `0|root|0|${acc.email}`,
+          is_readonly: true
+        });
+      });
+    } else if (currentFolderId.startsWith('ac_')) {
+      const email = currentFolderId.replace('ac_', '');
+      list.push({
+        id: -2000,
+        path: `gdrive://md_${email}`,
+        filename: 'Drive Saya',
+        type: 'gdrive',
+        status: 'Cloud',
+        version_label: 'application/vnd.google-apps.folder',
+        last_modified: new Date().toISOString(),
+        modified_by: `0|ac_${email}|0|${email}`,
+        is_readonly: true
+      });
+      list.push({
+        id: -2001,
+        path: `gdrive://swm_${email}`,
+        filename: 'Shared with me',
+        type: 'gdrive',
+        status: 'Cloud',
+        version_label: 'application/vnd.google-apps.folder',
+        last_modified: new Date().toISOString(),
+        modified_by: `0|ac_${email}|1|${email}`,
+        is_readonly: true
+      });
     }
-  ];
+    return list;
+  };
 
   const handleGoUp = () => {
-    if (currentFolderId === 'my_drive' || currentFolderId === 'shared_with_me') {
+    if (currentFolderId.startsWith('md_') || currentFolderId.startsWith('swm_')) {
+      const email = currentFolderId.substring(3);
+      navigateFolder(`ac_${email}`);
+      setSelectedFileId(null);
+      return;
+    }
+    if (currentFolderId.startsWith('ac_')) {
       navigateFolder(rootFolderId);
       setSelectedFileId(null);
       return;
@@ -66,7 +91,14 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
     const currentFolder = files.find(f => f.path === `gdrive://${currentFolderId}`);
     if (currentFolder) {
       const parentId = getParentId(currentFolder);
-      navigateFolder(parentId || rootFolderId);
+      const isShared = getIsShared(currentFolder);
+      const email = parseModifiedBy(currentFolder.modified_by).accountEmail;
+      
+      if (parentId === 'root' || !parentId || !gdriveIdSet.has(parentId)) {
+        navigateFolder(isShared ? `swm_${email}` : `md_${email}`);
+      } else {
+        navigateFolder(parentId);
+      }
     } else {
       navigateFolder(rootFolderId);
     }
@@ -76,7 +108,19 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
   const renderFileIcon = (file: any, size: 'large' | 'small' = 'large') => {
     const isFolder = file.type === 'gdrive' && file.version_label === 'application/vnd.google-apps.folder';
     
-    if (file.id === -100) {
+    if (file.path && file.path.startsWith('gdrive://ac_')) {
+      const dim = size === 'large' ? 48 : 18;
+      return (
+        <svg width={dim} height={dim} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 10C4 7.79086 5.79086 6 8 6H18.5C19.7827 6 20.9781 6.61273 21.7222 7.65449L24.2778 11.2312C24.65 11.7521 25.2476 12.0583 25.8889 12.0583H40C42.2091 12.0583 44 13.8492 44 16.0583V38C44 40.2091 42.2091 42 40 42H8C5.79086 42 4 40.2091 4 38V10Z" fill="#E8F0FE" stroke="#4285F4" strokeWidth="1.5" />
+          <path d="M4 17H44V38C44 40.2091 42.2091 42 40 42H8C5.79086 42 4 40.2091 4 38V17Z" fill="#4285F4" />
+          <circle cx="24" cy="26" r="3.5" fill="#FFFFFF" />
+          <path d="M24 31C21.5 31 19.5 32.2 19.5 34V35H28.5V34C28.5 32.2 26.5 31 24 31Z" fill="#FFFFFF" />
+        </svg>
+      );
+    }
+
+    if (file.path && file.path.startsWith('gdrive://md_')) {
       const dim = size === 'large' ? 48 : 18;
       return (
         <svg width={dim} height={dim} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -87,7 +131,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
       );
     }
 
-    if (file.id === -101) {
+    if (file.path && file.path.startsWith('gdrive://swm_')) {
       const dim = size === 'large' ? 48 : 18;
       return (
         <svg width={dim} height={dim} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -133,13 +177,21 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
     }
     if (path.startsWith('gdrive://')) {
       const fileId = path.replace('gdrive://', '');
-      let token = localStorage.getItem('gdrive_token');
-      if (!token && refreshAccessToken) {
+      const { accountEmail } = parseModifiedBy(file.modified_by);
+      
+      let account = gdriveAccounts.find(acc => acc.email === accountEmail);
+      let token = account ? account.token : localStorage.getItem('gdrive_token');
+      
+      if (!token && accountEmail && refreshAccountToken) {
+        showToast('Memperbarui koneksi akun Google...', 'info');
+        token = await refreshAccountToken(accountEmail);
+      } else if (!token && refreshAccessToken) {
         showToast('Memperbarui koneksi Google Drive...', 'info');
         token = await refreshAccessToken();
       }
+
       if (!token) {
-        showToast('Google Drive belum dikonfigurasi. Atur token di Pengaturan.', 'error');
+        showToast('Google Drive belum dikonfigurasi. Hubungkan akun di Pengaturan.', 'error');
         return;
       }
 
@@ -179,9 +231,15 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
           }
         });
 
-        if (response.status === 401 && refreshAccessToken) {
+        if (response.status === 401) {
           showToast('Token kedaluwarsa. Memperbarui token...', 'info');
-          const newToken = await refreshAccessToken();
+          let newToken = null;
+          if (accountEmail && refreshAccountToken) {
+            newToken = await refreshAccountToken(accountEmail);
+          } else if (refreshAccessToken) {
+            newToken = await refreshAccessToken();
+          }
+          
           if (newToken) {
             token = newToken;
             response = await fetch(url, {
@@ -305,9 +363,8 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
       .map(f => f.path.replace('gdrive://', ''))
   );
 
-  // Jika di root Google Drive, gabungkan folder virtual
-  const allFiles = fileCategory === 'gdrive' && currentFolderId === rootFolderId
-    ? virtualFolders
+  const allFiles = fileCategory === 'gdrive' && (currentFolderId === rootFolderId || currentFolderId.startsWith('ac_'))
+    ? getVirtualFolders()
     : files;
 
   const filteredFiles = allFiles.filter((file) => {
@@ -321,33 +378,34 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
     const matchesSearch = file.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
       file.path.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Filter folder jika menjelajah gdrive secara normal (tanpa pencarian)
     const fileParentId = getParentId(file);
     const isShared = getIsShared(file);
+    const { accountEmail } = parseModifiedBy(file.modified_by);
     
     let matchesFolder = true;
     if (!searchQuery && fileCategory === 'gdrive') {
       if (currentFolderId === rootFolderId) {
-        // Di root, hanya tampilkan folder virtual
-        matchesFolder = file.id === -100 || file.id === -101;
-      } else if (currentFolderId === 'my_drive') {
-        // Di Drive Saya, tampilkan file milik sendiri (isShared === false) yang berada di root
-        matchesFolder = !isShared && (
+        matchesFolder = file.path?.startsWith('gdrive://ac_') || false;
+      } else if (currentFolderId.startsWith('ac_')) {
+        const email = currentFolderId.replace('ac_', '');
+        matchesFolder = file.path === `gdrive://md_${email}` || file.path === `gdrive://swm_${email}`;
+      } else if (currentFolderId.startsWith('md_')) {
+        const email = currentFolderId.replace('md_', '');
+        matchesFolder = accountEmail === email && !isShared && (
           fileParentId === 'root' ||
           fileParentId === rootFolderId ||
           !fileParentId ||
           !gdriveIdSet.has(fileParentId)
         );
-      } else if (currentFolderId === 'shared_with_me') {
-        // Di Shared with me, tampilkan file shared (isShared === true) yang berada di root
-        matchesFolder = isShared && (
+      } else if (currentFolderId.startsWith('swm_')) {
+        const email = currentFolderId.replace('swm_', '');
+        matchesFolder = accountEmail === email && isShared && (
           fileParentId === 'root' ||
           fileParentId === rootFolderId ||
           !fileParentId ||
           !gdriveIdSet.has(fileParentId)
         );
       } else {
-        // Subfolder biasa
         matchesFolder = fileParentId === currentFolderId;
       }
     }

@@ -2,10 +2,80 @@ mod db;
 
 use db::*;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{State, Emitter};
+use std::net::TcpListener;
+use std::io::{Read, Write};
 
 struct AppState {
     db: Mutex<Option<Database>>,
+}
+
+#[tauri::command]
+async fn start_oauth_server(app_handle: tauri::AppHandle, port: u16) -> Result<String, String> {
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", port))
+        .map_err(|e| format!("Gagal mendengarkan di port: {}", e))?;
+    
+    // Set non-blocking agar bisa timeout dan keluar jika user menutup browser
+    listener.set_nonblocking(true).map_err(|e| e.to_string())?;
+
+    std::thread::spawn(move || {
+        let start_time = std::time::Instant::now();
+        loop {
+            // Timeout server setelah 5 menit
+            if start_time.elapsed().as_secs() > 300 {
+                break;
+            }
+
+            match listener.accept() {
+                Ok((mut stream, _addr)) => {
+                    let mut buffer = [0; 2048];
+                    if let Ok(size) = stream.read(&mut buffer) {
+                        let request = String::from_utf8_lossy(&buffer[..size]);
+                        
+                        // Cari parameter "code" di request URI (e.g. GET /?code=... HTTP/1.1)
+                        if let Some(code_pos) = request.find("code=") {
+                            let after_code = &request[code_pos + 5..];
+                            let end_pos = after_code.find(' ').or_else(|| after_code.find('&')).unwrap_or(after_code.len());
+                            let auth_code = &after_code[..end_pos];
+                            
+                            // Kirim event ke frontend Tauri
+                            let _ = app_handle.emit("gdrive-oauth-code", auth_code.to_string());
+                            
+                            // Tampilkan halaman sukses di browser
+                            let response_body = "
+                                <html>
+                                <head><title>Login Sukses</title></head>
+                                <body style='font-family: sans-serif; text-align: center; padding-top: 60px; background-color: #f3f4f6; color: #1f2937;'>
+                                    <div style='display: inline-block; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-top: 4px solid #10b981;'>
+                                        <h1 style='color: #10b981; margin-bottom: 12px;'>Login Google Drive Berhasil!</h1>
+                                        <p style='font-size: 15px; margin-bottom: 24px;'>Akun Google Anda berhasil dihubungkan ke PubDesk.</p>
+                                        <p style='color: #6b7280; font-size: 13px;'>Anda dapat menutup jendela browser ini sekarang dan kembali ke aplikasi.</p>
+                                    </div>
+                                </body>
+                                </html>
+                            ";
+                            let response = format!(
+                                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/html; charset=utf-8\r\n\r\n{}",
+                                response_body.len(),
+                                response_body
+                            );
+                            let _ = stream.write_all(response.as_bytes());
+                            let _ = stream.flush();
+                            break;
+                        }
+                    }
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+                Err(_) => {
+                    break;
+                }
+            }
+        }
+    });
+
+    Ok("Server dimulai".to_string())
 }
 
 #[tauri::command]
@@ -229,7 +299,8 @@ pub fn run() {
             update_file,
             create_physical_file,
             open_file_physically,
-            open_file_location_physically
+            open_file_location_physically,
+            start_oauth_server
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

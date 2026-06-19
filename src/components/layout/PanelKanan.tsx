@@ -4,7 +4,7 @@ import InvoicePreview from '../invoice/InvoicePreview';
 import { invoke } from '@tauri-apps/api/core';
 
 const PanelKanan: React.FC = () => {
-  const { appState, files, invoices, selectedFileId, services, selectedServiceId, activeSettingsTab, showToast, updateFile, refreshAccessToken } = useAppContext();
+  const { appState, files, invoices, selectedFileId, services, selectedServiceId, activeSettingsTab, showToast, updateFile, refreshAccessToken, gdriveAccounts, refreshAccountToken } = useAppContext();
 
   const renderPreview = () => {
     switch (appState.activeModule) {
@@ -170,17 +170,36 @@ const PanelKanan: React.FC = () => {
             );
           }
         } else if (file.type === 'gdrive') {
+          const parseModifiedBy = (modifiedBy?: string) => {
+            if (!modifiedBy) return { size: '0', parentId: 'root', shared: '0', accountEmail: '' };
+            const parts = modifiedBy.split('|');
+            return {
+              size: parts[0] || '0',
+              parentId: parts[1] || 'root',
+              shared: parts[2] || '0',
+              accountEmail: parts[3] || ''
+            };
+          };
+
           const handleOpenGDrivePhysically = async (e: React.MouseEvent) => {
             e.stopPropagation();
             try {
               const fileId = file.path.replace('gdrive://', '');
-              let token = localStorage.getItem('gdrive_token');
-              if (!token && refreshAccessToken) {
+              const { accountEmail } = parseModifiedBy(file.modified_by);
+              
+              let account = gdriveAccounts.find(acc => acc.email === accountEmail);
+              let token = account ? account.token : localStorage.getItem('gdrive_token');
+              
+              if (!token && accountEmail && refreshAccountToken) {
+                showToast('Memperbarui koneksi akun Google...', 'info');
+                token = await refreshAccountToken(accountEmail);
+              } else if (!token && refreshAccessToken) {
                 showToast('Memperbarui koneksi Google Drive...', 'info');
                 token = await refreshAccessToken();
               }
+              
               if (!token) {
-                showToast('Google Drive belum dikonfigurasi. Atur token di Pengaturan.', 'error');
+                showToast('Google Drive belum dikonfigurasi. Hubungkan akun di Pengaturan.', 'error');
                 return;
               }
 
@@ -219,9 +238,15 @@ const PanelKanan: React.FC = () => {
                 }
               });
 
-              if (response.status === 401 && refreshAccessToken) {
+              if (response.status === 401) {
                 showToast('Token kedaluwarsa. Memperbarui token...', 'info');
-                const newToken = await refreshAccessToken();
+                let newToken = null;
+                if (accountEmail && refreshAccountToken) {
+                  newToken = await refreshAccountToken(accountEmail);
+                } else if (refreshAccessToken) {
+                  newToken = await refreshAccessToken();
+                }
+                
                 if (newToken) {
                   token = newToken;
                   response = await fetch(url, {

@@ -19,7 +19,6 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
     navigateForward,
     fileLayoutMode,
     setFileLayoutMode,
-    connectedUser,
     fileCategory,
     currentFolderId,
     files
@@ -155,9 +154,6 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
             >
               {fileCategory === 'gdrive' ? (
                 (() => {
-                  const emailText = connectedUser?.email || 'Google Drive';
-                  
-                  // Ikon database/server coklat keemasan/hijau
                   const serverIcon = (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#855800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
                       <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
@@ -167,46 +163,67 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
                     </svg>
                   );
 
+                  const parseModifiedBy = (modifiedBy?: string) => {
+                    if (!modifiedBy) return { size: '0', parentId: 'root', shared: '0', accountEmail: '' };
+                    const parts = modifiedBy.split('|');
+                    return {
+                      size: parts[0] || '0',
+                      parentId: parts[1] || 'root',
+                      shared: parts[2] || '0',
+                      accountEmail: parts[3] || ''
+                    };
+                  };
+
                   const rootFolderId = localStorage.getItem('gdrive_parent_folder_id') || 'root';
 
                   if (currentFolderId === 'root' || currentFolderId === rootFolderId) {
                     return (
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         {serverIcon}
-                        <span className="top-bar-path-text" style={{ fontWeight: '600', color: '#556B2F' }}>{emailText}</span>
+                        <span className="top-bar-path-text" style={{ fontWeight: '600', color: '#556B2F' }}>Google Drive</span>
                       </div>
                     );
                   }
 
                   const breadcrumbs = [];
-                  breadcrumbs.push({ id: 'root', name: emailText, icon: serverIcon });
+                  breadcrumbs.push({ id: 'root', name: 'Google Drive', icon: serverIcon });
 
-                  let tempId = currentFolderId;
-                  if (tempId === 'my_drive') {
-                    breadcrumbs.push({ id: 'my_drive', name: 'Drive Saya' });
-                  } else if (tempId === 'shared_with_me') {
-                    breadcrumbs.push({ id: 'shared_with_me', name: 'Shared with me' });
+                  if (currentFolderId.startsWith('ac_')) {
+                    const email = currentFolderId.replace('ac_', '');
+                    breadcrumbs.push({ id: currentFolderId, name: email });
+                  } else if (currentFolderId.startsWith('md_')) {
+                    const email = currentFolderId.replace('md_', '');
+                    breadcrumbs.push({ id: `ac_${email}`, name: email });
+                    breadcrumbs.push({ id: currentFolderId, name: 'Drive Saya' });
+                  } else if (currentFolderId.startsWith('swm_')) {
+                    const email = currentFolderId.replace('swm_', '');
+                    breadcrumbs.push({ id: `ac_${email}`, name: email });
+                    breadcrumbs.push({ id: currentFolderId, name: 'Shared with me' });
                   } else {
                     const pathList = [];
+                    let tempId = currentFolderId;
                     let limit = 10;
-                    while (tempId && tempId !== 'root' && tempId !== 'my_drive' && tempId !== 'shared_with_me' && limit > 0) {
+                    let accountEmail = '';
+                    let isShared = false;
+
+                    while (tempId && tempId !== 'root' && !tempId.startsWith('ac_') && !tempId.startsWith('md_') && !tempId.startsWith('swm_') && limit > 0) {
                       const folder = files.find(f => f.path === `gdrive://${tempId}`);
                       if (folder) {
                         pathList.unshift({ id: tempId, name: folder.filename });
-                        const parts = folder.modified_by?.split('|') || [];
-                        tempId = parts[1] || 'root';
+                        const meta = parseModifiedBy(folder.modified_by);
+                        tempId = meta.parentId || 'root';
+                        accountEmail = meta.accountEmail;
+                        isShared = meta.shared === '1';
                       } else {
                         break;
                       }
                       limit--;
                     }
 
-                    if (tempId === 'my_drive' || tempId === 'root') {
-                      breadcrumbs.push({ id: 'my_drive', name: 'Drive Saya' });
-                    } else if (tempId === 'shared_with_me') {
-                      breadcrumbs.push({ id: 'shared_with_me', name: 'Shared with me' });
+                    if (accountEmail) {
+                      breadcrumbs.push({ id: `ac_${accountEmail}`, name: accountEmail });
+                      breadcrumbs.push({ id: isShared ? `swm_${accountEmail}` : `md_${accountEmail}`, name: isShared ? 'Shared with me' : 'Drive Saya' });
                     }
-
                     breadcrumbs.push(...pathList);
                   }
 

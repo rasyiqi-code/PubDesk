@@ -1,6 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { AppState, Book, Contact, Invoice, File, Service } from '../types';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+
+export interface GDriveAccount {
+  email: string;
+  name: string;
+  token: string;
+  refreshToken: string;
+  clientId: string;
+  clientSecret: string;
+}
 
 export interface ConfirmOptions {
   title: string;
@@ -68,6 +78,9 @@ interface AppContextType {
   setConnectedUser: (user: { name: string, email: string } | null) => void;
   testConnection: (token: string) => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
+  gdriveAccounts: GDriveAccount[];
+  setGdriveAccounts: (accounts: GDriveAccount[]) => void;
+  refreshAccountToken: (email: string) => Promise<string | null>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -97,6 +110,112 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [folderHistoryIndex, setFolderHistoryIndex] = useState<number>(0);
   const [fileLayoutMode, setFileLayoutMode] = useState<'list' | 'grid'>('list');
   const [connectedUser, setConnectedUser] = useState<{ name: string, email: string } | null>(null);
+  const [gdriveAccounts, setGdriveAccountsState] = useState<GDriveAccount[]>(() => {
+    try {
+      const saved = localStorage.getItem('gdrive_accounts');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const gdriveAccountsRef = useRef<GDriveAccount[]>(gdriveAccounts);
+  useEffect(() => {
+    gdriveAccountsRef.current = gdriveAccounts;
+  }, [gdriveAccounts]);
+
+  const setGdriveAccounts = (accounts: GDriveAccount[]) => {
+    setGdriveAccountsState(accounts);
+    localStorage.setItem('gdrive_accounts', JSON.stringify(accounts));
+  };
+
+  const exchangeCodeForToken = async (code: string) => {
+    const clientId = localStorage.getItem('gdrive_client_id') || '935478440552-k48b61cglp06gskchsc7qg6l2i1pkhn1.apps.googleusercontent.com';
+    const clientSecret = localStorage.getItem('gdrive_client_secret') || '';
+    const port = 50007;
+
+    showToast('Menukar kode otorisasi...', 'info');
+    try {
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code: code,
+          redirect_uri: `http://localhost:${port}`,
+          grant_type: 'authorization_code'
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const accessToken = data.access_token;
+        const refreshToken = data.refresh_token || '';
+
+        const profileRes = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          const email = profileData.user.emailAddress;
+          const name = profileData.user.displayName;
+
+          const currentAccounts = gdriveAccountsRef.current;
+          const existingAccIdx = currentAccounts.findIndex(acc => acc.email === email);
+          let updatedAccounts = [...currentAccounts];
+
+          if (existingAccIdx > -1) {
+            const existingAcc = currentAccounts[existingAccIdx];
+            updatedAccounts[existingAccIdx] = {
+              ...existingAcc,
+              name,
+              token: accessToken,
+              refreshToken: refreshToken || existingAcc.refreshToken,
+              clientId,
+              clientSecret
+            };
+          } else {
+            updatedAccounts.push({
+              email,
+              name,
+              token: accessToken,
+              refreshToken: refreshToken,
+              clientId,
+              clientSecret
+            });
+          }
+
+          setGdriveAccounts(updatedAccounts);
+
+          // Set akun default
+          localStorage.setItem('gdrive_token', accessToken);
+          if (refreshToken) {
+            localStorage.setItem('gdrive_refresh_token', refreshToken);
+          }
+          localStorage.setItem('gdrive_client_id', clientId);
+          localStorage.setItem('gdrive_client_secret', clientSecret);
+
+          setConnectedUser({ name, email });
+          showToast(`Akun ${email} berhasil dihubungkan!`, 'success');
+        } else {
+          showToast('Gagal mendapatkan profil pengguna Google', 'error');
+        }
+      } else {
+        const errData = await res.json();
+        console.error('Exchange token error:', errData);
+        showToast(`Gagal menukar kode otorisasi: ${errData.error_description || errData.error}`, 'error');
+      }
+    } catch (err: any) {
+      console.error('Exchange token error:', err);
+      showToast(`Error penukaran token: ${err.message || err}`, 'error');
+    }
+  };
 
   const testConnection = async (currentToken: string) => {
     if (!currentToken) {
@@ -126,9 +245,64 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
 
+  const refreshAccountToken = async (email: string): Promise<string | null> => {
+    const currentAccounts = gdriveAccountsRef.current;
+    const account = currentAccounts.find(acc => acc.email === email);
+    if (!account) return null;
+
+    try {
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          client_id: account.clientId,
+          client_secret: account.clientSecret,
+          refresh_token: account.refreshToken,
+          grant_type: 'refresh_token'
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const newAccessToken = data.access_token;
+        
+        const updatedAccounts = currentAccounts.map(acc => {
+          if (acc.email === email) {
+            return { ...acc, token: newAccessToken };
+          }
+          return acc;
+        });
+        setGdriveAccounts(updatedAccounts);
+
+        const defaultToken = localStorage.getItem('gdrive_token');
+        const defaultEmail = connectedUser?.email;
+        if (defaultEmail === email || !defaultToken) {
+          localStorage.setItem('gdrive_token', newAccessToken);
+          setConnectedUser({ name: account.name, email: account.email });
+        }
+        
+        return newAccessToken;
+      }
+    } catch (e) {
+      console.error(`Gagal refresh token untuk ${email}:`, e);
+    }
+    return null;
+  };
+
   const refreshAccessToken = async (): Promise<string | null> => {
     if (refreshPromiseRef.current) {
       return refreshPromiseRef.current;
+    }
+
+    const defaultEmail = connectedUser?.email;
+    const currentAccounts = gdriveAccountsRef.current;
+    if (defaultEmail && currentAccounts.some(acc => acc.email === defaultEmail)) {
+      refreshPromiseRef.current = refreshAccountToken(defaultEmail);
+      const res = await refreshPromiseRef.current;
+      refreshPromiseRef.current = null;
+      return res;
     }
 
     const refreshToken = localStorage.getItem('gdrive_refresh_token');
@@ -247,6 +421,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   useEffect(() => {
+    let unlisten: (() => void) | undefined;
     const init = async () => {
       try {
         await invoke('init_database');
@@ -260,6 +435,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     };
     init();
+
+    const setupListener = async () => {
+      try {
+        unlisten = await listen<string>('gdrive-oauth-code', async (event) => {
+          const code = event.payload;
+          if (code) {
+            await exchangeCodeForToken(code);
+          }
+        });
+      } catch (err) {
+        console.error('Gagal memasang event listener oauth:', err);
+      }
+    };
+    setupListener();
+
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   useEffect(() => {
@@ -447,6 +640,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setConnectedUser,
       testConnection,
       refreshAccessToken,
+      gdriveAccounts,
+      setGdriveAccounts,
+      refreshAccountToken,
     }}>
       {children}
     </AppContext.Provider>

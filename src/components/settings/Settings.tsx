@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import InvoiceSettings from './InvoiceSettings';
 import ServiceManager from '../services/ServiceManager';
 import { useAppContext } from '../../contexts/AppContext';
+import { invoke } from '@tauri-apps/api/core';
 
 const Settings: React.FC = () => {
   const { 
@@ -14,12 +15,14 @@ const Settings: React.FC = () => {
     deleteFile, 
     showConfirm,
     setConnectedUser: setGlobalConnectedUser,
-    refreshAccessToken
+    gdriveAccounts,
+    setGdriveAccounts,
+    refreshAccountToken
   } = useAppContext();
 
   const [token, setToken] = useState(localStorage.getItem('gdrive_token') || '');
   const [parentFolderId, setParentFolderId] = useState(localStorage.getItem('gdrive_parent_folder_id') || '');
-  const [clientId, setClientId] = useState(localStorage.getItem('gdrive_client_id') || '');
+  const [clientId, setClientId] = useState(localStorage.getItem('gdrive_client_id') || '935478440552-k48b61cglp06gskchsc7qg6l2i1pkhn1.apps.googleusercontent.com');
   const [clientSecret, setClientSecret] = useState(localStorage.getItem('gdrive_client_secret') || '');
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem('gdrive_refresh_token') || '');
   const [showSecret, setShowSecret] = useState(false);
@@ -72,150 +75,235 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleAddAccount = async () => {
+    const port = 50007;
+    try {
+      setTestingConnection(true);
+      await invoke('start_oauth_server', { port });
+
+      const client_id = clientId.trim() || '935478440552-k48b61cglp06gskchsc7qg6l2i1pkhn1.apps.googleusercontent.com';
+      const redirect_uri = encodeURIComponent(`http://localhost:${port}`);
+      const scopes = encodeURIComponent(
+        'https://www.googleapis.com/auth/drive.readonly ' +
+        'https://www.googleapis.com/auth/userinfo.profile ' +
+        'https://www.googleapis.com/auth/userinfo.email'
+      );
+      
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scopes}&prompt=select_account`;
+      
+      const { openUrl } = await import('@tauri-apps/plugin-opener');
+      await openUrl(authUrl);
+      
+      showToast('Browser terbuka. Silakan lakukan proses login Google.', 'info');
+    } catch (err: any) {
+      console.error('OAuth start server error:', err);
+      showToast(`Gagal memulai proses login: ${err.message || err}`, 'error');
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const handleRemoveAccount = (email: string) => {
+    showConfirm({
+      title: 'Putuskan Akun',
+      message: `Apakah Anda yakin ingin memutuskan akun "${email}"? Berkas Google Drive milik akun ini akan tetap ada di database sampai Anda melakukan sinkronisasi ulang.`,
+      confirmText: 'Putuskan',
+      type: 'danger',
+      onConfirm: () => {
+        const updatedAccounts = gdriveAccounts.filter(acc => acc.email !== email);
+        setGdriveAccounts(updatedAccounts);
+        
+        if (connectedUser?.email === email) {
+          if (updatedAccounts.length > 0) {
+            const nextAcc = updatedAccounts[0];
+            localStorage.setItem('gdrive_token', nextAcc.token);
+            localStorage.setItem('gdrive_refresh_token', nextAcc.refreshToken);
+            localStorage.setItem('gdrive_client_id', nextAcc.clientId);
+            localStorage.setItem('gdrive_client_secret', nextAcc.clientSecret);
+            setGlobalConnectedUser({ name: nextAcc.name, email: nextAcc.email });
+            setConnectedUser({ name: nextAcc.name, email: nextAcc.email });
+          } else {
+            localStorage.removeItem('gdrive_token');
+            localStorage.removeItem('gdrive_refresh_token');
+            setGlobalConnectedUser(null);
+            setConnectedUser(null);
+          }
+        }
+        showToast(`Akun ${email} berhasil diputuskan.`, 'success');
+      }
+    });
+  };
+
   const handleSync = async () => {
-    let activeToken = token;
-    
-    // Coba refresh token jika access token kosong tapi ada refresh token
-    if (!activeToken && refreshToken && clientId && clientSecret) {
-      setSyncing(true);
-      setSyncProgress('Memperbarui token Google Drive...');
-      const renewed = await refreshAccessToken();
-      if (renewed) {
-        activeToken = renewed;
-        setToken(renewed);
+    let targetAccounts = [...gdriveAccounts];
+    if (targetAccounts.length === 0) {
+      if (token || (refreshToken && clientId && clientSecret)) {
+        targetAccounts.push({
+          email: connectedUser?.email || 'default_account',
+          name: connectedUser?.name || 'Default Account',
+          token: token,
+          refreshToken: refreshToken,
+          clientId: clientId,
+          clientSecret: clientSecret
+        });
       }
     }
 
-    if (!activeToken) {
-      showToast('Masukkan Token Akses atau Refresh Token terlebih dahulu!', 'error');
+    if (targetAccounts.length === 0) {
+      showToast('Hubungkan minimal satu akun Google Drive terlebih dahulu!', 'error');
       return;
     }
-    
+
     setSyncing(true);
-    setSyncProgress('Menghubungkan ke Google Drive...');
+    setSyncProgress('Memulai sinkronisasi multi-akun...');
+
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalDeleted = 0;
+
+    const allDriveFilePaths = new Set<string>();
+
     try {
-      // Kita selalu query "trashed = false" agar dapat mengambil seluruh struktur file/folder GDrive 
-      // (My Drive + Shared with me), lalu jika parentFolderId ditentukan, kita filter keturunannya secara lokal.
-      const q = "trashed = false";
-      const driveFiles: any[] = [];
-      let nextPageToken = '';
-      let page = 1;
-
-      do {
-        setSyncProgress(`Mengambil daftar file Google Drive (Halaman ${page})...`);
-        let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,modifiedTime,size,parents,shared)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true`;
-        if (nextPageToken) {
-          url += `&pageToken=${nextPageToken}`;
-        }
-
-        let res = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${activeToken}`
-          }
-        });
-
-        if (res.status === 401 && refreshAccessToken) {
-          setSyncProgress('Token kedaluwarsa. Mencoba memperbarui token...');
-          const renewed = await refreshAccessToken();
+      for (const account of targetAccounts) {
+        setSyncProgress(`Menghubungkan ke Google Drive untuk ${account.email}...`);
+        
+        let activeToken = account.token;
+        if (!activeToken && account.refreshToken && account.clientId && account.clientSecret) {
+          setSyncProgress(`Memperbarui token untuk ${account.email}...`);
+          const renewed = await refreshAccountToken(account.email);
           if (renewed) {
             activeToken = renewed;
-            setToken(renewed);
-            res = await fetch(url, {
-              headers: {
-                'Authorization': `Bearer ${activeToken}`
-              }
-            });
           }
         }
 
-        if (!res.ok) {
-          throw new Error(`Gagal mengambil data halaman ${page}: ${res.status}`);
+        if (!activeToken) {
+          console.warn(`Token tidak tersedia untuk ${account.email}, melewati sinkronisasi.`);
+          continue;
         }
 
-        const data = await res.json();
-        const filesPage = data.files || [];
-        driveFiles.push(...filesPage);
+        const q = "trashed = false";
+        const driveFiles: any[] = [];
+        let nextPageToken = '';
+        let page = 1;
 
-        nextPageToken = data.nextPageToken || '';
-        page++;
-      } while (nextPageToken);
+        do {
+          setSyncProgress(`Mengambil file ${account.email} (Halaman ${page})...`);
+          let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,modifiedTime,size,parents,shared)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true`;
+          if (nextPageToken) {
+            url += `&pageToken=${nextPageToken}`;
+          }
 
-      // Penyaringan rekursif secara lokal jika parentFolderId diisi
-      let filteredDriveFiles = driveFiles;
-      if (parentFolderId.trim()) {
-        const targetParentId = parentFolderId.trim();
-        const descendantIds = new Set<string>();
-        descendantIds.add(targetParentId);
+          let res = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${activeToken}`
+            }
+          });
 
-        let addedNew = true;
-        while (addedNew) {
-          addedNew = false;
-          for (const df of driveFiles) {
-            const parents = df.parents || [];
-            for (const p of parents) {
-              if (descendantIds.has(p) && !descendantIds.has(df.id)) {
-                descendantIds.add(df.id);
-                addedNew = true;
+          if (res.status === 401) {
+            setSyncProgress(`Token kedaluwarsa untuk ${account.email}. Memperbarui token...`);
+            const renewed = await refreshAccountToken(account.email);
+            if (renewed) {
+              activeToken = renewed;
+              res = await fetch(url, {
+                headers: {
+                  'Authorization': `Bearer ${activeToken}`
+                }
+              });
+            }
+          }
+
+          if (!res.ok) {
+            console.error(`Gagal mengambil data halaman ${page} untuk ${account.email}: ${res.status}`);
+            break;
+          }
+
+          const data = await res.json();
+          const filesPage = data.files || [];
+          driveFiles.push(...filesPage);
+
+          nextPageToken = data.nextPageToken || '';
+          page++;
+        } while (nextPageToken);
+
+        // Penyaringan rekursif secara lokal jika parentFolderId diisi
+        let filteredDriveFiles = driveFiles;
+        if (parentFolderId.trim()) {
+          const targetParentId = parentFolderId.trim();
+          const descendantIds = new Set<string>();
+          descendantIds.add(targetParentId);
+
+          let addedNew = true;
+          while (addedNew) {
+            addedNew = false;
+            for (const df of driveFiles) {
+              const parents = df.parents || [];
+              for (const p of parents) {
+                if (descendantIds.has(p) && !descendantIds.has(df.id)) {
+                  descendantIds.add(df.id);
+                  addedNew = true;
+                }
               }
             }
           }
-        }
 
-        // Hanya sertakan file yang parent-nya ada di descendantIds (dan bukan folder induk itu sendiri)
-        filteredDriveFiles = driveFiles.filter(df => {
-          if (df.id === targetParentId) return false;
-          const parents = df.parents || [];
-          return parents.some((p: string) => descendantIds.has(p));
-        });
-      }
-
-      setSyncProgress(`Ditemukan ${filteredDriveFiles.length} file yang cocok. Menyinkronkan ke database lokal...`);
-
-      const existingGDriveFiles = files.filter(f => f.type === 'gdrive');
-
-      let createdCount = 0;
-      let updatedCount = 0;
-      let deletedCount = 0;
-
-      for (const df of filteredDriveFiles) {
-        const path = `gdrive://${df.id}`;
-        const existing = existingGDriveFiles.find(f => f.path === path);
-
-        const parentId = df.parents && df.parents.length > 0 ? df.parents[0] : 'root';
-        const isShared = df.shared ? '1' : '0';
-        const fileData = {
-          path,
-          filename: df.name,
-          type: 'gdrive',
-          status: existing ? existing.status : 'Cloud',
-          version_label: df.mimeType,
-          last_modified: df.modifiedTime,
-          modified_by: `${df.size ? df.size.toString() : '0'}|${parentId}|${isShared}`,
-          is_readonly: true
-        };
-
-        if (existing) {
-          await updateFile({
-            ...existing,
-            ...fileData
+          filteredDriveFiles = driveFiles.filter(df => {
+            if (df.id === targetParentId) return false;
+            const parents = df.parents || [];
+            return parents.some((p: string) => descendantIds.has(p));
           });
-          updatedCount++;
-        } else {
-          await addFile(fileData);
-          createdCount++;
+        }
+
+        setSyncProgress(`Menyelaraskan data lokal untuk ${account.email} (${filteredDriveFiles.length} file)...`);
+
+        const existingGDriveFiles = files.filter(f => f.type === 'gdrive');
+
+        for (const df of filteredDriveFiles) {
+          const path = `gdrive://${df.id}`;
+          allDriveFilePaths.add(path);
+          const existing = existingGDriveFiles.find(f => f.path === path);
+
+          const parentId = df.parents && df.parents.length > 0 ? df.parents[0] : 'root';
+          const isShared = df.shared ? '1' : '0';
+          
+          const modifiedByValue = `${df.size ? df.size.toString() : '0'}|${parentId}|${isShared}|${account.email}`;
+
+          const fileData = {
+            path,
+            filename: df.name,
+            type: 'gdrive',
+            status: existing ? existing.status : 'Cloud',
+            version_label: df.mimeType,
+            last_modified: df.modifiedTime,
+            modified_by: modifiedByValue,
+            is_readonly: true
+          };
+
+          if (existing) {
+            await updateFile({
+              ...existing,
+              ...fileData
+            });
+            totalUpdated++;
+          } else {
+            await addFile(fileData);
+            totalCreated++;
+          }
         }
       }
 
-      const driveFilePaths = filteredDriveFiles.map((df: any) => `gdrive://${df.id}`);
+      // Hapus file-file cloud lokal yang tidak ada lagi di Drive manapun
+      const existingGDriveFiles = files.filter(f => f.type === 'gdrive');
       for (const lf of existingGDriveFiles) {
-        if (!driveFilePaths.includes(lf.path)) {
+        if (!allDriveFilePaths.has(lf.path)) {
           await deleteFile(lf.id!);
-          deletedCount++;
+          totalDeleted++;
         }
       }
 
-      showToast(`Sinkronisasi selesai! ${createdCount} file baru, ${updatedCount} diperbarui, ${deletedCount} dihapus.`, 'success');
-      testConnection(token); // Update status koneksi
+      showToast(`Sinkronisasi selesai! ${totalCreated} file baru, ${totalUpdated} diperbarui, ${totalDeleted} dihapus.`, 'success');
+      if (token) {
+        testConnection(token);
+      }
     } catch (error: any) {
       console.error(error);
       showToast(`Gagal sinkronisasi: ${error.message || error}`, 'error');
@@ -339,6 +427,48 @@ const Settings: React.FC = () => {
         {activeSettingsTab === 'services' && <ServiceManager />}
         {activeSettingsTab === 'general' && (
           <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Akun Google Drive Terhubung */}
+            <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'left' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                👤 Akun Google Drive Terhubung
+              </h2>
+              
+              {gdriveAccounts.length === 0 ? (
+                <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', border: '1px dashed var(--border)', textAlign: 'center', marginBottom: '16px' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>Belum ada akun Google Drive yang terhubung.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                  {gdriveAccounts.map(account => (
+                    <div key={account.email} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{account.name}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{account.email}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-danger compact-btn"
+                        onClick={() => handleRemoveAccount(account.email)}
+                        style={{ padding: '4px 8px', fontSize: '11px', height: '24px', cursor: 'pointer' }}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="btn-primary compact-btn"
+                onClick={handleAddAccount}
+                disabled={testingConnection || syncing}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '13px', cursor: 'pointer' }}
+              >
+                ➕ Hubungkan Akun Google Baru
+              </button>
+            </div>
+
             {/* Integrasi Google Drive Card */}
             <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
               <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
