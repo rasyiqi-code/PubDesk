@@ -516,13 +516,16 @@ const InvoiceGenerator: React.FC = () => {
                 </div>
               );
             })}
-
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button className="btn-primary" onClick={handleAddItem} style={{ height: '42px' }}>
-                + Tambah
-              </button>
-            </div>
           </div>
+
+          {/* Tombol Tambah — full width di bawah form */}
+          <button
+            className="btn-primary"
+            onClick={handleAddItem}
+            style={{ width: '100%', padding: '10px', fontSize: '14px', fontWeight: '600', borderRadius: '8px', marginTop: '4px' }}
+          >
+            + Tambah Item
+          </button>
         </div>
 
         {/* List Item */}
