@@ -112,6 +112,8 @@ const InvoicePreview: React.FC = () => {
 
   const accentColor = activeProfile?.accentColor || '#c01c1c';
   const accentColorDark = activeProfile?.accentColorDark || '#991b1b';
+  const headerColor = activeProfile?.headerColor || activeProfile?.accentColor || '#c01c1c';
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', overflow: 'auto', padding: '20px', alignItems: 'center', justifyContent: 'center' }}>
@@ -170,13 +172,13 @@ const InvoicePreview: React.FC = () => {
               <rect x="267" y="54" width="390" height="78" fill="#222933" />
 
               {/* Bidang merah utama (Warna dinamis) - Sejajar dengan panel hitam y=54 ke y=132 */}
-              <polygon points="0,54 220,54 264.5,132 0,132" fill={accentColor} />
+              <polygon points="0,54 220,54 264.5,132 0,132" fill={headerColor} />
 
               {/* Pemisah putih agar warna hitam tidak menyelip */}
               <polygon points="220,54 236,54 280.5,132 264.5,132" fill="#ffffff" />
 
               {/* Aksen merah kedua (Warna dinamis) */}
-              <polygon points="236,54 271,54 316.5,132 280.5,132" fill={accentColor} />
+              <polygon points="236,54 271,54 316.5,132 280.5,132" fill={headerColor} />
 
               {/* Logo placeholder / Gambar Logo Kustom */}
               {activeProfile?.companyLogo ? (
@@ -192,7 +194,7 @@ const InvoicePreview: React.FC = () => {
                 <>
                   <g transform="translate(40 61)">
                     <path d="M20 0 L38 10 L38 33 L20 44 L2 33 L2 10 Z" fill="#ffffff" />
-                    <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill={accentColor} />
+                    <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill={headerColor} />
                   </g>
 
                   {/* Nama perusahaan */}
@@ -461,10 +463,10 @@ const InvoicePreview: React.FC = () => {
               <path d="M 0 20 H 462 L 499.5 70 H 0 Z" fill="#222933" />
 
               {/* Bidang merah kanan (Warna dinamis) */}
-              <path d="M 538.25 20 H 1045 V 70 H 575.75 Z" fill={accentColor} />
+              <path d="M 538.25 20 H 1045 V 70 H 575.75 Z" fill={headerColor} />
 
               {/* Diagonal merah tengah (Warna dinamis) */}
-              <path d="M 470 5 H 509 L 557.75 70 H 518.75 Z" fill={accentColor} />
+              <path d="M 470 5 H 509 L 557.75 70 H 518.75 Z" fill={headerColor} />
 
               {/* Pemisah putih */}
               <path d="M 509 5 H 527 L 575.75 70 H 557.75 Z" fill="#ffffff" />

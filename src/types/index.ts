@@ -80,6 +80,7 @@ export interface InvoiceProfile {
   invoiceTitleText: string;
   accentColor: string;
   accentColorDark: string;
+  headerColor: string;
   defaultHal: string;
   defaultLampiran: string;
   salamPembuka: string;

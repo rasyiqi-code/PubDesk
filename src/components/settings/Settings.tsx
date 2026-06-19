@@ -24,6 +24,7 @@ const Settings: React.FC = () => {
   const [invoiceTitleText, setInvoiceTitleText] = useState('INVOICE');
   const [accentColor, setAccentColor] = useState('#1e70cd');
   const [accentColorDark, setAccentColorDark] = useState('#1e3a8a');
+  const [headerColor, setHeaderColor] = useState('#d93838');
   const [defaultHal, setDefaultHal] = useState('');
   const [defaultLampiran, setDefaultLampiran] = useState('-');
   const [salamPembuka, setSalamPembuka] = useState('');
@@ -53,6 +54,7 @@ const Settings: React.FC = () => {
       setInvoiceTitleText('INVOICE');
       setAccentColor('#1e70cd');
       setAccentColorDark('#1e3a8a');
+      setHeaderColor('#d93838');
       setDefaultHal('Perihal Invoice');
       setDefaultLampiran('-');
       setSalamPembuka('Bersama surat ini kami memberikan gambaran rincian biaya dengan ketentuan sebagai berikut:');
@@ -79,6 +81,7 @@ const Settings: React.FC = () => {
         setInvoiceTitleText(profile.invoiceTitleText || 'INVOICE');
         setAccentColor(profile.accentColor || '#1e70cd');
         setAccentColorDark(profile.accentColorDark || '#1e3a8a');
+        setHeaderColor(profile.headerColor || profile.accentColor || '#d93838');
         setDefaultHal(profile.defaultHal || '');
         setDefaultLampiran(profile.defaultLampiran || '-');
         setSalamPembuka(profile.salamPembuka || '');
@@ -121,6 +124,7 @@ const Settings: React.FC = () => {
       invoiceTitleText,
       accentColor,
       accentColorDark,
+      headerColor,
       defaultHal,
       defaultLampiran,
       salamPembuka,
@@ -379,6 +383,25 @@ const Settings: React.FC = () => {
                 value={accentColorDark}
                 onChange={(e) => setAccentColorDark(e.target.value)}
                 placeholder="#1e3a8a"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Warna Header & Footer SVG</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="color"
+                style={{ width: '42px', height: '42px', padding: '2px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)', cursor: 'pointer' }}
+                value={headerColor}
+                onChange={(e) => setHeaderColor(e.target.value)}
+              />
+              <input
+                type="text"
+                style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                value={headerColor}
+                onChange={(e) => setHeaderColor(e.target.value)}
+                placeholder="#d93838"
               />
             </div>
           </div>
