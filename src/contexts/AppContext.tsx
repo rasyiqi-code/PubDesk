@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppState, Book, Contact, Invoice, File } from '../types';
+import { AppState, Book, Contact, Invoice, File, Service } from '../types';
 import { invoke } from '@tauri-apps/api/core';
 
 interface AppContextType {
@@ -9,16 +9,18 @@ interface AppContextType {
   contacts: Contact[];
   invoices: Invoice[];
   files: File[];
+  services: Service[];
   toast: { message: string; type: 'success' | 'error' | 'info' } | null;
   selectedFileId: number | null;
   setSelectedFileId: (id: number | null) => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
-  fileCategory: 'all' | 'invoice' | 'book' | 'other';
-  setFileCategory: (category: 'all' | 'invoice' | 'book' | 'other') => void;
+  fileCategory: 'all' | 'invoice' | 'book' | 'service' | 'other';
+  setFileCategory: (category: 'all' | 'invoice' | 'book' | 'service' | 'other') => void;
   loadBooks: () => Promise<void>;
   loadContacts: () => Promise<void>;
   loadInvoices: () => Promise<void>;
   loadFiles: () => Promise<void>;
+  loadServices: () => Promise<void>;
   addBook: (book: Book) => Promise<number>;
   deleteBook: (id: number) => Promise<void>;
   updateBook: (book: Book) => Promise<void>;
@@ -26,10 +28,15 @@ interface AppContextType {
   addInvoice: (invoice: Invoice) => Promise<number>;
   addFile: (file: File) => Promise<number>;
   deleteFile: (id: number) => Promise<void>;
+  addService: (service: Service) => Promise<number>;
+  updateService: (service: Service) => Promise<void>;
+  deleteService: (id: number) => Promise<void>;
   rightPanelVisible: boolean;
   setRightPanelVisible: (visible: boolean) => void;
   selectedBookId: number | null;
   setSelectedBookId: (id: number | null) => void;
+  selectedServiceId: number | null;
+  setSelectedServiceId: (id: number | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -43,11 +50,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
-  const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'book' | 'other'>('all');
+  const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'book' | 'service' | 'other'>('all');
   const [rightPanelVisible, setRightPanelVisible] = useState(true);
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -57,6 +66,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         await loadContacts();
         await loadInvoices();
         await loadFiles();
+        await loadServices();
       } catch (error) {
         console.error('Failed to initialize app:', error);
       }
@@ -159,6 +169,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const loadServices = async () => {
+    try {
+      const data = await invoke<Service[]>('get_services');
+      setServices(data);
+    } catch (error) {
+      console.error('Failed to load services:', error);
+    }
+  };
+
+  const addService = async (service: Service) => {
+    const id = await invoke<number>('add_service', { service });
+    await loadServices();
+    return id;
+  };
+
+  const updateService = async (service: Service) => {
+    await invoke('update_service', { service });
+    await loadServices();
+  };
+
+  const deleteService = async (id: number) => {
+    await invoke('delete_service', { id });
+    await loadServices();
+    if (selectedServiceId === id) {
+      setSelectedServiceId(null);
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       appState,
@@ -167,6 +205,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       contacts,
       invoices,
       files,
+      services,
       toast,
       selectedFileId,
       setSelectedFileId,
@@ -177,6 +216,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       loadContacts,
       loadInvoices,
       loadFiles,
+      loadServices,
       addBook,
       deleteBook,
       updateBook,
@@ -184,10 +224,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addInvoice,
       addFile,
       deleteFile,
+      addService,
+      updateService,
+      deleteService,
       rightPanelVisible,
       setRightPanelVisible,
       selectedBookId,
       setSelectedBookId,
+      selectedServiceId,
+      setSelectedServiceId,
     }}>
       {children}
     </AppContext.Provider>

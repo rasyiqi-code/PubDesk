@@ -53,6 +53,35 @@ fn update_book(state: State<'_, AppState>, book: Book) -> Result<(), String> {
     db.update_book(&book).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn get_services(state: State<'_, AppState>) -> Result<Vec<Service>, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.get_services().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn add_service(state: State<'_, AppState>, service: Service) -> Result<i64, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.add_service(&service).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn update_service(state: State<'_, AppState>, service: Service) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.update_service(&service).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_service(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database not initialized")?;
+    db.delete_service(id).map_err(|e| e.to_string())
+}
+
+
 
 // Contacts commands
 #[tauri::command]
@@ -179,6 +208,10 @@ pub fn run() {
             add_book,
             delete_book,
             update_book,
+            get_services,
+            add_service,
+            update_service,
+            delete_service,
             get_contacts,
             add_contact,
             get_invoices,

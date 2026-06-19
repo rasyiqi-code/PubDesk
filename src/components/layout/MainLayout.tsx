@@ -8,6 +8,7 @@ import Settings from '../settings/Settings';
 import Toast from '../shared/Toast';
 import FileManager from '../files/FileManager';
 import BookManager from '../books/BookManager';
+import ServiceManager from '../services/ServiceManager';
 
 
 const MainLayout = () => {
@@ -68,6 +69,8 @@ const MainLayout = () => {
         return <FileManager />;
       case 'books':
         return <BookManager />;
+      case 'services':
+        return <ServiceManager />;
       case 'ledger':
         return <div className="module-content" style={{ padding: '24px', color: '#a89880' }}><h2>Buku Besar Virtual</h2><p>Fitur akan segera tersedia</p></div>;
       case 'settings':

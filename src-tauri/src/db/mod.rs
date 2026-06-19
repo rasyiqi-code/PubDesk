@@ -218,4 +218,56 @@ impl Database {
         self.conn.execute("DELETE FROM files WHERE id = ?1", params![id])?;
         Ok(())
     }
+
+    // Services CRUD
+    pub fn add_service(&self, service: &Service) -> Result<i64, DbError> {
+        self.conn.execute(
+            "INSERT INTO services (name, price, description, category) VALUES (?1, ?2, ?3, ?4)",
+            params![
+                service.name,
+                service.price,
+                service.description,
+                service.category
+            ]
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn get_services(&self) -> Result<Vec<Service>, DbError> {
+        let mut stmt = self.conn.prepare("SELECT id, name, price, description, category FROM services")?;
+        let services = stmt.query_map([], |row| {
+            Ok(Service {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                price: row.get(2)?,
+                description: row.get(3)?,
+                category: row.get(4)?,
+            })
+        })?;
+        
+        let mut result = Vec::new();
+        for service in services {
+            result.push(service?);
+        }
+        Ok(result)
+    }
+
+    pub fn update_service(&self, service: &Service) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE services SET name = ?1, price = ?2, description = ?3, category = ?4 WHERE id = ?5",
+            params![
+                service.name,
+                service.price,
+                service.description,
+                service.category,
+                service.id
+            ]
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_service(&self, id: i64) -> Result<(), DbError> {
+        self.conn.execute("DELETE FROM services WHERE id = ?1", params![id])?;
+        Ok(())
+    }
 }

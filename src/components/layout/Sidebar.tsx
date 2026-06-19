@@ -13,6 +13,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
     { id: 'extractor' as const, label: 'Pre-order Extractor', icon: '📥' },
     { id: 'files' as const, label: 'Smart Folders', icon: '📁' },
     { id: 'books' as const, label: 'Master Buku', icon: '📚' },
+    { id: 'services' as const, label: 'Master Layanan', icon: '🛠️' },
     { id: 'ledger' as const, label: 'Buku Besar', icon: '📊' },
   ];
 
@@ -78,6 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                     { cat: 'all' as const, label: 'Semua Berkas', icon: '📂' },
                     { cat: 'invoice' as const, label: 'Dokumen Invoice', icon: '📄' },
                     { cat: 'book' as const, label: 'Katalog Buku', icon: '📚' },
+                    { cat: 'service' as const, label: 'Katalog Layanan', icon: '🛠️' },
                     { cat: 'other' as const, label: 'Berkas Lainnya', icon: '📁' },
                   ].map((sub) => {
                     const isSubActive = isActive && fileCategory === sub.cat;

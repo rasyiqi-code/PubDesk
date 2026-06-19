@@ -69,8 +69,16 @@ export interface Invoice {
   file_path?: string;
 }
 
+export interface Service {
+  id?: number;
+  name: string;
+  price: number;
+  description?: string;
+  category: string;
+}
+
 export interface AppState {
-  activeModule: 'invoice' | 'extractor' | 'files' | 'ledger' | 'settings' | 'books';
+  activeModule: 'invoice' | 'extractor' | 'files' | 'ledger' | 'settings' | 'books' | 'services';
 }
 
 export interface InvoiceProfile {

@@ -96,5 +96,17 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
         [],
     )?;
 
+    // Services table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            price REAL NOT NULL,
+            description TEXT,
+            category TEXT NOT NULL DEFAULT 'other'
+        )",
+        [],
+    )?;
+
     Ok(())
 }

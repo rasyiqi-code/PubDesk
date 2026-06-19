@@ -120,3 +120,24 @@ impl Default for Invoice {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Service {
+    pub id: Option<i64>,
+    pub name: String,
+    pub price: f64,
+    pub description: Option<String>,
+    pub category: String,
+}
+
+impl Default for Service {
+    fn default() -> Self {
+        Self {
+            id: None,
+            name: String::new(),
+            price: 0.0,
+            description: None,
+            category: "other".to_string(),
+        }
+    }
+}
