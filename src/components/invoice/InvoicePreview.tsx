@@ -182,10 +182,10 @@ const InvoicePreview: React.FC = () => {
               {activeProfile?.companyLogo ? (
                 <image
                   href={activeProfile.companyLogo}
-                  x="30"
-                  y="40"
+                  x="35"
+                  y="27"
                   width="180"
-                  height="70"
+                  height="111"
                   preserveAspectRatio="xMinYMid meet"
                 />
               ) : (
