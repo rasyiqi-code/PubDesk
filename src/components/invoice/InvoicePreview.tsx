@@ -178,19 +178,32 @@ const InvoicePreview: React.FC = () => {
               {/* Aksen merah kedua (Warna dinamis) */}
               <polygon points="232,49 268,49 320,138 284,138" fill={accentColor} />
 
-              {/* Logo placeholder */}
-              <g transform="translate(40 61)">
-                <path d="M20 0 L38 10 L38 33 L20 44 L2 33 L2 10 Z" fill="#ffffff" />
-                <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill={accentColor} />
-              </g>
+              {/* Logo placeholder / Gambar Logo Kustom */}
+              {activeProfile?.companyLogo ? (
+                <image
+                  href={activeProfile.companyLogo}
+                  x="30"
+                  y="40"
+                  width="180"
+                  height="70"
+                  preserveAspectRatio="xMinYMid meet"
+                />
+              ) : (
+                <>
+                  <g transform="translate(40 61)">
+                    <path d="M20 0 L38 10 L38 33 L20 44 L2 33 L2 10 Z" fill="#ffffff" />
+                    <path d="M20 11 L29 16 L29 28 L20 33 L11 28 L11 16 Z" fill={accentColor} />
+                  </g>
 
-              {/* Nama perusahaan */}
-              <text x="88" y="82" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="15" fontWeight="700" letterSpacing="1.4">
-                {activeProfile?.companyName || 'CV KBM'}
-              </text>
-              <text x="89" y="96" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="7" fontWeight="600" letterSpacing="1.8">
-                {activeProfile?.companyTagline || 'KARYA BAKTI MAKMUR'}
-              </text>
+                  {/* Nama perusahaan */}
+                  <text x="88" y="82" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="15" fontWeight="700" letterSpacing="1.4">
+                    {activeProfile?.companyName || 'CV KBM'}
+                  </text>
+                  <text x="89" y="96" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="7" fontWeight="600" letterSpacing="1.8">
+                    {activeProfile?.companyTagline || 'KARYA BAKTI MAKMUR'}
+                  </text>
+                </>
+              )}
 
               {/* Judul invoice */}
               <text x="389" y="116" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="54" fontWeight="700" letterSpacing="2">

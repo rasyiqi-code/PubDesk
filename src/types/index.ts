@@ -96,4 +96,5 @@ export interface InvoiceProfile {
   bankName: string;
   bankAccountNo: string;
   bankAccountOwner: string;
+  companyLogo?: string;
 }

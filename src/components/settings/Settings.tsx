@@ -41,6 +41,7 @@ const Settings: React.FC = () => {
   const [bankName, setBankName] = useState('');
   const [bankAccountNo, setBankAccountNo] = useState('');
   const [bankAccountOwner, setBankAccountOwner] = useState('');
+  const [companyLogo, setCompanyLogo] = useState('');
 
   // Load selected profile data into form
   useEffect(() => {
@@ -68,6 +69,7 @@ const Settings: React.FC = () => {
       setBankName('');
       setBankAccountNo('');
       setBankAccountOwner('');
+      setCompanyLogo('');
     } else {
       const profile = profiles.find((p) => p.id === selectedProfileId);
       if (profile) {
@@ -93,6 +95,7 @@ const Settings: React.FC = () => {
         setBankName(profile.bankName || '');
         setBankAccountNo(profile.bankAccountNo || '');
         setBankAccountOwner(profile.bankAccountOwner || '');
+        setCompanyLogo(profile.companyLogo || '');
       }
     }
   }, [selectedProfileId, isEditingNew, profiles]);
@@ -134,6 +137,7 @@ const Settings: React.FC = () => {
       bankName,
       bankAccountNo,
       bankAccountOwner,
+      companyLogo,
     };
 
     addOrUpdateProfile(newProfile);
@@ -414,6 +418,54 @@ const Settings: React.FC = () => {
               onChange={(e) => setInvoiceTitleText(e.target.value)}
               placeholder="Contoh: INVOICE"
             />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Logo Kop Surat (PNG/JPG/SVG)</label>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {companyLogo && (
+                <div style={{ position: 'relative', width: '42px', height: '42px', borderRadius: '8px', border: '1px solid var(--border)', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <img src={companyLogo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                  <button 
+                    type="button" 
+                    onClick={() => setCompanyLogo('')} 
+                    style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '0 0 0 4px', cursor: 'pointer', fontSize: '10px', padding: '1px 3px' }}
+                    title="Hapus Logo"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              <div style={{ flex: 1 }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 1024 * 1024) {
+                        alert('Ukuran berkas logo terlalu besar (maksimal 1MB)!');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        setCompanyLogo(event.target?.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  style={{ display: 'none' }}
+                  id="logo-upload-input"
+                />
+                <label 
+                  htmlFor="logo-upload-input" 
+                  className="btn-secondary" 
+                  style={{ cursor: 'pointer', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', textAlign: 'center', display: 'block' }}
+                >
+                  {companyLogo ? 'Ubah Logo' : 'Unggah Logo'}
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
