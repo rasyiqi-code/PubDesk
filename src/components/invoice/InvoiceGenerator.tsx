@@ -382,40 +382,35 @@ const InvoiceGenerator: React.FC = () => {
         {/* Input Form Item */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ flex: 2, minWidth: '200px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)' }}>Pilih dari Layanan Master</label>
-              <select
-                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-panel)', color: 'var(--text-primary)', fontSize: '14px' }}
-                value={selectedServiceIdState}
-                onChange={(e) => {
-                  setSelectedServiceIdState(e.target.value);
-                  if (e.target.value) {
-                    const service = services.find(s => s.id === parseInt(e.target.value));
-                    if (service) {
-                      setCustomTitle(service.name);
-                      setItemPrice(service.price);
-                    }
-                  }
-                }}
-              >
-                <option value="">-- Kustom / Ketik Sendiri --</option>
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.name} (Tarif: {new Intl.NumberFormat('id-ID').format(service.price)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ flex: 3, minWidth: '250px' }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
               <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Layanan / Karya</label>
               <input
+                list="services-datalist"
                 type="text"
                 style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-panel)', color: 'var(--text-primary)' }}
                 value={customTitle}
-                onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="Ketik nama layanan atau karya di sini..."
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomTitle(val);
+                  
+                  // Periksa jika input cocok dengan salah satu layanan master
+                  const matchedService = services.find(s => s.name === val);
+                  if (matchedService) {
+                    setSelectedServiceIdState(String(matchedService.id));
+                    setItemPrice(matchedService.price);
+                  } else {
+                    setSelectedServiceIdState('');
+                  }
+                }}
+                placeholder="Ketik nama layanan / karya atau pilih dari Master Layanan..."
               />
+              <datalist id="services-datalist">
+                {services.map((service) => (
+                  <option key={service.id} value={service.name}>
+                    Tarif: Rp {new Intl.NumberFormat('id-ID').format(service.price)}
+                  </option>
+                ))}
+              </datalist>
             </div>
           </div>
 
