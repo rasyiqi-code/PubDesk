@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
-import { Service, InvoiceItem } from '../../types';
+import { InvoiceItem } from '../../types';
 
 const InvoiceGenerator: React.FC = () => {
-  const { services, addService, addInvoice, addFile, showToast } = useAppContext();
+  const { services, addInvoice, addFile, showToast } = useAppContext();
   const {
     customer, setCustomer,
     items, addItem, removeItem,
@@ -38,13 +38,7 @@ const InvoiceGenerator: React.FC = () => {
   const [itemShippingCostInput, setItemShippingCostInput] = useState(75000);
   const [packageNameInput, setPackageNameInput] = useState('Paket Gold');
 
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [newService, setNewService] = useState<Partial<Service>>({
-    name: '',
-    price: 0,
-    category: 'penerbitan',
-    description: ''
-  });
+
 
   // Dynamically set default values when activeProfile changes
   useEffect(() => {
@@ -230,18 +224,7 @@ const InvoiceGenerator: React.FC = () => {
     }
   };
 
-  const handleAddService = async () => {
-    if (!newService.name || !newService.price) return;
 
-    await addService(newService as Service);
-    setShowServiceModal(false);
-    setNewService({
-      name: '',
-      price: 0,
-      category: 'penerbitan',
-      description: ''
-    });
-  };
 
   const formatPrice = (amount: number) => {
     return new Intl.NumberFormat('id-ID').format(amount);
@@ -394,9 +377,6 @@ const InvoiceGenerator: React.FC = () => {
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', borderBottom: '1px solid var(--border)', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>📦 Rincian Item</h2>
-          <button className="btn-success" onClick={() => setShowServiceModal(true)} style={{ padding: '4px 10px', fontSize: '12px' }}>
-            Data Master Layanan
-          </button>
         </div>
 
         {/* Input Form Item */}
@@ -644,59 +624,7 @@ const InvoiceGenerator: React.FC = () => {
         </button>
       </div>
 
-      {showServiceModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowServiceModal(false)}>
-          <div style={{ background: 'var(--bg-panel)', borderRadius: '12px', padding: '24px', minWidth: '400px', border: '1px solid var(--border)' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ color: 'var(--text-primary)' }}>Tambah Layanan Master</h2>
-              <button style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '24px', cursor: 'pointer' }} onClick={() => setShowServiceModal(false)}>✕</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="form-group">
-                <label>Nama Layanan</label>
-                <input
-                  type="text"
-                  value={newService.name || ''}
-                  onChange={(e) => setNewService((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Nama Layanan"
-                />
-              </div>
-              <div className="form-group">
-                <label>Kategori Layanan</label>
-                <select
-                  value={newService.category || 'penerbitan'}
-                  onChange={(e) => setNewService((prev) => ({ ...prev, category: e.target.value }))}
-                  style={{ width: '100%', padding: '8px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                >
-                  <option value="penerbitan">Layanan Penerbitan</option>
-                  <option value="desain_layout">Desain & Layout</option>
-                  <option value="haki">Pendaftaran HAKI</option>
-                  <option value="isbn">Pengajuan ISBN</option>
-                  <option value="mitra">Layanan Mitra</option>
-                  <option value="other">Lainnya</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Tarif / Harga (Rp)</label>
-                <input
-                  type="number"
-                  value={newService.price || 0}
-                  onChange={(e) => setNewService((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                  placeholder="Tarif Layanan"
-                />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleAddService}>
-                Simpan
-              </button>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowServiceModal(false)}>
-                Batal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };
