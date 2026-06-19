@@ -4,7 +4,7 @@
   "description": "Kolom: Judul, Hal, Jenis Naskah, Jml. Cetak, Harga Cetak/pcs, Ongkir, Total",
   "category": "Penerbitan",
   "name": "Cetak Buku + Ongkir",
-  "companyName": "NAMA PENERBIT/PERUSAHAAN",
+  "companyName": "COMPANY",
   "companyTagline": "Tagline Penerbit/Perusahaan",
   "invoiceTitleText": "INVOICE",
   "accentColor": "#d93838",
@@ -33,12 +33,54 @@
   "bankAccountOwner": "Nama Pemilik Rekening",
   "headerType": "logo_text",
   "tableColumns": [
-    { "key": "item_title", "label": "Judul", "type": "text", "align": "left" },
-    { "key": "pages", "label": "Hal", "type": "text", "align": "center", "width": "80px" },
-    { "key": "paper_type", "label": "Jenis Naskah", "type": "text", "align": "center", "width": "90px" },
-    { "key": "quantity", "label": "Jml. Cetak", "type": "number", "align": "center", "width": "80px" },
-    { "key": "price", "label": "Cetak/pcs", "type": "currency", "align": "right", "width": "100px" },
-    { "key": "item_shipping_cost", "label": "Ongkos Kirim", "type": "currency", "align": "right", "width": "100px" },
-    { "key": "total", "label": "Total Biaya", "type": "formula", "align": "right", "width": "110px", "formula": "({price} * {quantity}) + {item_shipping_cost}" }
+    {
+      "key": "item_title",
+      "label": "Judul",
+      "type": "text",
+      "align": "left"
+    },
+    {
+      "key": "pages",
+      "label": "Hal",
+      "type": "text",
+      "align": "center",
+      "width": "80px"
+    },
+    {
+      "key": "paper_type",
+      "label": "Jenis Naskah",
+      "type": "text",
+      "align": "center",
+      "width": "90px"
+    },
+    {
+      "key": "quantity",
+      "label": "Jml. Cetak",
+      "type": "number",
+      "align": "center",
+      "width": "80px"
+    },
+    {
+      "key": "price",
+      "label": "Cetak/pcs",
+      "type": "currency",
+      "align": "right",
+      "width": "100px"
+    },
+    {
+      "key": "item_shipping_cost",
+      "label": "Ongkos Kirim",
+      "type": "currency",
+      "align": "right",
+      "width": "100px"
+    },
+    {
+      "key": "total",
+      "label": "Total Biaya",
+      "type": "formula",
+      "align": "right",
+      "width": "110px",
+      "formula": "({price} * {quantity}) + {item_shipping_cost}"
+    }
   ]
 }

@@ -4,7 +4,7 @@
   "description": "Kolom: Judul, Hal, Jenis Naskah, Jml. Cetak + Paket, Harga Paket",
   "category": "Penerbitan",
   "name": "Penerbitan Buku",
-  "companyName": "NAMA PENERBIT/PERUSAHAAN",
+  "companyName": "COMPANY",
   "companyTagline": "Tagline Penerbit/Perusahaan",
   "invoiceTitleText": "INVOICE",
   "accentColor": "#f59e0b",
@@ -30,10 +30,40 @@
   "bankAccountOwner": "",
   "headerType": "logo_text",
   "tableColumns": [
-    { "key": "item_title", "label": "Judul", "type": "text", "align": "left" },
-    { "key": "pages", "label": "Hal", "type": "text", "align": "center", "width": "80px" },
-    { "key": "paper_type", "label": "Jenis Naskah", "type": "text", "align": "center", "width": "90px" },
-    { "key": "qty_desc", "label": "Jml. Cetak", "type": "formula", "align": "center", "width": "130px", "formula": "{quantity} pcs ({package_name})" },
-    { "key": "price", "label": "Harga Paket", "type": "currency", "align": "right", "width": "110px" }
+    {
+      "key": "item_title",
+      "label": "Judul",
+      "type": "text",
+      "align": "left"
+    },
+    {
+      "key": "pages",
+      "label": "Hal",
+      "type": "text",
+      "align": "center",
+      "width": "80px"
+    },
+    {
+      "key": "paper_type",
+      "label": "Jenis Naskah",
+      "type": "text",
+      "align": "center",
+      "width": "90px"
+    },
+    {
+      "key": "qty_desc",
+      "label": "Jml. Cetak",
+      "type": "formula",
+      "align": "center",
+      "width": "130px",
+      "formula": "{quantity} pcs ({package_name})"
+    },
+    {
+      "key": "price",
+      "label": "Harga Paket",
+      "type": "currency",
+      "align": "right",
+      "width": "110px"
+    }
   ]
 }

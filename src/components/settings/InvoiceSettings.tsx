@@ -12,10 +12,9 @@ const InvoiceSettings: React.FC = () => {
     setActiveProfileId,
     addOrUpdateProfile,
     deleteProfile,
-    resetProfilesToDefault,
     setProfiles
   } = useInvoiceContext();
-  const { showToast, showConfirm } = useAppContext();
+  const { showToast, showConfirm, addFile, files } = useAppContext();
 
   const [selectedProfileId, setSelectedProfileId] = useState<string>(activeProfileId);
   const [isEditingNew, setIsEditingNew] = useState<boolean>(false);
@@ -319,15 +318,43 @@ const InvoiceSettings: React.FC = () => {
     setNotes(notes.filter((_, i) => i !== index));
   };
 
-  const handleExportBackup = () => {
-    const dataStr = JSON.stringify(profiles, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    const exportFileDefaultName = 'pubdesk_invoice_profiles_backup.json';
+  const handleExportBackup = async () => {
+    try {
+      const dataStr = JSON.stringify(profiles, null, 2);
+      const bytes = new TextEncoder().encode(dataStr);
+      const filename = `pubdesk_invoice_profiles_backup.json`;
 
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+      const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
+      const physicalPath = await tauriInvoke<string>('create_physical_file', {
+        filename,
+        bytes: Array.from(bytes),
+        folder: 'backups'
+      });
+
+      // Daftarkan ke file manager/smart folder jika belum terdaftar
+      const alreadyExists = files.some((f) => f.filename === filename && f.type === 'other');
+      if (!alreadyExists) {
+        const fileData = {
+          filename,
+          path: physicalPath,
+          type: 'other',
+          project_id: undefined,
+          version_label: 'Backup',
+          status: 'Aktif',
+          last_modified: new Date().toISOString(),
+          is_readonly: false
+        };
+        await addFile(fileData);
+      }
+
+      showToast(`Backup berhasil diekspor ke: ${physicalPath}`, 'success');
+
+      // Buka folder lokasi berkas
+      await tauriInvoke('open_file_location_physically', { path: physicalPath });
+    } catch (error) {
+      console.error(error);
+      showToast('Gagal mengekspor backup.', 'error');
+    }
   };
 
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -356,19 +383,6 @@ const InvoiceSettings: React.FC = () => {
         }
       };
     }
-  };
-
-  const handleResetToDefault = () => {
-    showConfirm({
-      title: 'Reset Pengaturan Bawaan',
-      message: 'Apakah Anda yakin ingin me-reset profil ke pengaturan bawaan (dummy)? Seluruh perubahan kustom Anda akan terhapus.',
-      confirmText: 'Reset',
-      type: 'danger',
-      onConfirm: () => {
-        resetProfilesToDefault();
-        showToast('Pengaturan profil berhasil di-reset ke bawaan.', 'info');
-      }
-    });
   };
 
   return (
@@ -434,8 +448,6 @@ const InvoiceSettings: React.FC = () => {
               📤 Impor Backup JSON
               <input type="file" accept=".json" onChange={handleImportBackup} style={{ display: 'none' }} />
             </label>
-
-            <button className="btn-danger compact-btn" style={{ marginLeft: 'auto', height: '32px' }} onClick={handleResetToDefault}>🔄 Reset Bawaan</button>
           </div>
         </div>
 
