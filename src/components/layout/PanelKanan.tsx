@@ -26,7 +26,8 @@ const PanelKanan: React.FC = () => {
         }
 
         if (file.type === 'invoice') {
-          const invoice = invoices.find(inv => inv.id === file.project_id);
+          const invoiceId = file.version_label ? parseInt(file.version_label) : null;
+          const invoice = invoices.find(inv => inv.id === invoiceId);
           if (invoice) {
             let metadata = {
               invoiceNo: '',

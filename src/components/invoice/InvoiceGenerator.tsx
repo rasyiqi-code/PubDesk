@@ -194,7 +194,8 @@ const InvoiceGenerator: React.FC = () => {
         filename: `Invoice-${invoiceNo || 'DRAF'}.pdf`,
         path: `invoices/Invoice-${invoiceNo ? invoiceNo.replace(/\//g, '_') : 'DRAF'}-${Date.now()}.pdf`,
         type: 'invoice',
-        project_id: invoiceId,
+        project_id: undefined,
+        version_label: String(invoiceId),
         status: 'Tersimpan',
         last_modified: new Date().toISOString(),
         is_readonly: false
