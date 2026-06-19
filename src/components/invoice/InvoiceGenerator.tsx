@@ -206,7 +206,7 @@ const InvoiceGenerator: React.FC = () => {
       setWaInput('');
     } catch (error) {
       console.error(error);
-      showToast('Gagal menyimpan invoice.', 'error');
+      showToast(`Gagal menyimpan: ${error instanceof Error ? error.message : String(error)}`, 'error');
     }
   };
 
