@@ -1,6 +1,5 @@
 import React from 'react';
 import InvoiceSettings from './InvoiceSettings';
-import BookManager from '../books/BookManager';
 import ServiceManager from '../services/ServiceManager';
 import { useAppContext } from '../../contexts/AppContext';
 
@@ -46,27 +45,7 @@ const Settings: React.FC = () => {
             📄 Pengaturan Invoice
           </button>
 
-          <button
-            onClick={() => setActiveSettingsTab('books')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 12px',
-              border: 'none',
-              background: 'transparent',
-              borderBottom: activeSettingsTab === 'books' ? '2px solid var(--accent)' : '2px solid transparent',
-              color: activeSettingsTab === 'books' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              outline: 'none',
-              marginBottom: '-1px'
-            }}
-          >
-            📚 Master Buku
-          </button>
+
 
           <button
             onClick={() => setActiveSettingsTab('services')}
@@ -117,7 +96,6 @@ const Settings: React.FC = () => {
       {/* Area Konten Utama */}
       <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
         {activeSettingsTab === 'invoice' && <InvoiceSettings />}
-        {activeSettingsTab === 'books' && <BookManager />}
         {activeSettingsTab === 'services' && <ServiceManager />}
         {activeSettingsTab === 'general' && (
           <div style={{

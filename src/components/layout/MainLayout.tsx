@@ -100,7 +100,7 @@ const MainLayout = () => {
             </div>
 
             {/* Right panel with resizable width */}
-            {(appState.activeModule !== 'settings' || activeSettingsTab === 'books' || activeSettingsTab === 'services') && rightPanelVisible && (
+            {(appState.activeModule !== 'settings' || activeSettingsTab === 'services') && rightPanelVisible && (
               <div style={{ 
                 width: `${rightPanelWidth}px`, 
                 display: 'flex', 
