@@ -4,6 +4,14 @@ import { useAppContext } from '../../contexts/AppContext';
 import { InvoiceProfile, InvoiceTableColumn } from '../../types';
 import { invoiceTemplates } from '../../data/invoiceTemplates';
 import InvoicePreview from '../invoice/InvoicePreview';
+import { SettingsFormContext } from './invoice/SettingsFormContext';
+import DesignSection from './invoice/DesignSection';
+import HeaderSection from './invoice/HeaderSection';
+import ContentSection from './invoice/ContentSection';
+import NotesSection from './invoice/NotesSection';
+import SignatureSection from './invoice/SignatureSection';
+import BankSection from './invoice/BankSection';
+import ColumnsSection from './invoice/ColumnsSection';
 
 const InvoiceSettings: React.FC = () => {
   const {
@@ -35,7 +43,6 @@ const InvoiceSettings: React.FC = () => {
   const [actionLabel, setActionLabel] = useState('');
   const [tableType, setTableType] = useState<string>('');
   const [notes, setNotes] = useState<string[]>([]);
-  const [newNoteText, setNewNoteText] = useState('');
   const [showSpesifikasi, setShowSpesifikasi] = useState(false);
   const [defaultSpesifikasi, setDefaultSpesifikasi] = useState('');
   const [signatureOffice, setSignatureOffice] = useState('');
@@ -187,58 +194,7 @@ const InvoiceSettings: React.FC = () => {
     showToast('Profil invoice berhasil disimpan!', 'success');
   };
 
-  // Menyimpan nilai tableType generik tanpa mereset kolom secara otomatis
-  const handleTableTypeChange = (newType: string) => {
-    setTableType(newType);
-  };
-
-  const handleUpdateColumn = (index: number, updates: Partial<InvoiceTableColumn>) => {
-    setTableColumns(prev => prev.map((col, i) => i === index ? { ...col, ...updates } : col));
-  };
-
-  const handleAddColumn = () => {
-    const newCol: InvoiceTableColumn = {
-      key: `custom_${Date.now()}`,
-      label: 'Kolom Baru',
-      type: 'text',
-      align: 'left',
-      width: 'auto'
-    };
-    setTableColumns(prev => [...prev, newCol]);
-  };
-
-  const handleRemoveColumn = (index: number) => {
-    setTableColumns(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleMoveColumn = (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === tableColumns.length - 1) return;
-    
-    const targetIdx = direction === 'up' ? index - 1 : index + 1;
-    const updated = [...tableColumns];
-    const temp = updated[index];
-    updated[index] = updated[targetIdx];
-    updated[targetIdx] = temp;
-    setTableColumns(updated);
-  };
-
-  const handleResetColumns = () => {
-    showConfirm({
-      title: 'Reset Kolom',
-      message: 'Apakah Anda yakin ingin mereset kolom ke skema bawaan minimal?',
-      confirmText: 'Reset',
-      type: 'danger',
-      onConfirm: () => {
-        setTableColumns([
-          { key: 'item_title', label: 'Nama Item', type: 'text', align: 'left' },
-          { key: 'quantity', label: 'Qty', type: 'number', align: 'center', width: '80px' },
-          { key: 'price', label: 'Harga', type: 'currency', align: 'right', width: '110px' },
-          { key: 'total', label: 'Total', type: 'formula', align: 'right', width: '110px', formula: '{price} * {quantity}' }
-        ]);
-      }
-    });
-  };
+  // Note & column handlers moved to subcomponents.
 
   const handleCreateNew = () => {
     setIsEditingNew(true);
@@ -307,16 +263,7 @@ const InvoiceSettings: React.FC = () => {
     });
   };
 
-  const handleAddNote = () => {
-    if (newNoteText.trim()) {
-      setNotes([...notes, newNoteText.trim()]);
-      setNewNoteText('');
-    }
-  };
-
-  const handleRemoveNote = (index: number) => {
-    setNotes(notes.filter((_, i) => i !== index));
-  };
+  // Note helper functions moved to NotesSection component.
 
   const handleExportBackup = async () => {
     try {
@@ -457,677 +404,76 @@ const InvoiceSettings: React.FC = () => {
             ✏️ {isEditingNew ? 'Buat Profil Invoice Baru' : `Edit Profil: ${profileName}`}
           </h2>
 
-          {/* Bagian 1: Informasi Profil & Desain */}
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>1. Desain & Identitas Profil</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-            <div className="compact-form-group">
-              <label className="compact-label">Nama Profil (Internal)</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={profileName}
-                onChange={(e) => setProfileName(e.target.value)}
-                placeholder="Contoh: Profil Cetak Kustom"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Kode Tipe Tabel (bebas, untuk identifikasi)</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={tableType}
-                onChange={(e) => handleTableTypeChange(e.target.value)}
-                placeholder="Contoh: layanan_desain, cetak_buku, haki, dll."
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Warna Aksen Utama</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="color"
-                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="compact-input"
-                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={accentColor}
-                  onChange={(e) => setAccentColor(e.target.value)}
-                  placeholder="#1e70cd"
-                />
-              </div>
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Warna Aksen Gelap</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="color"
-                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
-                  value={accentColorDark}
-                  onChange={(e) => setAccentColorDark(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="compact-input"
-                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={accentColorDark}
-                  onChange={(e) => setAccentColorDark(e.target.value)}
-                  placeholder="#1e3a8a"
-                />
-              </div>
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Warna Utama Header SVG (Kiri)</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="color"
-                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
-                  value={headerPrimaryColor}
-                  onChange={(e) => setHeaderPrimaryColor(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="compact-input"
-                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={headerPrimaryColor}
-                  onChange={(e) => setHeaderPrimaryColor(e.target.value)}
-                  placeholder="#d93838"
-                />
-              </div>
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Warna Aksen Header SVG (Tengah)</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="color"
-                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
-                  value={headerSecondaryColor}
-                  onChange={(e) => setHeaderSecondaryColor(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="compact-input"
-                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={headerSecondaryColor}
-                  onChange={(e) => setHeaderSecondaryColor(e.target.value)}
-                  placeholder="#d93838"
-                />
-              </div>
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Warna Latar Header SVG (Kanan)</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="color"
-                  style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}
-                  value={headerBgColor}
-                  onChange={(e) => setHeaderBgColor(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="compact-input"
-                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={headerBgColor}
-                  onChange={(e) => setHeaderBgColor(e.target.value)}
-                  placeholder="#222933"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Bagian 2: Kop Surat (Header) */}
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>2. Kop Surat & Judul (Header)</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-            <div className="compact-form-group">
-              <label className="compact-label">Nama Perusahaan</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Contoh: CV DUMMY JAYA"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Tagline Perusahaan</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={companyTagline}
-                onChange={(e) => setCompanyTagline(e.target.value)}
-                placeholder="Contoh: DUMMY JAYA ABADI"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Teks Judul Invoice</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={invoiceTitleText}
-                onChange={(e) => setInvoiceTitleText(e.target.value)}
-                placeholder="Contoh: INVOICE"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Logo Kop Surat (PNG/JPG/SVG)</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {companyLogo && (
-                  <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '6px', border: '1px solid var(--border)', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <img src={companyLogo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                    <button 
-                      type="button" 
-                      onClick={() => setCompanyLogo('')} 
-                      style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '0 0 0 4px', cursor: 'pointer', fontSize: '8px', padding: '1px 2px' }}
-                      title="Hapus Logo"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-                <div style={{ flex: 1 }}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 1024 * 1024) {
-                          showToast('Ukuran berkas logo terlalu besar (maksimal 1MB)!', 'error');
-                          return;
-                        }
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          setCompanyLogo(event.target?.result as string);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    style={{ display: 'none' }}
-                    id="logo-upload-input"
-                  />
-                  <label 
-                    htmlFor="logo-upload-input" 
-                    className="btn-secondary compact-btn" 
-                    style={{ cursor: 'pointer', textAlign: 'center', display: 'block', height: '32px', lineHeight: '20px' }}
-                  >
-                    {companyLogo ? 'Ubah Logo' : 'Unggah Logo'}
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Tipe Kop Surat</label>
-              <select
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', height: '32px', padding: '0 8px', borderRadius: '6px' }}
-                value={headerType}
-                onChange={(e) => setHeaderType(e.target.value as any)}
-              >
-                <option value="logo_text">Logo + Teks</option>
-                <option value="logo_only">Hanya Logo</option>
-                <option value="text_only">Hanya Teks</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Bagian 3: Konten Surat */}
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>3. Detail Konten Surat</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-            <div className="compact-form-group">
-              <label className="compact-label">Perihal Bawaan (Default Hal)</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={defaultHal}
-                onChange={(e) => setDefaultHal(e.target.value)}
-                placeholder="Contoh: Pengadaan Modul Ajar"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Lampiran Bawaan (Default Lampiran)</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={defaultLampiran}
-                onChange={(e) => setDefaultLampiran(e.target.value)}
-                placeholder="Contoh: 1 Lembar"
-              />
-            </div>
-
-            <div style={{ gridColumn: 'span 2' }} className="compact-form-group">
-              <label className="compact-label">Salam Pembuka Bawaan</label>
-              <textarea
-                className="compact-textarea"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', minHeight: '42px', resize: 'vertical' }}
-                value={salamPembuka}
-                onChange={(e) => setSalamPembuka(e.target.value)}
-                placeholder="Teks salam pembuka..."
-                rows={2}
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Label Aksi Penutup</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={actionLabel}
-                onChange={(e) => setActionLabel(e.target.value)}
-                placeholder="Contoh: penerbitan buku"
-              />
-            </div>
-          </div>
-
-          {/* Bagian 4: Spesifikasi & Catatan */}
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>4. Spesifikasi & Catatan (Notes)</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <input
-                  type="checkbox"
-                  id="showSpesifikasi"
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                  checked={showSpesifikasi}
-                  onChange={(e) => setShowSpesifikasi(e.target.checked)}
-                />
-                <label htmlFor="showSpesifikasi" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>Tampilkan Box Spesifikasi & Fasilitas</label>
-              </div>
-              
-              {showSpesifikasi && (
-                <div className="compact-form-group">
-                  <label className="compact-label">Teks Spesifikasi Bawaan</label>
-                  <input
-                    type="text"
-                    className="compact-input"
-                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                    value={defaultSpesifikasi}
-                    onChange={(e) => setDefaultSpesifikasi(e.target.value)}
-                    placeholder="Contoh: Sesuai proposal kerjasama"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="compact-label">Daftar Catatan (Note)</label>
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
-                <input
-                  type="text"
-                  className="compact-input"
-                  style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={newNoteText}
-                  onChange={(e) => setNewNoteText(e.target.value)}
-                  placeholder="Ketik catatan baru..."
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNote(); } }}
-                />
-                <button className="btn-primary compact-btn" onClick={handleAddNote}>Tambah</button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '100px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px', background: 'var(--bg-card)' }}>
-                {notes.length === 0 ? (
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '2px' }}>Tidak ada catatan.</div>
-                ) : (
-                  notes.map((note, index) => (
-                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', background: 'var(--bg-panel)', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }}>
-                      <span style={{ color: 'var(--text-primary)', wordBreak: 'break-all' }}>{index + 1}. {note}</span>
-                      <button style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '12px' }} onClick={() => handleRemoveNote(index)}>✕</button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Bagian 5: Tanda Tangan */}
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>5. Tanda Tangan Penutup</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
-            <div className="compact-form-group">
-              <label className="compact-label">Instansi / Nama Kantor</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={signatureOffice}
-                onChange={(e) => setSignatureOffice(e.target.value)}
-                placeholder="Contoh: Kantor Penerbit Yogyakarta"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Lokasi Tanda Tangan</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={signatureLocation}
-                onChange={(e) => setSignatureLocation(e.target.value)}
-                placeholder="Contoh: Yogyakarta"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Jabatan Penandatangan</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={signatureRole}
-                onChange={(e) => setSignatureRole(e.target.value)}
-                placeholder="Contoh: CEO Penerbit"
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Nama Lengkap & Gelar</label>
-              <input
-                type="text"
-                className="compact-input"
-                style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                value={signatureName}
-                onChange={(e) => setSignatureName(e.target.value)}
-                placeholder="Contoh: RUDI HARTONO, M.Kom."
-              />
-            </div>
-
-            <div className="compact-form-group">
-              <label className="compact-label">Gambar Tanda Tangan (PNG Transparan)</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {signatureImg && (
-                  <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '6px', border: '1px solid var(--border)', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <img src={signatureImg} alt="Tanda Tangan" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                    <button 
-                      type="button" 
-                      onClick={() => setSignatureImg('')} 
-                      style={{ position: 'absolute', top: 0, right: 0, background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '0 0 0 4px', cursor: 'pointer', fontSize: '8px', padding: '1px 2px' }}
-                      title="Hapus Tanda Tangan"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-                <div style={{ flex: 1 }}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 1024 * 1024) {
-                          showToast('Ukuran berkas tanda tangan terlalu besar (maksimal 1MB)!', 'error');
-                          return;
-                        }
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          setSignatureImg(event.target?.result as string);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    style={{ display: 'none' }}
-                    id="signature-upload-input"
-                  />
-                  <label 
-                    htmlFor="signature-upload-input" 
-                    className="btn-secondary compact-btn" 
-                    style={{ cursor: 'pointer', textAlign: 'center', display: 'block', height: '32px', lineHeight: '20px' }}
-                  >
-                    {signatureImg ? 'Ubah Gambar' : 'Unggah Gambar'}
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bagian 6: Informasi Pembayaran */}
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>6. Informasi Rekening Bank</h3>
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-              <input
-                type="checkbox"
-                id="showBankInfo"
-                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                checked={showBankInfo}
-                onChange={(e) => setShowBankInfo(e.target.checked)}
-              />
-              <label htmlFor="showBankInfo" style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>Tampilkan Blok Informasi Bank</label>
-            </div>
-
-            {showBankInfo && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                <div className="compact-form-group">
-                  <label className="compact-label">Nama Bank / Layanan</label>
-                  <input
-                    type="text"
-                    className="compact-input"
-                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    placeholder="Contoh: Bank Central Asia (BCA)"
-                  />
-                </div>
-
-                <div className="compact-form-group">
-                  <label className="compact-label">Nomor Rekening</label>
-                  <input
-                    type="text"
-                    className="compact-input"
-                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                    value={bankAccountNo}
-                    onChange={(e) => setBankAccountNo(e.target.value)}
-                    placeholder="Contoh: 876830659"
-                  />
-                </div>
-
-                <div className="compact-form-group">
-                  <label className="compact-label">Nama Pemilik Rekening</label>
-                  <input
-                    type="text"
-                    className="compact-input"
-                    style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                    value={bankAccountOwner}
-                    onChange={(e) => setBankAccountOwner(e.target.value)}
-                    placeholder="Contoh: Mohammad Imam"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Bagian 7: Pengaturan Kolom Tabel Invoice */}
-          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>7. Kolom Tabel Rincian Invoice</h3>
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '500' }}>Sesuaikan kolom tabel rincian item:</span>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button type="button" className="btn-secondary compact-btn" style={{ fontSize: '11px', height: '26px' }} onClick={handleResetColumns}>
-                  🔄 Reset Bawaan
-                </button>
-                <button type="button" className="btn-primary compact-btn" style={{ fontSize: '11px', height: '26px' }} onClick={handleAddColumn}>
-                  ➕ Tambah Kolom
-                </button>
-              </div>
-            </div>
-
-            {/* Header label kolom */}
-            <div style={{ display: 'grid', gridTemplateColumns: '20px 1.8fr 1fr 0.8fr 1fr 32px 32px', gap: '6px', padding: '0 4px 4px', alignItems: 'center' }}>
-              <span />
-              <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Label / Kunci</span>
-              <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tipe</span>
-              <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rata</span>
-              <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lebar / Formula</span>
-              <span />
-              <span />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '380px', overflowY: 'auto', paddingRight: '2px' }}>
-              {tableColumns.length === 0 ? (
-                <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', padding: '16px', fontStyle: 'italic' }}>
-                  Belum ada kolom tabel yang didefinisikan.
-                </div>
-              ) : (
-                tableColumns.map((col, idx) => {
-                  const isLocked = col.key === 'item_title' || col.key === 'quantity' || col.key === 'price';
-
-                  const inputBase: React.CSSProperties = {
-                    width: '100%',
-                    fontSize: '12px',
-                    padding: '5px 8px',
-                    border: '1px solid var(--border)',
-                    borderRadius: '6px',
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    outline: 'none',
-                    height: '30px',
-                    boxSizing: 'border-box',
-                  };
-                  const selectBase: React.CSSProperties = { ...inputBase, cursor: 'pointer' };
-                  const disabledStyle: React.CSSProperties = {
-                    ...inputBase,
-                    background: 'var(--bg-panel)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'default',
-                  };
-
-                  return (
-                    <div
-                      key={col.key}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '20px 1.8fr 1fr 0.8fr 1fr 32px 32px',
-                        gap: '6px',
-                        alignItems: 'center',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        padding: '8px',
-                        opacity: isLocked ? 0.85 : 1,
-                      }}
-                    >
-                      {/* Nomor */}
-                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '600', textAlign: 'center' }}>
-                        {idx + 1}
-                      </span>
-
-                      {/* Label + Kunci */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <input
-                          type="text"
-                          style={{ ...inputBase, fontWeight: '600', fontSize: '12px' }}
-                          value={col.label}
-                          onChange={(e) => handleUpdateColumn(idx, { label: e.target.value })}
-                          placeholder="Label Kolom"
-                        />
-                        <input
-                          type="text"
-                          style={{ ...disabledStyle, fontSize: '10px', height: '22px', padding: '2px 8px', fontFamily: 'monospace' }}
-                          value={col.key}
-                          onChange={(e) => handleUpdateColumn(idx, { key: e.target.value })}
-                          disabled={isLocked}
-                          placeholder="key_field"
-                        />
-                      </div>
-
-                      {/* Tipe */}
-                      <select
-                        style={isLocked ? { ...selectBase, background: 'var(--bg-panel)', color: 'var(--text-secondary)' } : selectBase}
-                        value={col.type}
-                        onChange={(e) => handleUpdateColumn(idx, { type: e.target.value as any })}
-                        disabled={isLocked}
-                      >
-                        <option value="text">Teks</option>
-                        <option value="number">Angka</option>
-                        <option value="currency">Mata Uang (Rp)</option>
-                        <option value="formula">Formula</option>
-                      </select>
-
-                      {/* Rata */}
-                      <select
-                        style={selectBase}
-                        value={col.align || 'left'}
-                        onChange={(e) => handleUpdateColumn(idx, { align: e.target.value as any })}
-                      >
-                        <option value="left">Kiri</option>
-                        <option value="center">Tengah</option>
-                        <option value="right">Kanan</option>
-                      </select>
-
-                      {/* Lebar atau Formula */}
-                      {col.type === 'formula' ? (
-                        <input
-                          type="text"
-                          style={{ ...inputBase, fontFamily: 'monospace', fontSize: '11px', color: '#7c3aed', borderColor: '#7c3aed44', background: '#f5f3ff' }}
-                          value={col.formula || ''}
-                          onChange={(e) => handleUpdateColumn(idx, { formula: e.target.value })}
-                          placeholder="{price}*{qty}"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          style={inputBase}
-                          value={col.width || 'auto'}
-                          onChange={(e) => handleUpdateColumn(idx, { width: e.target.value })}
-                          placeholder="auto / 90px"
-                        />
-                      )}
-
-                      {/* Naik / Turun */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveColumn(idx, 'up')}
-                          disabled={idx === 0}
-                          style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', padding: '1px', fontSize: '11px', color: 'var(--text-secondary)', opacity: idx === 0 ? 0.3 : 0.7, lineHeight: 1 }}
-                        >▲</button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveColumn(idx, 'down')}
-                          disabled={idx === tableColumns.length - 1}
-                          style={{ background: 'none', border: 'none', cursor: idx === tableColumns.length - 1 ? 'default' : 'pointer', padding: '1px', fontSize: '11px', color: 'var(--text-secondary)', opacity: idx === tableColumns.length - 1 ? 0.3 : 0.7, lineHeight: 1 }}
-                        >▼</button>
-                      </div>
-
-                      {/* Hapus */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveColumn(idx)}
-                        disabled={isLocked}
-                        title={isLocked ? 'Kolom wajib' : 'Hapus kolom'}
-                        style={{ background: isLocked ? 'transparent' : '#fef2f2', border: isLocked ? 'none' : '1px solid #fecaca', borderRadius: '6px', cursor: isLocked ? 'default' : 'pointer', padding: '4px', color: '#dc2626', opacity: isLocked ? 0.2 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '30px', width: '30px' }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6l-1 14H6L5 6"></path>
-                          <path d="M10 11v6M14 11v6"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-
+          <SettingsFormContext.Provider
+            value={{
+              profileName,
+              setProfileName,
+              companyName,
+              setCompanyName,
+              companyTagline,
+              setCompanyTagline,
+              invoiceTitleText,
+              setInvoiceTitleText,
+              accentColor,
+              setAccentColor,
+              accentColorDark,
+              setAccentColorDark,
+              headerBgColor,
+              setHeaderBgColor,
+              headerPrimaryColor,
+              setHeaderPrimaryColor,
+              headerSecondaryColor,
+              setHeaderSecondaryColor,
+              defaultHal,
+              setDefaultHal,
+              defaultLampiran,
+              setDefaultLampiran,
+              salamPembuka,
+              setSalamPembuka,
+              actionLabel,
+              setActionLabel,
+              tableType,
+              setTableType,
+              notes,
+              setNotes,
+              showSpesifikasi,
+              setShowSpesifikasi,
+              defaultSpesifikasi,
+              setDefaultSpesifikasi,
+              signatureOffice,
+              setSignatureOffice,
+              signatureLocation,
+              setSignatureLocation,
+              signatureRole,
+              setSignatureRole,
+              signatureName,
+              setSignatureName,
+              showBankInfo,
+              setShowBankInfo,
+              bankName,
+              setBankName,
+              bankAccountNo,
+              setBankAccountNo,
+              bankAccountOwner,
+              setBankAccountOwner,
+              companyLogo,
+              setCompanyLogo,
+              signatureImg,
+              setSignatureImg,
+              headerType,
+              setHeaderType,
+              tableColumns,
+              setTableColumns
+            }}
+          >
+            <DesignSection />
+            <HeaderSection />
+            <ContentSection />
+            <NotesSection />
+            <SignatureSection />
+            <BankSection />
+            <ColumnsSection />
+          </SettingsFormContext.Provider>
 
           {/* Tombol Simpan Terakhir */}
           <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '12px' }}>
