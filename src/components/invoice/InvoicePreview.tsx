@@ -292,77 +292,72 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile }) => {
               <thead>
                 <tr style={{ color: '#ffffff' }}>
                   <th style={{ background: accentColorDark, width: '35px', textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>No</th>
-                  {invoiceType === 'kbm_cetak' && (
-                    <>
-                      <th style={{ background: accentColor, textAlign: 'left', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>Judul</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '70px', border: 'none' }}>Hal</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '75px', border: 'none' }}>Naskah</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '60px', border: 'none' }}>Jml. Cetak</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '75px', border: 'none' }}>Cetak/pcs</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '75px', border: 'none' }}>Ongkir</th>
-                      <th style={{ background: accentColor, textAlign: 'right', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '85px', border: 'none' }}>Total Biaya</th>
-                    </>
-                  )}
-                  {invoiceType === 'kbm_creator' && (
-                    <>
-                      <th style={{ background: accentColor, textAlign: 'left', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>Judul Karya</th>
-                      <th style={{ background: accentColor, textAlign: 'left', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '220px', border: 'none' }}>Pemegang Hak Cipta</th>
-                      <th style={{ background: accentColor, textAlign: 'right', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '120px', border: 'none' }}>Total Biaya</th>
-                    </>
-                  )}
-                  {invoiceType === 'spt_mitra' && (
-                    <>
-                      <th style={{ background: accentColor, textAlign: 'left', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>Judul</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '80px', border: 'none' }}>Hal</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '85px', border: 'none' }}>Naskah</th>
-                      <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '110px', border: 'none' }}>Jml. Cetak</th>
-                      <th style={{ background: accentColor, textAlign: 'right', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '100px', border: 'none' }}>Harga Paket</th>
-                    </>
-                  )}
+                  <th style={{ background: accentColor, textAlign: 'left', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>Deskripsi / Detail Barang</th>
+                  <th style={{ background: accentColor, textAlign: 'right', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '100px', border: 'none' }}>Harga Satuan</th>
+                  <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '80px', border: 'none' }}>Jumlah</th>
+                  <th style={{ background: accentColor, textAlign: 'right', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '110px', border: 'none' }}>Total Biaya</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={invoiceType === 'kbm_cetak' ? 8 : invoiceType === 'kbm_creator' ? 3 : 5} style={{ padding: '20px', textAlign: 'center', fontSize: '11px', color: '#6b7280', fontStyle: 'italic', borderBottom: '1px solid #e5e7eb' }}>
+                    <td colSpan={5} style={{ padding: '20px', textAlign: 'center', fontSize: '11px', color: '#6b7280', fontStyle: 'italic', borderBottom: '1px solid #e5e7eb' }}>
                       Belum ada rincian item. Silakan tambahkan di menu generator.
                     </td>
                   </tr>
                 ) : (
                   items.map((item, index) => {
                     const rowBg = index % 2 === 0 ? '#fdf2f2' : '#ffffff';
+                    
+                    // Buat sub-detail info berdasarkan jenis invoice
+                    let subDetailText = '';
+                    if (invoiceType === 'kbm_cetak') {
+                      subDetailText = `${item.pages || '± 160 hal'} • ${item.paper_type || 'Cetak BW'}`;
+                      if (item.item_shipping_cost && item.item_shipping_cost > 0) {
+                        subDetailText += ` • Ongkir: Rp ${formatPrice(item.item_shipping_cost)}`;
+                      }
+                    } else if (invoiceType === 'kbm_creator') {
+                      subDetailText = `Hak Cipta: ${item.copyright_holder || customer.name || '-'}`;
+                    } else if (invoiceType === 'spt_mitra') {
+                      subDetailText = `${item.pages || '± 144 hal'} • ${item.paper_type || 'Cetak BW'}`;
+                      if (item.package_name) {
+                        subDetailText += ` • Paket: ${item.package_name}`;
+                      }
+                    }
+
                     return (
                       <tr key={index} style={{ background: rowBg }}>
-                        <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', fontWeight: '500', borderBottom: '1px solid #e5e7eb' }}>{index + 1}.</td>
-                        <td style={{ padding: '8px 8px', textAlign: 'left', fontSize: '9.5px', color: '#1f2937', fontWeight: '600', borderBottom: '1px solid #e5e7eb', wordBreak: 'break-word' }}>
-                          "{item.book_title}"
+                        {/* No */}
+                        <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', fontWeight: '500', borderBottom: '1px solid #e5e7eb' }}>
+                          {index + 1}.
                         </td>
-                        {invoiceType === 'kbm_cetak' && (
-                          <>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>{item.pages || '± 160 hal A5'}</td>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>{item.paper_type || 'Cetak BW'}</td>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>{item.quantity} pcs</td>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>Rp {formatPrice(item.price)}</td>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>Rp {formatPrice(item.item_shipping_cost || 0)}</td>
-                            <td style={{ padding: '8px 8px', textAlign: 'right', fontSize: '9.5px', color: '#1f2937', fontWeight: '700', borderBottom: '1px solid #e5e7eb' }}>Rp {formatPrice(calculateItemTotal(item))}</td>
-                          </>
-                        )}
-                        {invoiceType === 'kbm_creator' && (
-                          <>
-                            <td style={{ padding: '8px 8px', textAlign: 'left', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>{item.copyright_holder || customer.name || '-'}</td>
-                            <td style={{ padding: '8px 8px', textAlign: 'right', fontSize: '9.5px', color: '#1f2937', fontWeight: '700', borderBottom: '1px solid #e5e7eb' }}>Rp {formatPrice(calculateItemTotal(item))}</td>
-                          </>
-                        )}
-                        {invoiceType === 'spt_mitra' && (
-                          <>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>{item.pages || '± 144 hal A4'}</td>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>{item.paper_type || 'Cetak BW'}</td>
-                            <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>
-                              {item.quantity} pcs {item.package_name ? `(${item.package_name})` : ''}
-                            </td>
-                            <td style={{ padding: '8px 8px', textAlign: 'right', fontSize: '9.5px', color: '#1f2937', fontWeight: '700', borderBottom: '1px solid #e5e7eb' }}>Rp {formatPrice(calculateItemTotal(item))}</td>
-                          </>
-                        )}
+                        
+                        {/* Deskripsi / Detail Barang */}
+                        <td style={{ padding: '6px 8px', textAlign: 'left', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>
+                          <div style={{ fontWeight: '700', wordBreak: 'break-word', marginBottom: '2px' }}>
+                            "{item.book_title}"
+                          </div>
+                          {subDetailText && (
+                            <div style={{ fontSize: '8px', color: '#6b7280', fontWeight: '500' }}>
+                              {subDetailText}
+                            </div>
+                          )}
+                        </td>
+                        
+                        {/* Harga Satuan */}
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>
+                          Rp {formatPrice(item.price)}
+                        </td>
+                        
+                        {/* Jumlah */}
+                        <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
+                          {item.quantity} {invoiceType === 'kbm_creator' ? 'lisensi' : 'pcs'}
+                        </td>
+                        
+                        {/* Total Biaya */}
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9.5px', color: '#1f2937', fontWeight: '700', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>
+                          Rp {formatPrice(calculateItemTotal(item))}
+                        </td>
                       </tr>
                     );
                   })
