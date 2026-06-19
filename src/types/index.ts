@@ -44,6 +44,15 @@ export interface Tag {
   name: string;
 }
 
+export interface InvoiceTableColumn {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'currency' | 'formula';
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+  formula?: string;
+}
+
 export interface InvoiceItem {
   book_id: number;
   book_title: string;
@@ -55,6 +64,7 @@ export interface InvoiceItem {
   copyright_holder?: string;
   item_shipping_cost?: number;
   package_name?: string;
+  [key: string]: any; // Mendukung properti dinamis tambahan
 }
 
 export interface Invoice {
@@ -111,4 +121,5 @@ export interface InvoiceProfile {
   companyLogo?: string;
   signatureImg?: string;
   headerType?: 'logo_only' | 'logo_text' | 'text_only';
+  tableColumns?: InvoiceTableColumn[]; // Konfigurasi kolom tabel dinamis
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
-import { InvoiceProfile } from '../../types';
+import { InvoiceProfile, InvoiceTableColumn } from '../../types';
 import kbmProfilesBackup from '../../assets/kbm_profiles_backup.json';
 import InvoicePreview from '../invoice/InvoicePreview';
 
@@ -48,6 +48,7 @@ const InvoiceSettings: React.FC = () => {
   const [companyLogo, setCompanyLogo] = useState('');
   const [signatureImg, setSignatureImg] = useState('');
   const [headerType, setHeaderType] = useState<'logo_only' | 'logo_text' | 'text_only'>('logo_text');
+  const [tableColumns, setTableColumns] = useState<InvoiceTableColumn[]>([]);
 
   // Memuat data profil terpilih ke dalam state form
   useEffect(() => {
@@ -80,6 +81,15 @@ const InvoiceSettings: React.FC = () => {
       setCompanyLogo('');
       setSignatureImg('');
       setHeaderType('logo_text');
+      setTableColumns([
+        { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+        { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '90px' },
+        { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
+        { key: 'quantity', label: 'Jml. Cetak', type: 'number', align: 'center', width: '80px' },
+        { key: 'price', label: 'Cetak/pcs', type: 'currency', align: 'right', width: '100px' },
+        { key: 'item_shipping_cost', label: 'Ongkos Kirim', type: 'currency', align: 'right', width: '100px' },
+        { key: 'total', label: 'Total Biaya', type: 'formula', align: 'right', width: '110px', formula: '({price} * {quantity}) + {item_shipping_cost}' }
+      ]);
     } else {
       const profile = profiles.find((p) => p.id === selectedProfileId);
       if (profile) {
@@ -111,6 +121,7 @@ const InvoiceSettings: React.FC = () => {
         setCompanyLogo(profile.companyLogo || '');
         setSignatureImg(profile.signatureImg || '');
         setHeaderType(profile.headerType || 'logo_text');
+        setTableColumns(profile.tableColumns || []);
       }
     }
   }, [selectedProfileId, isEditingNew, profiles]);
@@ -152,7 +163,8 @@ const InvoiceSettings: React.FC = () => {
     bankAccountOwner,
     companyLogo,
     signatureImg,
-    headerType
+    headerType,
+    tableColumns
   };
 
   const handleSave = () => {
@@ -171,6 +183,100 @@ const InvoiceSettings: React.FC = () => {
     setSelectedProfileId(savedProfile.id);
     setActiveProfileId(savedProfile.id);
     alert('Profil invoice berhasil disimpan!');
+  };
+
+  const handleTableTypeChange = (newType: 'kbm_cetak' | 'kbm_creator' | 'spt_mitra') => {
+    setTableType(newType);
+    
+    // Reset kolom ke skema bawaan untuk tipe tabel tersebut
+    if (newType === 'kbm_cetak') {
+      setTableColumns([
+        { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+        { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '90px' },
+        { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
+        { key: 'quantity', label: 'Jml. Cetak', type: 'number', align: 'center', width: '80px' },
+        { key: 'price', label: 'Cetak/pcs', type: 'currency', align: 'right', width: '100px' },
+        { key: 'item_shipping_cost', label: 'Ongkos Kirim', type: 'currency', align: 'right', width: '100px' },
+        { key: 'total', label: 'Total Biaya', type: 'formula', align: 'right', width: '110px', formula: '({price} * {quantity}) + {item_shipping_cost}' }
+      ]);
+    } else if (newType === 'kbm_creator') {
+      setTableColumns([
+        { key: 'book_title', label: 'Judul Karya', type: 'text', align: 'left' },
+        { key: 'copyright_holder', label: 'Pemegang Hak Cipta', type: 'text', align: 'center' },
+        { key: 'price', label: 'Total Biaya', type: 'currency', align: 'right', width: '110px' }
+      ]);
+    } else if (newType === 'spt_mitra') {
+      setTableColumns([
+        { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+        { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '80px' },
+        { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
+        { key: 'qty_desc', label: 'Jml. Cetak', type: 'formula', align: 'center', width: '120px', formula: '{quantity} pcs ({package_name})' },
+        { key: 'price', label: 'Harga Paket', type: 'currency', align: 'right', width: '110px' },
+        { key: 'total', label: 'Total Biaya', type: 'formula', align: 'right', width: '110px', formula: '{price} * {quantity}' }
+      ]);
+    }
+  };
+
+  const handleUpdateColumn = (index: number, updates: Partial<InvoiceTableColumn>) => {
+    setTableColumns(prev => prev.map((col, i) => i === index ? { ...col, ...updates } : col));
+  };
+
+  const handleAddColumn = () => {
+    const newCol: InvoiceTableColumn = {
+      key: `custom_${Date.now()}`,
+      label: 'Kolom Baru',
+      type: 'text',
+      align: 'left',
+      width: 'auto'
+    };
+    setTableColumns(prev => [...prev, newCol]);
+  };
+
+  const handleRemoveColumn = (index: number) => {
+    setTableColumns(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleMoveColumn = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === tableColumns.length - 1) return;
+    
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const updated = [...tableColumns];
+    const temp = updated[index];
+    updated[index] = updated[targetIdx];
+    updated[targetIdx] = temp;
+    setTableColumns(updated);
+  };
+
+  const handleResetColumns = () => {
+    if (confirm('Apakah Anda yakin ingin mereset kolom ke skema bawaan untuk tipe tabel ini?')) {
+      if (tableType === 'kbm_cetak') {
+        setTableColumns([
+          { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+          { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '90px' },
+          { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
+          { key: 'quantity', label: 'Jml. Cetak', type: 'number', align: 'center', width: '80px' },
+          { key: 'price', label: 'Cetak/pcs', type: 'currency', align: 'right', width: '100px' },
+          { key: 'item_shipping_cost', label: 'Ongkos Kirim', type: 'currency', align: 'right', width: '100px' },
+          { key: 'total', label: 'Total Biaya', type: 'formula', align: 'right', width: '110px', formula: '({price} * {quantity}) + {item_shipping_cost}' }
+        ]);
+      } else if (tableType === 'kbm_creator') {
+        setTableColumns([
+          { key: 'book_title', label: 'Judul Karya', type: 'text', align: 'left' },
+          { key: 'copyright_holder', label: 'Pemegang Hak Cipta', type: 'text', align: 'center' },
+          { key: 'price', label: 'Total Biaya', type: 'currency', align: 'right', width: '110px' }
+        ]);
+      } else if (tableType === 'spt_mitra') {
+        setTableColumns([
+          { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+          { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '80px' },
+          { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
+          { key: 'qty_desc', label: 'Jml. Cetak', type: 'formula', align: 'center', width: '120px', formula: '{quantity} pcs ({package_name})' },
+          { key: 'price', label: 'Harga Paket', type: 'currency', align: 'right', width: '110px' },
+          { key: 'total', label: 'Total Biaya', type: 'formula', align: 'right', width: '110px', formula: '{price} * {quantity}' }
+        ]);
+      }
+    }
   };
 
   const handleCreateNew = () => {
@@ -371,7 +477,7 @@ const InvoiceSettings: React.FC = () => {
                 className="compact-select"
                 style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                 value={tableType}
-                onChange={(e) => setTableType(e.target.value as any)}
+                onChange={(e) => handleTableTypeChange(e.target.value as any)}
               >
                 <option value="kbm_cetak">KBM Cetak (Kolom: Judul, Hal, Naskah, Qty, Pcs, Ongkir, Total)</option>
                 <option value="kbm_creator">KBM Creator (Kolom: Judul Karya, Pemegang Hak Cipta, Total)</option>
@@ -846,6 +952,154 @@ const InvoiceSettings: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Bagian 7: Pengaturan Kolom Tabel Invoice */}
+          <h3 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>7. Kolom Tabel Rincian Invoice</h3>
+          <div style={{ marginBottom: '16px', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', background: 'var(--bg-card)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '500' }}>Sesuaikan kolom tabel rincian item:</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button type="button" className="btn-secondary compact-btn" style={{ fontSize: '11px', height: '26px' }} onClick={handleResetColumns}>
+                  🔄 Reset Bawaan
+                </button>
+                <button type="button" className="btn-primary compact-btn" style={{ fontSize: '11px', height: '26px' }} onClick={handleAddColumn}>
+                  ➕ Tambah Kolom
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
+              {tableColumns.length === 0 ? (
+                <div style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', padding: '12px', fontStyle: 'italic' }}>
+                  Belum ada kolom tabel yang didefinisikan.
+                </div>
+              ) : (
+                tableColumns.map((col, idx) => (
+                  <div 
+                    key={col.key} 
+                    style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: '1.2fr 1fr 1fr 1.2fr 45px 45px', 
+                      gap: '8px', 
+                      alignItems: 'center', 
+                      background: 'var(--bg-panel)', 
+                      padding: '8px', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border)' 
+                    }}
+                  >
+                    {/* Label & Kunci */}
+                    <div>
+                      <input 
+                        type="text" 
+                        className="compact-input" 
+                        style={{ width: '100%', fontSize: '12px', padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                        value={col.label} 
+                        onChange={(e) => handleUpdateColumn(idx, { label: e.target.value })} 
+                        placeholder="Label Kolom"
+                      />
+                      <input 
+                        type="text" 
+                        className="compact-input" 
+                        style={{ width: '100%', fontSize: '10px', padding: '2px 8px', marginTop: '4px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)' }}
+                        value={col.key} 
+                        onChange={(e) => handleUpdateColumn(idx, { key: e.target.value })} 
+                        placeholder="Kunci (e.g. pages)"
+                        disabled={col.key === 'book_title' || col.key === 'quantity' || col.key === 'price'}
+                      />
+                    </div>
+
+                    {/* Tipe Kolom */}
+                    <div>
+                      <select
+                        className="compact-select"
+                        style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', height: '28px' }}
+                        value={col.type}
+                        onChange={(e) => handleUpdateColumn(idx, { type: e.target.value as any })}
+                        disabled={col.key === 'book_title' || col.key === 'quantity' || col.key === 'price'}
+                      >
+                        <option value="text">Teks</option>
+                        <option value="number">Angka</option>
+                        <option value="currency">Mata Uang (Rp)</option>
+                        <option value="formula">Formula (Rumus)</option>
+                      </select>
+                    </div>
+
+                    {/* Align & Width */}
+                    <div>
+                      <select
+                        className="compact-select"
+                        style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', height: '28px' }}
+                        value={col.align || 'left'}
+                        onChange={(e) => handleUpdateColumn(idx, { align: e.target.value as any })}
+                      >
+                        <option value="left">Kiri</option>
+                        <option value="center">Tengah</option>
+                        <option value="right">Kanan</option>
+                      </select>
+                      <input 
+                        type="text" 
+                        className="compact-input" 
+                        style={{ width: '100%', fontSize: '10px', padding: '2px 8px', marginTop: '4px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                        value={col.width || 'auto'} 
+                        onChange={(e) => handleUpdateColumn(idx, { width: e.target.value })} 
+                        placeholder="Lebar (e.g. 90px)"
+                      />
+                    </div>
+
+                    {/* Formula Editor */}
+                    <div>
+                      {col.type === 'formula' ? (
+                        <input 
+                          type="text" 
+                          className="compact-input" 
+                          style={{ width: '100%', fontSize: '11px', padding: '4px 8px', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                          value={col.formula || ''} 
+                          onChange={(e) => handleUpdateColumn(idx, { formula: e.target.value })} 
+                          placeholder="e.g. {price}*{quantity}"
+                        />
+                      ) : (
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Bukan Formula</span>
+                      )}
+                    </div>
+
+                    {/* Navigasi Urutan */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                      <button 
+                        type="button" 
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', fontSize: '10px', color: idx === 0 ? 'var(--text-secondary)' : 'var(--text-primary)' }}
+                        onClick={() => handleMoveColumn(idx, 'up')}
+                        disabled={idx === 0}
+                      >
+                        ▲
+                      </button>
+                      <button 
+                        type="button" 
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', fontSize: '10px', color: idx === tableColumns.length - 1 ? 'var(--text-secondary)' : 'var(--text-primary)' }}
+                        onClick={() => handleMoveColumn(idx, 'down')}
+                        disabled={idx === tableColumns.length - 1}
+                      >
+                        ▼
+                      </button>
+                    </div>
+
+                    {/* Hapus */}
+                    <div style={{ textAlign: 'center' }}>
+                      <button 
+                        type="button"
+                        className="btn-danger" 
+                        style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                        onClick={() => handleRemoveColumn(idx)}
+                        disabled={col.key === 'book_title' || col.key === 'quantity' || col.key === 'price'}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Tombol Simpan Terakhir */}

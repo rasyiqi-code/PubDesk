@@ -32,7 +32,16 @@ const defaultProfiles: InvoiceProfile[] = [
     bankName: 'Bank Mandiri',
     bankAccountNo: '1234567890123',
     bankAccountOwner: 'Nama Pemilik Rekening',
-    headerType: 'logo_text'
+    headerType: 'logo_text',
+    tableColumns: [
+      { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+      { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '90px' },
+      { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
+      { key: 'quantity', label: 'Jml. Cetak', type: 'number', align: 'center', width: '80px' },
+      { key: 'price', label: 'Cetak/pcs', type: 'currency', align: 'right', width: '100px' },
+      { key: 'item_shipping_cost', label: 'Ongkos Kirim', type: 'currency', align: 'right', width: '100px' },
+      { key: 'total', label: 'Total Biaya', type: 'formula', align: 'right', width: '110px', formula: '({price} * {quantity}) + {item_shipping_cost}' }
+    ]
   },
   {
     id: 'kbm_creator',
@@ -64,7 +73,12 @@ const defaultProfiles: InvoiceProfile[] = [
     bankName: 'Bank Central Asia (BCA)',
     bankAccountNo: '9876543210',
     bankAccountOwner: 'Nama Pemilik Rekening',
-    headerType: 'logo_text'
+    headerType: 'logo_text',
+    tableColumns: [
+      { key: 'book_title', label: 'Judul Karya', type: 'text', align: 'left' },
+      { key: 'copyright_holder', label: 'Pemegang Hak Cipta', type: 'text', align: 'center' },
+      { key: 'price', label: 'Total Biaya', type: 'currency', align: 'right', width: '110px' }
+    ]
   },
   {
     id: 'spt_mitra',
@@ -93,7 +107,15 @@ const defaultProfiles: InvoiceProfile[] = [
     bankName: '',
     bankAccountNo: '',
     bankAccountOwner: '',
-    headerType: 'logo_text'
+    headerType: 'logo_text',
+    tableColumns: [
+      { key: 'book_title', label: 'Judul', type: 'text', align: 'left' },
+      { key: 'pages', label: 'Hal', type: 'text', align: 'center', width: '80px' },
+      { key: 'paper_type', label: 'Jenis Naskah', type: 'text', align: 'center', width: '90px' },
+      { key: 'qty_desc', label: 'Jml. Cetak', type: 'formula', align: 'center', width: '120px', formula: '{quantity} pcs ({package_name})' },
+      { key: 'price', label: 'Harga Paket', type: 'currency', align: 'right', width: '110px' },
+      { key: 'total', label: 'Total Biaya', type: 'formula', align: 'right', width: '110px', formula: '{price} * {quantity}' }
+    ]
   }
 ];
 
@@ -171,6 +193,47 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [spesifikasiFasilitas, setSpesifikasiFasilitas] = useState('Sesuai poster paket yang diambil');
   const [bankAccountInfo, setBankAccountInfo] = useState('');
 
+  // Helper to evaluate dynamic formulas
+  const evaluateItemFormula = (formulaStr: string, item: InvoiceItem): any => {
+    try {
+      let processed = formulaStr;
+      const tokenRegex = /\{([^}]+)\}/g;
+      
+      let match;
+      let containsString = false;
+      const keys: string[] = [];
+      while ((match = tokenRegex.exec(formulaStr)) !== null) {
+        keys.push(match[1]);
+      }
+      
+      keys.forEach(key => {
+        let val = item[key];
+        if (val === undefined || val === null) {
+          val = 0;
+        }
+        
+        if (typeof val === 'string' && isNaN(Number(val))) {
+          containsString = true;
+        }
+        
+        processed = processed.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val));
+      });
+      
+      const mathOperators = /[\+\-\*\/\(\)]/;
+      if (containsString || !mathOperators.test(processed)) {
+        return processed;
+      }
+      
+      const safeMathExpr = processed.replace(/[^0-9\+\-\*\/\.\(\)\s]/g, '');
+      // eslint-disable-next-line no-new-func
+      const result = new Function(`return (${safeMathExpr});`)();
+      return typeof result === 'number' && !isNaN(result) ? result : 0;
+    } catch (e) {
+      console.error('Gagal mengevaluasi formula:', formulaStr, e);
+      return 0;
+    }
+  };
+
   // Load profiles from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('invoice_profiles');
@@ -178,8 +241,21 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setProfilesState(parsed);
-          const activeId = localStorage.getItem('active_profile_id') || parsed[0].id;
+          // Suntik tableColumns default jika profil lama belum memilikinya
+          const migrasiParsed = parsed.map((p: any) => {
+            if (!p.tableColumns) {
+              const matchingDefault = defaultProfiles.find(dp => dp.id === p.id) 
+                || defaultProfiles.find(dp => dp.tableType === p.tableType)
+                || defaultProfiles[0];
+              return {
+                ...p,
+                tableColumns: matchingDefault.tableColumns
+              };
+            }
+            return p;
+          });
+          setProfilesState(migrasiParsed);
+          const activeId = localStorage.getItem('active_profile_id') || migrasiParsed[0].id;
           setActiveProfileIdState(activeId);
           return;
         }
@@ -232,6 +308,18 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const calculateItemTotal = (item: InvoiceItem) => {
+    // Jika ada kolom formula total pada profil aktif, gunakan formula tersebut
+    if (activeProfile?.tableColumns) {
+      const totalCol = activeProfile.tableColumns.find(
+        col => col.type === 'formula' && (col.key === 'total' || col.key.toLowerCase().includes('total'))
+      );
+      if (totalCol && totalCol.formula) {
+        const val = evaluateItemFormula(totalCol.formula, item);
+        return typeof val === 'number' ? val : parseFloat(val) || 0;
+      }
+    }
+    
+    // Fallback ke perhitungan bawaan jika tidak ada kolom formula khusus
     const itemShip = item.item_shipping_cost || 0;
     return (item.price * item.quantity) - item.discount + itemShip;
   };

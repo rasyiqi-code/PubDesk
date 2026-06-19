@@ -2,6 +2,46 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { InvoiceProfile, InvoiceItem } from '../../types';
 
+const evaluateItemFormula = (formulaStr: string, item: InvoiceItem): any => {
+  try {
+    let processed = formulaStr;
+    const tokenRegex = /\{([^}]+)\}/g;
+    
+    let match;
+    let containsString = false;
+    const keys: string[] = [];
+    while ((match = tokenRegex.exec(formulaStr)) !== null) {
+      keys.push(match[1]);
+    }
+    
+    keys.forEach(key => {
+      let val = item[key];
+      if (val === undefined || val === null) {
+        val = 0;
+      }
+      
+      if (typeof val === 'string' && isNaN(Number(val))) {
+        containsString = true;
+      }
+      
+      processed = processed.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val));
+    });
+    
+    const mathOperators = /[\+\-\*\/\(\)]/;
+    if (containsString || !mathOperators.test(processed)) {
+      return processed;
+    }
+    
+    const safeMathExpr = processed.replace(/[^0-9\+\-\*\/\.\(\)\s]/g, '');
+    // eslint-disable-next-line no-new-func
+    const result = new Function(`return (${safeMathExpr});`)();
+    return typeof result === 'number' && !isNaN(result) ? result : 0;
+  } catch (e) {
+    console.error('Gagal mengevaluasi formula:', formulaStr, e);
+    return 0;
+  }
+};
+
 interface InvoicePreviewProps {
   previewProfile?: InvoiceProfile;
   overrideInvoice?: {
@@ -353,38 +393,36 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
               <thead>
                 <tr style={{ color: '#ffffff' }}>
                   <th style={{ background: accentColorDark, width: '35px', textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>No</th>
-                  <th style={{ background: accentColor, textAlign: 'left', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', border: 'none' }}>Deskripsi / Detail Barang</th>
-                  <th style={{ background: accentColor, textAlign: 'right', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '100px', border: 'none' }}>Harga Satuan</th>
-                  <th style={{ background: accentColor, textAlign: 'center', padding: '8px 4px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '80px', border: 'none' }}>Jumlah</th>
-                  <th style={{ background: accentColor, textAlign: 'right', padding: '8px 8px', fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', width: '110px', border: 'none' }}>Total Biaya</th>
+                  {(profile?.tableColumns || []).map((col) => (
+                    <th 
+                      key={col.key} 
+                      style={{ 
+                        background: accentColor, 
+                        textAlign: col.align || 'left', 
+                        padding: '8px 8px', 
+                        fontSize: '9px', 
+                        fontWeight: '700', 
+                        textTransform: 'uppercase', 
+                        width: col.width || 'auto', 
+                        border: 'none' 
+                      }}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ padding: '20px', textAlign: 'center', fontSize: '11px', color: '#6b7280', fontStyle: 'italic', borderBottom: '1px solid #e5e7eb' }}>
+                    <td colSpan={(profile?.tableColumns?.length || 4) + 1} style={{ padding: '20px', textAlign: 'center', fontSize: '11px', color: '#6b7280', fontStyle: 'italic', borderBottom: '1px solid #e5e7eb' }}>
                       Belum ada rincian item. Silakan tambahkan di menu generator.
                     </td>
                   </tr>
                 ) : (
                   items.map((item, index) => {
                     const rowBg = index % 2 === 0 ? '#fdf2f2' : '#ffffff';
-                    
-                    // Buat sub-detail info berdasarkan jenis invoice
-                    let subDetailText = '';
-                    if (invoiceType === 'kbm_cetak') {
-                      subDetailText = `${item.pages || '± 160 hal'} • ${item.paper_type || 'Cetak BW'}`;
-                      if (item.item_shipping_cost && item.item_shipping_cost > 0) {
-                        subDetailText += ` • Ongkir: Rp ${formatPrice(item.item_shipping_cost)}`;
-                      }
-                    } else if (invoiceType === 'kbm_creator') {
-                      subDetailText = `Hak Cipta: ${item.copyright_holder || customer.name || '-'}`;
-                    } else if (invoiceType === 'spt_mitra') {
-                      subDetailText = `${item.pages || '± 144 hal'} • ${item.paper_type || 'Cetak BW'}`;
-                      if (item.package_name) {
-                        subDetailText += ` • Paket: ${item.package_name}`;
-                      }
-                    }
+                    const columns = profile?.tableColumns || [];
 
                     return (
                       <tr key={index} style={{ background: rowBg }}>
@@ -393,32 +431,45 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                           {index + 1}.
                         </td>
                         
-                        {/* Deskripsi / Detail Barang */}
-                        <td style={{ padding: '6px 8px', textAlign: 'left', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb' }}>
-                          <div style={{ fontWeight: '700', wordBreak: 'break-word', marginBottom: '2px' }}>
-                            "{item.book_title}"
-                          </div>
-                          {subDetailText && (
-                            <div style={{ fontSize: '8px', color: '#6b7280', fontWeight: '500' }}>
-                              {subDetailText}
-                            </div>
-                          )}
-                        </td>
-                        
-                        {/* Harga Satuan */}
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>
-                          Rp {formatPrice(item.price)}
-                        </td>
-                        
-                        {/* Jumlah */}
-                        <td style={{ padding: '6px 4px', textAlign: 'center', fontSize: '9.5px', color: '#1f2937', borderBottom: '1px solid #e5e7eb', fontWeight: '500' }}>
-                          {item.quantity} {invoiceType === 'kbm_creator' ? 'lisensi' : 'pcs'}
-                        </td>
-                        
-                        {/* Total Biaya */}
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9.5px', color: '#1f2937', fontWeight: '700', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>
-                          Rp {formatPrice(calculateItemTotal(item))}
-                        </td>
+                        {/* Kolom Dinamis */}
+                        {columns.map((col) => {
+                          let displayVal = '';
+                          let val = item[col.key];
+                          
+                          if (col.type === 'formula' && col.formula) {
+                            val = evaluateItemFormula(col.formula, item);
+                          }
+                          
+                          if (col.type === 'currency' && typeof val === 'number') {
+                            displayVal = `Rp ${formatPrice(val)}`;
+                          } else if (col.type === 'number' && typeof val === 'number') {
+                            displayVal = String(val);
+                          } else {
+                            displayVal = val !== undefined && val !== null ? String(val) : '';
+                          }
+                          
+                          if (col.key === 'book_title') {
+                            displayVal = `"${displayVal.replace(/"/g, '')}"`;
+                          }
+                          
+                          return (
+                            <td 
+                              key={col.key} 
+                              style={{ 
+                                padding: '6px 8px', 
+                                textAlign: col.align || 'left', 
+                                fontSize: '9.5px', 
+                                color: '#1f2937', 
+                                fontWeight: col.key === 'book_title' || col.key === 'total' || col.key.includes('total') ? '700' : '500',
+                                borderBottom: '1px solid #e5e7eb',
+                                whiteSpace: col.type === 'currency' ? 'nowrap' : 'normal',
+                                wordBreak: 'break-word'
+                              }}
+                            >
+                              {displayVal}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })
