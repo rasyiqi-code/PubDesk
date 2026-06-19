@@ -169,23 +169,23 @@ const InvoicePreview: React.FC = () => {
               {/* Panel hitam di belakang seluruh shape */}
               <rect x="267" y="54" width="390" height="78" fill="#222933" />
 
-              {/* Bidang merah utama (Warna dinamis) */}
-              <polygon points="0,27 204,27 268,138 0,138" fill={accentColor} />
+              {/* Bidang merah utama (Warna dinamis) - Sejajar dengan panel hitam y=54 ke y=132 */}
+              <polygon points="0,54 220,54 264.5,132 0,132" fill={accentColor} />
 
               {/* Pemisah putih agar warna hitam tidak menyelip */}
-              <polygon points="204,27 220,27 284,138 268,138" fill="#ffffff" />
+              <polygon points="220,54 236,54 280.5,132 264.5,132" fill="#ffffff" />
 
               {/* Aksen merah kedua (Warna dinamis) */}
-              <polygon points="232,49 268,49 320,138 284,138" fill={accentColor} />
+              <polygon points="236,54 271,54 316.5,132 280.5,132" fill={accentColor} />
 
               {/* Logo placeholder / Gambar Logo Kustom */}
               {activeProfile?.companyLogo ? (
                 <image
                   href={activeProfile.companyLogo}
                   x="35"
-                  y="27"
+                  y="54"
                   width="180"
-                  height="111"
+                  height="78"
                   preserveAspectRatio="xMinYMid meet"
                 />
               ) : (
