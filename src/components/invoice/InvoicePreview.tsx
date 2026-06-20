@@ -592,15 +592,21 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
 
 
 
-            {/* Spesifikasi & Fasilitas (SPT) */}
+            {/* Spesifikasi & Fasilitas (SPT) - Hanya Menampilkan Isi */}
             {activeProfile?.showSpesifikasi && (
-              <div style={{ marginTop: '10px', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ background: accentColor, color: '#ffffff', padding: '4px 10px', fontSize: '8.5px', fontWeight: '700', textTransform: 'uppercase', textAlign: 'center' }}>
-                  SPESIFIKASI & FASILITAS
-                </div>
-                <div style={{ border: `1px solid ${accentColor}`, borderTop: 'none', padding: '6px 10px', fontSize: '8.5px', color: '#4b5563', background: '#fef3c7', textAlign: 'center', fontWeight: '600' }}>
-                  {spesifikasiFasilitas || activeProfile.defaultSpesifikasi}
-                </div>
+              <div style={{ 
+                marginTop: '10px', 
+                border: `1.5px solid ${accentColor}`, 
+                borderRadius: '4px', 
+                padding: '6px 10px', 
+                fontSize: '8.5px', 
+                color: '#4b5563', 
+                background: '#fef3c7', 
+                textAlign: 'center', 
+                fontWeight: '600',
+                lineHeight: '1.4'
+              }}>
+                {spesifikasiFasilitas || activeProfile.defaultSpesifikasi}
               </div>
             )}
 
