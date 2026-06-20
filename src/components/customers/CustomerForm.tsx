@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { Contact } from '../../types/contact.types';
+import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 
 const CustomerForm: React.FC = () => {
   const {
@@ -16,6 +17,9 @@ const CustomerForm: React.FC = () => {
   const [name, setName] = useState('');
   const [waNumber, setWaNumber] = useState('');
   const [address, setAddress] = useState('');
+  
+  // State accordion
+  const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
   // Sinkronisasi data saat masuk mode edit
   useEffect(() => {
@@ -78,88 +82,98 @@ const CustomerForm: React.FC = () => {
   };
 
   return (
-    <div className="customer-form" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', overflow: 'auto', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ 
-        width: '100%', 
-        maxWidth: '560px', 
-        background: 'var(--bg-panel)', 
-        border: '1px solid var(--border)', 
-        borderRadius: '16px', 
-        padding: '28px', 
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '20px' 
-      }}>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
-              {editingCustomer ? '✏️ Edit Profil Pelanggan' : '➕ Tambah Pelanggan Baru'}
-            </h2>
-            <button 
-              type="button" 
-              onClick={handleCancel}
-              style={{ border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              <span>❌</span> Batal
-            </button>
-          </div>
+    <div className="customer-form" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
+      <h1 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px', color: 'var(--text-primary)' }}>
+        {editingCustomer ? '📝 Edit Profil Pelanggan' : 'Pembuat Profil Pelanggan'}
+      </h1>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nama Pelanggan</label>
-            <input
-              type="text"
-              style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: PT. Aksara Nusantara Utama"
-              required
-              autoFocus
-            />
-          </div>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <Accordion>
+          <AccordionSection index={1} title="💬 Informasi Profil Pelanggan" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Nama Pelanggan / Instansi
+                </label>
+                <input
+                  type="text"
+                  style={{ 
+                    width: '100%', 
+                    padding: '10px 14px', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '8px', 
+                    fontSize: '14px', 
+                    background: 'var(--bg-card)', 
+                    color: 'var(--text-primary)', 
+                    outline: 'none' 
+                  }}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Contoh: PT. Aksara Nusantara Utama"
+                  required
+                  autoFocus
+                />
+              </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Nomor WhatsApp / Kontak</label>
-            <input
-              type="text"
-              style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }}
-              value={waNumber}
-              onChange={(e) => setWaNumber(e.target.value)}
-              placeholder="Contoh: 08123456789 atau +62812..."
-            />
-          </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Nomor WhatsApp / Kontak
+                </label>
+                <input
+                  type="text"
+                  style={{ 
+                    width: '100%', 
+                    padding: '10px 14px', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '8px', 
+                    fontSize: '14px', 
+                    background: 'var(--bg-card)', 
+                    color: 'var(--text-primary)', 
+                    outline: 'none' 
+                  }}
+                  value={waNumber}
+                  onChange={(e) => setWaNumber(e.target.value)}
+                  placeholder="Contoh: 08123456789 atau +62812..."
+                />
+              </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Alamat Pengiriman / Instansi (Opsional)</label>
-            <textarea
-              style={{ width: '100%', height: '100px', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'vertical', outline: 'none', lineHeight: '1.4' }}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Masukkan alamat pengiriman buku atau invoice..."
-            />
-          </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Alamat Pengiriman / Surat (Opsional)
+                </label>
+                <textarea
+                  style={{ 
+                    width: '100%', 
+                    height: '120px', 
+                    padding: '10px 14px', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '8px', 
+                    fontSize: '14px', 
+                    background: 'var(--bg-card)', 
+                    color: 'var(--text-primary)', 
+                    resize: 'vertical', 
+                    outline: 'none', 
+                    lineHeight: '1.4' 
+                  }}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Masukkan alamat lengkap pengiriman buku atau invoice..."
+                />
+              </div>
+            </div>
+          </AccordionSection>
+        </Accordion>
 
-          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-            <button 
-              type="button" 
-              className="btn-secondary" 
-              onClick={handleCancel}
-              style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }}
-            >
-              Batal
-            </button>
-            <button 
-              type="submit" 
-              className="btn-primary" 
-              style={{ flex: 2, padding: '10px', fontSize: '14px', fontWeight: '600' }}
-            >
-              {editingCustomer ? '💾 Simpan Perubahan' : '➕ Daftarkan Pelanggan'}
-            </button>
-          </div>
-
-        </form>
-      </div>
+        {/* Aksi Utama */}
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button type="submit" className="btn-primary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }}>
+            {editingCustomer ? '💾 Perbarui & Catat' : '💾 Simpan & Catat'}
+          </button>
+          <button type="button" className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }} onClick={handleCancel}>
+            ❌ Batal
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
