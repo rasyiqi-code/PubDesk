@@ -25,6 +25,7 @@ const STORAGE_KEYS = {
   TOKEN: 'pubdesk_gas_token'
 };
 
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxiHG--yIAwOapvGkkK57-E6dQfAKzHO_vbB8JgdYvIZa5VbC3sibRMmJ_nIlcttZMyWA/exec';
 const DEFAULT_TOKEN = 'PubDesk_Secret_Token_2026';
 
 /**
@@ -44,7 +45,7 @@ export const googleAppsScriptService = {
    * Mendapatkan konfigurasi URL dan Token dari localStorage
    */
   getSettings() {
-    const url = localStorage.getItem(STORAGE_KEYS.URL) || '';
+    const url = localStorage.getItem(STORAGE_KEYS.URL) || DEFAULT_URL;
     const token = localStorage.getItem(STORAGE_KEYS.TOKEN) || DEFAULT_TOKEN;
     return { url, token };
   },
