@@ -167,17 +167,11 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           position: 'absolute',
           top: '55%',
           left: '50%',
-          transform: 'translate(-50%, -50%) rotate(-25deg)',
-          fontSize: isMultiLine ? '44px' : '56px',
-          fontWeight: '900',
+          transform: 'translate(-50%, -50%) rotate(-12deg)',
           color: color,
-          border: `8px double ${color}`,
-          padding: isMultiLine ? '10px 20px' : '8px 24px',
-          borderRadius: '12px',
-          textTransform: 'uppercase',
-          letterSpacing: '6px',
-          whiteSpace: isMultiLine ? 'normal' : 'nowrap',
-          textAlign: 'center',
+          border: `5px solid ${color}`,
+          padding: '3px',
+          borderRadius: '6px',
           pointerEvents: 'none',
           userSelect: 'none',
           zIndex: 10,
@@ -185,7 +179,22 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           fontFamily: '"Montserrat", sans-serif'
         }}
       >
-        {textContent}
+        <div
+          style={{
+            border: `2px solid ${color}`,
+            padding: isMultiLine ? '8px 16px' : '6px 20px',
+            borderRadius: '3px',
+            fontSize: isMultiLine ? '40px' : '52px',
+            fontWeight: '900',
+            textTransform: 'uppercase',
+            letterSpacing: '6px',
+            whiteSpace: isMultiLine ? 'normal' : 'nowrap',
+            textAlign: 'center',
+            lineHeight: '1'
+          }}
+        >
+          {textContent}
+        </div>
       </div>
     );
   };
