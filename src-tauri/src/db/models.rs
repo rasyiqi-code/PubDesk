@@ -156,3 +156,175 @@ pub struct WatchFolder {
     pub created_at: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Penulis {
+    pub id: Option<i64>,
+    pub name: String,
+    pub email: Option<String>,
+    pub wa_number: Option<String>,
+    pub province: Option<String>,
+    pub city: Option<String>,
+    pub job: Option<String>,
+    pub institution: Option<String>,
+    pub data_source: Option<String>,
+    pub email_valid: i32, // 0 = false, 1 = true
+    pub wa_valid: i32,
+    pub followup_status: Option<String>,
+    pub notes: Option<String>,
+    pub created_at: String,
+}
+
+impl Default for Penulis {
+    fn default() -> Self {
+        Self {
+            id: None,
+            name: String::new(),
+            email: None,
+            wa_number: None,
+            province: None,
+            city: None,
+            job: None,
+            institution: None,
+            data_source: None,
+            email_valid: 0,
+            wa_valid: 0,
+            followup_status: None,
+            notes: None,
+            created_at: Local::now().to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Penerbit {
+    pub id: Option<i64>,
+    pub name: String,
+    pub city: Option<String>,
+    pub instagram: Option<String>,
+    pub facebook: Option<String>,
+    pub email: Option<String>,
+    pub wa_number: Option<String>,
+    pub linkedin: Option<String>,
+    pub twitter: Option<String>,
+    pub tiktok: Option<String>,
+    pub wa_valid: i32,
+    pub email_valid: i32,
+    pub cooperation_status: Option<String>,
+    pub created_at: String,
+}
+
+impl Default for Penerbit {
+    fn default() -> Self {
+        Self {
+            id: None,
+            name: String::new(),
+            city: None,
+            instagram: None,
+            facebook: None,
+            email: None,
+            wa_number: None,
+            linkedin: None,
+            twitter: None,
+            tiktok: None,
+            wa_valid: 0,
+            email_valid: 0,
+            cooperation_status: None,
+            created_at: Local::now().to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NaskahOrder {
+    pub id: Option<i64>,
+    pub naskah_id_code: Option<String>,
+    pub title: String,
+    pub penulis_id: Option<i64>,
+    pub penerbit_id: Option<i64>,
+    pub package_type: Option<String>,
+    pub order_type: Option<String>,
+    pub copies: Option<i64>,
+    pub book_size: Option<String>,
+    pub initial_request: Option<String>,
+    pub revised_request: Option<String>,
+    pub legal_type: Option<String>,
+    pub shipping_address: Option<String>,
+    pub status: String,
+    pub created_at: String,
+}
+
+impl Default for NaskahOrder {
+    fn default() -> Self {
+        Self {
+            id: None,
+            naskah_id_code: None,
+            title: String::new(),
+            penulis_id: None,
+            penerbit_id: None,
+            package_type: None,
+            order_type: None,
+            copies: None,
+            book_size: None,
+            initial_request: None,
+            revised_request: None,
+            legal_type: None,
+            shipping_address: None,
+            status: "Belum Dimulai".to_string(),
+            created_at: Local::now().to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Layouter {
+    pub id: Option<i64>,
+    pub name: String,
+    pub role: String,
+    pub is_active: i32,
+    pub weekly_target: i64,
+    pub notes: Option<String>,
+    pub created_at: String,
+}
+
+impl Default for Layouter {
+    fn default() -> Self {
+        Self {
+            id: None,
+            name: String::new(),
+            role: "layouter".to_string(),
+            is_active: 1,
+            weekly_target: 0,
+            notes: None,
+            created_at: Local::now().to_rfc3339(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkflowEvent {
+    pub id: Option<i64>,
+    pub naskah_order_id: i64,
+    pub event_name: String,
+    pub completed_date: Option<String>,
+    pub pic_name: Option<String>,
+    pub notes: Option<String>,
+    pub proof_path_or_link: Option<String>,
+    pub status: String,
+}
+
+impl Default for WorkflowEvent {
+    fn default() -> Self {
+        Self {
+            id: None,
+            naskah_order_id: 0,
+            event_name: String::new(),
+            completed_date: None,
+            pic_name: None,
+            notes: None,
+            proof_path_or_link: None,
+            status: "Belum Dimulai".to_string(),
+        }
+    }
+}
+
+

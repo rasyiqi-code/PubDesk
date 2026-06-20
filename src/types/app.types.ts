@@ -13,7 +13,11 @@ export type AppModule =
   | 'books'
   | 'services'
   | 'customer-form'
-  | 'customer-manager';
+  | 'customer-manager'
+  | 'crm-penulis'
+  | 'crm-penerbit'
+  | 'naskah-orders'
+  | 'layouters';
 
 export interface AppState {
   activeModule: AppModule;

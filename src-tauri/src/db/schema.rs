@@ -172,5 +172,99 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
         [],
     )?;
 
+    // Penulis table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS penulis (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT,
+            wa_number TEXT,
+            province TEXT,
+            city TEXT,
+            job TEXT,
+            institution TEXT,
+            data_source TEXT,
+            email_valid INTEGER NOT NULL DEFAULT 0,
+            wa_valid INTEGER NOT NULL DEFAULT 0,
+            followup_status TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    // Penerbit table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS penerbit (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            city TEXT,
+            instagram TEXT,
+            facebook TEXT,
+            email TEXT,
+            wa_number TEXT,
+            linkedin TEXT,
+            twitter TEXT,
+            tiktok TEXT,
+            wa_valid INTEGER NOT NULL DEFAULT 0,
+            email_valid INTEGER NOT NULL DEFAULT 0,
+            cooperation_status TEXT,
+            created_at TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    // Naskah Orders table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS naskah_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            naskah_id_code TEXT UNIQUE,
+            title TEXT NOT NULL,
+            penulis_id INTEGER REFERENCES penulis(id),
+            penerbit_id INTEGER REFERENCES penerbit(id),
+            package_type TEXT,
+            order_type TEXT,
+            copies INTEGER,
+            book_size TEXT,
+            initial_request TEXT,
+            revised_request TEXT,
+            legal_type TEXT,
+            shipping_address TEXT,
+            status TEXT NOT NULL DEFAULT 'Belum Dimulai',
+            created_at TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    // Layouters table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS layouters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'layouter',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            weekly_target INTEGER NOT NULL DEFAULT 0,
+            notes TEXT,
+            created_at TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    // Workflow Events table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS workflow_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            naskah_order_id INTEGER REFERENCES naskah_orders(id) ON DELETE CASCADE,
+            event_name TEXT NOT NULL,
+            completed_date TEXT,
+            pic_name TEXT,
+            notes TEXT,
+            proof_path_or_link TEXT,
+            status TEXT NOT NULL DEFAULT 'Belum Dimulai'
+        )",
+        [],
+    )?;
+
     Ok(())
 }
+

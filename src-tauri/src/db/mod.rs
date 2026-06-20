@@ -519,4 +519,348 @@ impl Database {
         }
         Ok(map)
     }
+
+    // Penulis CRUD
+    pub fn add_penulis(&self, p: &Penulis) -> Result<i64, DbError> {
+        self.conn.execute(
+            "INSERT INTO penulis (name, email, wa_number, province, city, job, institution, data_source, email_valid, wa_valid, followup_status, notes, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            params![
+                p.name,
+                p.email,
+                p.wa_number,
+                p.province,
+                p.city,
+                p.job,
+                p.institution,
+                p.data_source,
+                p.email_valid,
+                p.wa_valid,
+                p.followup_status,
+                p.notes,
+                p.created_at
+            ]
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn get_penulis(&self) -> Result<Vec<Penulis>, DbError> {
+        let mut stmt = self.conn.prepare("SELECT id, name, email, wa_number, province, city, job, institution, data_source, email_valid, wa_valid, followup_status, notes, created_at FROM penulis ORDER BY name ASC")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Penulis {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                email: row.get(2)?,
+                wa_number: row.get(3)?,
+                province: row.get(4)?,
+                city: row.get(5)?,
+                job: row.get(6)?,
+                institution: row.get(7)?,
+                data_source: row.get(8)?,
+                email_valid: row.get(9)?,
+                wa_valid: row.get(10)?,
+                followup_status: row.get(11)?,
+                notes: row.get(12)?,
+                created_at: row.get(13)?,
+            })
+        })?;
+        let mut res = Vec::new();
+        for r in rows {
+            res.push(r?);
+        }
+        Ok(res)
+    }
+
+    pub fn update_penulis(&self, p: &Penulis) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE penulis SET name = ?1, email = ?2, wa_number = ?3, province = ?4, city = ?5, job = ?6, institution = ?7, data_source = ?8, email_valid = ?9, wa_valid = ?10, followup_status = ?11, notes = ?12 WHERE id = ?13",
+            params![
+                p.name,
+                p.email,
+                p.wa_number,
+                p.province,
+                p.city,
+                p.job,
+                p.institution,
+                p.data_source,
+                p.email_valid,
+                p.wa_valid,
+                p.followup_status,
+                p.notes,
+                p.id
+            ]
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_penulis(&self, id: i64) -> Result<(), DbError> {
+        self.conn.execute("DELETE FROM penulis WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    // Penerbit CRUD
+    pub fn add_penerbit(&self, p: &Penerbit) -> Result<i64, DbError> {
+        self.conn.execute(
+            "INSERT INTO penerbit (name, city, instagram, facebook, email, wa_number, linkedin, twitter, tiktok, wa_valid, email_valid, cooperation_status, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            params![
+                p.name,
+                p.city,
+                p.instagram,
+                p.facebook,
+                p.email,
+                p.wa_number,
+                p.linkedin,
+                p.twitter,
+                p.tiktok,
+                p.wa_valid,
+                p.email_valid,
+                p.cooperation_status,
+                p.created_at
+            ]
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn get_penerbit(&self) -> Result<Vec<Penerbit>, DbError> {
+        let mut stmt = self.conn.prepare("SELECT id, name, city, instagram, facebook, email, wa_number, linkedin, twitter, tiktok, wa_valid, email_valid, cooperation_status, created_at FROM penerbit ORDER BY name ASC")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Penerbit {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                city: row.get(2)?,
+                instagram: row.get(3)?,
+                facebook: row.get(4)?,
+                email: row.get(5)?,
+                wa_number: row.get(6)?,
+                linkedin: row.get(7)?,
+                twitter: row.get(8)?,
+                tiktok: row.get(9)?,
+                wa_valid: row.get(10)?,
+                email_valid: row.get(11)?,
+                cooperation_status: row.get(12)?,
+                created_at: row.get(13)?,
+            })
+        })?;
+        let mut res = Vec::new();
+        for r in rows {
+            res.push(r?);
+        }
+        Ok(res)
+    }
+
+    pub fn update_penerbit(&self, p: &Penerbit) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE penerbit SET name = ?1, city = ?2, instagram = ?3, facebook = ?4, email = ?5, wa_number = ?6, linkedin = ?7, twitter = ?8, tiktok = ?9, wa_valid = ?10, email_valid = ?11, cooperation_status = ?12 WHERE id = ?13",
+            params![
+                p.name,
+                p.city,
+                p.instagram,
+                p.facebook,
+                p.email,
+                p.wa_number,
+                p.linkedin,
+                p.twitter,
+                p.tiktok,
+                p.wa_valid,
+                p.email_valid,
+                p.cooperation_status,
+                p.id
+            ]
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_penerbit(&self, id: i64) -> Result<(), DbError> {
+        self.conn.execute("DELETE FROM penerbit WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    // NaskahOrder CRUD
+    pub fn add_naskah_order(&self, n: &NaskahOrder) -> Result<i64, DbError> {
+        self.conn.execute(
+            "INSERT INTO naskah_orders (naskah_id_code, title, penulis_id, penerbit_id, package_type, order_type, copies, book_size, initial_request, revised_request, legal_type, shipping_address, status, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+            params![
+                n.naskah_id_code,
+                n.title,
+                n.penulis_id,
+                n.penerbit_id,
+                n.package_type,
+                n.order_type,
+                n.copies,
+                n.book_size,
+                n.initial_request,
+                n.revised_request,
+                n.legal_type,
+                n.shipping_address,
+                n.status,
+                n.created_at
+            ]
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn get_naskah_orders(&self) -> Result<Vec<NaskahOrder>, DbError> {
+        let mut stmt = self.conn.prepare("SELECT id, naskah_id_code, title, penulis_id, penerbit_id, package_type, order_type, copies, book_size, initial_request, revised_request, legal_type, shipping_address, status, created_at FROM naskah_orders ORDER BY created_at DESC")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(NaskahOrder {
+                id: row.get(0)?,
+                naskah_id_code: row.get(1)?,
+                title: row.get(2)?,
+                penulis_id: row.get(3)?,
+                penerbit_id: row.get(4)?,
+                package_type: row.get(5)?,
+                order_type: row.get(6)?,
+                copies: row.get(7)?,
+                book_size: row.get(8)?,
+                initial_request: row.get(9)?,
+                revised_request: row.get(10)?,
+                legal_type: row.get(11)?,
+                shipping_address: row.get(12)?,
+                status: row.get(13)?,
+                created_at: row.get(14)?,
+            })
+        })?;
+        let mut res = Vec::new();
+        for r in rows {
+            res.push(r?);
+        }
+        Ok(res)
+    }
+
+    pub fn update_naskah_order(&self, n: &NaskahOrder) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE naskah_orders SET naskah_id_code = ?1, title = ?2, penulis_id = ?3, penerbit_id = ?4, package_type = ?5, order_type = ?6, copies = ?7, book_size = ?8, initial_request = ?9, revised_request = ?10, legal_type = ?11, shipping_address = ?12, status = ?13 WHERE id = ?14",
+            params![
+                n.naskah_id_code,
+                n.title,
+                n.penulis_id,
+                n.penerbit_id,
+                n.package_type,
+                n.order_type,
+                n.copies,
+                n.book_size,
+                n.initial_request,
+                n.revised_request,
+                n.legal_type,
+                n.shipping_address,
+                n.status,
+                n.id
+            ]
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_naskah_order(&self, id: i64) -> Result<(), DbError> {
+        self.conn.execute("DELETE FROM naskah_orders WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    // Layouters CRUD
+    pub fn add_layouter(&self, l: &Layouter) -> Result<i64, DbError> {
+        self.conn.execute(
+            "INSERT INTO layouters (name, role, is_active, weekly_target, notes, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                l.name,
+                l.role,
+                l.is_active,
+                l.weekly_target,
+                l.notes,
+                l.created_at
+            ]
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn get_layouters(&self) -> Result<Vec<Layouter>, DbError> {
+        let mut stmt = self.conn.prepare("SELECT id, name, role, is_active, weekly_target, notes, created_at FROM layouters ORDER BY name ASC")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Layouter {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                role: row.get(2)?,
+                is_active: row.get(3)?,
+                weekly_target: row.get(4)?,
+                notes: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?;
+        let mut res = Vec::new();
+        for r in rows {
+            res.push(r?);
+        }
+        Ok(res)
+    }
+
+    pub fn update_layouter(&self, l: &Layouter) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE layouters SET name = ?1, role = ?2, is_active = ?3, weekly_target = ?4, notes = ?5 WHERE id = ?6",
+            params![
+                l.name,
+                l.role,
+                l.is_active,
+                l.weekly_target,
+                l.notes,
+                l.id
+            ]
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_layouter(&self, id: i64) -> Result<(), DbError> {
+        self.conn.execute("DELETE FROM layouters WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    // WorkflowEvents CRUD
+    pub fn add_workflow_event(&self, e: &WorkflowEvent) -> Result<i64, DbError> {
+        self.conn.execute(
+            "INSERT INTO workflow_events (naskah_order_id, event_name, completed_date, pic_name, notes, proof_path_or_link, status) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                e.naskah_order_id,
+                e.event_name,
+                e.completed_date,
+                e.pic_name,
+                e.notes,
+                e.proof_path_or_link,
+                e.status
+            ]
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn get_workflow_events(&self, naskah_order_id: i64) -> Result<Vec<WorkflowEvent>, DbError> {
+        let mut stmt = self.conn.prepare("SELECT id, naskah_order_id, event_name, completed_date, pic_name, notes, proof_path_or_link, status FROM workflow_events WHERE naskah_order_id = ?1 ORDER BY id ASC")?;
+        let rows = stmt.query_map(params![naskah_order_id], |row| {
+            Ok(WorkflowEvent {
+                id: row.get(0)?,
+                naskah_order_id: row.get(1)?,
+                event_name: row.get(2)?,
+                completed_date: row.get(3)?,
+                pic_name: row.get(4)?,
+                notes: row.get(5)?,
+                proof_path_or_link: row.get(6)?,
+                status: row.get(7)?,
+            })
+        })?;
+        let mut res = Vec::new();
+        for r in rows {
+            res.push(r?);
+        }
+        Ok(res)
+    }
+
+    pub fn update_workflow_event(&self, e: &WorkflowEvent) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE workflow_events SET completed_date = ?1, pic_name = ?2, notes = ?3, proof_path_or_link = ?4, status = ?5 WHERE id = ?6",
+            params![
+                e.completed_date,
+                e.pic_name,
+                e.notes,
+                e.proof_path_or_link,
+                e.status,
+                e.id
+            ]
+        )?;
+        Ok(())
+    }
 }
+

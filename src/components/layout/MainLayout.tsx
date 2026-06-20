@@ -14,6 +14,10 @@ import BookManager from '../books/BookManager';
 import ServiceManager from '../services-module/ServiceManager';
 import CustomerForm from '../customers/CustomerForm';
 import CustomerList from '../customers/CustomerList';
+import PenulisManager from '../crm/PenulisManager';
+import PenerbitManager from '../crm/PenerbitManager';
+import NaskahOrdersManager from '../crm/NaskahOrdersManager';
+import LayouterManager from '../crm/LayouterManager';
 
 
 const MainLayout = () => {
@@ -90,6 +94,14 @@ const MainLayout = () => {
         return <CustomerForm />;
       case 'customer-manager':
         return <CustomerList />;
+      case 'crm-penulis':
+        return <PenulisManager />;
+      case 'crm-penerbit':
+        return <PenerbitManager />;
+      case 'naskah-orders':
+        return <NaskahOrdersManager />;
+      case 'layouters':
+        return <LayouterManager />;
       case 'ledger':
         return <div className="module-content" style={{ padding: '24px', color: '#a89880' }}><h2>Buku Besar Virtual</h2><p>Fitur akan segera tersedia</p></div>;
       case 'settings':

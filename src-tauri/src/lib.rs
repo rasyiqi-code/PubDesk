@@ -545,6 +545,118 @@ async fn global_semantic_search(
     crate::indexing::pipeline::global_semantic_search(db, &query)
 }
 
+#[tauri::command]
+async fn get_penulis(state: State<'_, AppState>) -> Result<Vec<Penulis>, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.get_penulis().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_penulis(state: State<'_, AppState>, penulis: Penulis) -> Result<i64, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.add_penulis(&penulis).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_penulis(state: State<'_, AppState>, penulis: Penulis) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.update_penulis(&penulis).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_penulis(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.delete_penulis(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_penerbit(state: State<'_, AppState>) -> Result<Vec<Penerbit>, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.get_penerbit().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_penerbit(state: State<'_, AppState>, penerbit: Penerbit) -> Result<i64, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.add_penerbit(&penerbit).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_penerbit(state: State<'_, AppState>, penerbit: Penerbit) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.update_penerbit(&penerbit).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_penerbit(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.delete_penerbit(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_naskah_orders(state: State<'_, AppState>) -> Result<Vec<NaskahOrder>, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.get_naskah_orders().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_naskah_order(state: State<'_, AppState>, order: NaskahOrder) -> Result<i64, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.add_naskah_order(&order).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_naskah_order(state: State<'_, AppState>, order: NaskahOrder) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.update_naskah_order(&order).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_naskah_order(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.delete_naskah_order(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_layouters(state: State<'_, AppState>) -> Result<Vec<Layouter>, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.get_layouters().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_layouter(state: State<'_, AppState>, layouter: Layouter) -> Result<i64, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.add_layouter(&layouter).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_layouter(state: State<'_, AppState>, layouter: Layouter) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.update_layouter(&layouter).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_layouter(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.delete_layouter(id).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -596,8 +708,25 @@ pub fn run() {
             remove_file_tag,
             get_file_tags,
             get_all_tags,
-            get_all_file_tags
+            get_all_file_tags,
+            get_penulis,
+            add_penulis,
+            update_penulis,
+            delete_penulis,
+            get_penerbit,
+            add_penerbit,
+            update_penerbit,
+            delete_penerbit,
+            get_naskah_orders,
+            add_naskah_order,
+            update_naskah_order,
+            delete_naskah_order,
+            get_layouters,
+            add_layouter,
+            update_layouter,
+            delete_layouter
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
