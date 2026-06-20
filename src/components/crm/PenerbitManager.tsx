@@ -4,6 +4,15 @@ import { useAppContext } from '../../contexts/AppContext';
 import { Penerbit } from '../../types/crm.types';
 import PenerbitForm from './PenerbitForm';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
+import { Button } from '../../ui/atoms/Button';
+import { Badge } from '../../ui/atoms/Badge';
+
+const coopVariantMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'accent'> = {
+  'Aktif': 'success',
+  'Negosiasi': 'warning',
+  'Pasif': 'neutral',
+  'Berhenti': 'danger'
+};
 
 const PenerbitManager: React.FC = () => {
   const { penerbit, addPenerbit, updatePenerbit, deletePenerbit } = useCrmContext();
@@ -81,21 +90,6 @@ const PenerbitManager: React.FC = () => {
     }
   };
 
-  const getCoopBadgeStyle = (status?: string) => {
-    switch (status) {
-      case 'Aktif':
-        return { background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)' };
-      case 'Negosiasi':
-        return { background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', border: '1px solid rgba(234, 179, 8, 0.3)' };
-      case 'Pasif':
-        return { background: 'rgba(107, 114, 128, 0.15)', color: '#9ca3af', border: '1px solid rgba(107, 114, 128, 0.3)' };
-      case 'Berhenti':
-        return { background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' };
-      default:
-        return { background: 'var(--bg-main)', color: 'var(--text-secondary)', border: '1px solid var(--border)' };
-    }
-  };
-
   if (isEditing) {
     return (
       <PenerbitForm
@@ -168,22 +162,9 @@ const PenerbitManager: React.FC = () => {
         </div>
 
         {/* Tombol Tambah */}
-        <button 
-          onClick={handleAddNew}
-          className="btn-primary" 
-          style={{ 
-            padding: '6px 14px', 
-            fontSize: '12px', 
-            fontWeight: '600', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '6px', 
-            borderRadius: '6px', 
-            cursor: 'pointer' 
-          }}
-        >
-          <span>➕</span> Tambah Penerbit
-        </button>
+        <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕">
+          Tambah Penerbit
+        </Button>
       </div>
 
       {/* Tabel Data */}
@@ -243,32 +224,27 @@ const PenerbitManager: React.FC = () => {
                     </div>
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <span style={{
-                      padding: '3px 8px',
-                      borderRadius: '12px',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      ...getCoopBadgeStyle(p.cooperation_status)
-                    }}>
-                      {p.cooperation_status || 'Aktif'}
-                    </span>
+                    <Badge
+                      label={p.cooperation_status || 'Aktif'}
+                      variant={coopVariantMap[p.cooperation_status || 'Aktif']}
+                    />
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={(e) => handleEdit(p, e)}
-                        style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '600' }}
                       >
                         ✏️ Edit
-                      </button>
-                      <button
-                        className="btn-danger"
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={(e) => p.id && handleDelete(p.id, p.name, e)}
-                        style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '600' }}
                       >
                         🗑️ Hapus
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

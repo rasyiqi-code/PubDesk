@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Penerbit } from '../../types/crm.types';
 import { useAppContext } from '../../contexts/AppContext';
+import { TextField } from '../../ui/atoms/TextField';
+import { Select } from '../../ui/atoms/Select';
+import { Button } from '../../ui/atoms/Button';
 
 interface PenerbitFormProps {
   initialData?: Penerbit | null;
@@ -78,16 +81,12 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
     });
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    border: '1px solid var(--border)',
-    borderRadius: '8px',
-    fontSize: '14px',
-    background: 'var(--bg-card)',
-    color: 'var(--text-primary)',
-    outline: 'none'
-  };
+  const statusOptions = [
+    { value: 'Aktif', label: 'Aktif' },
+    { value: 'Negosiasi', label: 'Dalam Negosiasi' },
+    { value: 'Pasif', label: 'Pasif' },
+    { value: 'Berhenti', label: 'Berhenti' }
+  ];
 
   return (
     <div className="customer-form" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
@@ -97,63 +96,43 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Nama Penerbit / Penerbitan <span style={{ color: '#ff4d4f' }}>*</span>
-            </label>
-            <input
-              type="text"
-              style={inputStyle}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: PT. Aksara Nusantara"
-              required
-              autoFocus
+          <TextField
+            label="Nama Penerbit / Penerbitan"
+            placeholder="Contoh: PT. Aksara Nusantara"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            fullWidth
+            autoFocus
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <TextField
+              label="Kota Asal Penerbit"
+              placeholder="Contoh: Yogyakarta"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              fullWidth
+            />
+
+            <Select
+              label="Status Kerja Sama"
+              options={statusOptions}
+              value={cooperationStatus}
+              onChange={(e) => setCooperationStatus(e.target.value)}
+              fullWidth
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Kota Asal Penerbit
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Contoh: Yogyakarta"
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Status Kerja Sama
-              </label>
-              <select
-                style={inputStyle}
-                value={cooperationStatus}
-                onChange={(e) => setCooperationStatus(e.target.value)}
-              >
-                <option value="Aktif">Aktif</option>
-                <option value="Negosiasi">Dalam Negosiasi</option>
-                <option value="Pasif">Pasif</option>
-                <option value="Berhenti">Berhenti</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Email Resmi
-              </label>
-              <input
+              <TextField
+                label="Email Resmi"
                 type="email"
-                style={inputStyle}
+                placeholder="redaksi@penerbit.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="redaksi@penerbit.com"
+                fullWidth
               />
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 <input
@@ -166,15 +145,12 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Nomor WhatsApp PIC
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
+              <TextField
+                label="Nomor WhatsApp PIC"
+                placeholder="Contoh: 08123456789"
                 value={waNumber}
                 onChange={(e) => setWaNumber(e.target.value)}
-                placeholder="Contoh: 08123456789"
+                fullWidth
               />
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 <input
@@ -192,69 +168,49 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Instagram
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={instagram}
-                onChange={(e) => setInstagram(e.target.value)}
-                placeholder="@username_penerbit"
-              />
-            </div>
+            <TextField
+              label="Instagram"
+              placeholder="@username_penerbit"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Facebook Page
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={facebook}
-                onChange={(e) => setFacebook(e.target.value)}
-                placeholder="Nama Halaman Facebook"
-              />
-            </div>
+            <TextField
+              label="Facebook Page"
+              placeholder="Nama Halaman Facebook"
+              value={facebook}
+              onChange={(e) => setFacebook(e.target.value)}
+              fullWidth
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                LinkedIn Company Page
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={linkedin}
-                onChange={(e) => setLinkedin(e.target.value)}
-                placeholder="nama-perusahaan"
-              />
-            </div>
+            <TextField
+              label="LinkedIn Company Page"
+              placeholder="nama-perusahaan"
+              value={linkedin}
+              onChange={(e) => setLinkedin(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                TikTok
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={tiktok}
-                onChange={(e) => setTiktok(e.target.value)}
-                placeholder="@tiktok_penerbit"
-              />
-            </div>
+            <TextField
+              label="TikTok"
+              placeholder="@tiktok_penerbit"
+              value={tiktok}
+              onChange={(e) => setTiktok(e.target.value)}
+              fullWidth
+            />
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button type="submit" className="btn-primary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }}>
-            {initialData ? '💾 Perbarui & Catat' : '💾 Simpan & Catat'}
-          </button>
-          <button type="button" className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }} onClick={onCancel}>
+          <Button type="submit" variant="primary" style={{ flex: 1 }} size="lg">
+            💾 Simpan & Catat
+          </Button>
+          <Button type="button" variant="secondary" style={{ flex: 1 }} size="lg" onClick={onCancel}>
             ❌ Batal
-          </button>
+          </Button>
         </div>
       </form>
     </div>

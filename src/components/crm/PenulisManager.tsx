@@ -4,6 +4,16 @@ import { useAppContext } from '../../contexts/AppContext';
 import { Penulis } from '../../types/crm.types';
 import PenulisForm from './PenulisForm';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
+import { Button } from '../../ui/atoms/Button';
+import { Badge } from '../../ui/atoms/Badge';
+
+const followupVariantMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'accent'> = {
+  'New': 'info',
+  'Contacted': 'warning',
+  'Interested': 'accent',
+  'Deal': 'success',
+  'Rejected': 'danger'
+};
 
 const PenulisManager: React.FC = () => {
   const { penulis, addPenulis, updatePenulis, deletePenulis } = useCrmContext();
@@ -86,23 +96,6 @@ const PenulisManager: React.FC = () => {
     } catch (err) {
       console.error(err);
       showToast('Gagal menyimpan data penulis!', 'error');
-    }
-  };
-
-  const getStatusBadgeStyle = (status?: string) => {
-    switch (status) {
-      case 'New':
-        return { background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.3)' };
-      case 'Contacted':
-        return { background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', border: '1px solid rgba(234, 179, 8, 0.3)' };
-      case 'Interested':
-        return { background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' };
-      case 'Deal':
-        return { background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)' };
-      case 'Rejected':
-        return { background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' };
-      default:
-        return { background: 'var(--bg-main)', color: 'var(--text-secondary)', border: '1px solid var(--border)' };
     }
   };
 
@@ -199,22 +192,9 @@ const PenulisManager: React.FC = () => {
         </div>
 
         {/* Tombol Tambah */}
-        <button 
-          onClick={handleAddNew}
-          className="btn-primary" 
-          style={{ 
-            padding: '6px 14px', 
-            fontSize: '12px', 
-            fontWeight: '600', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '6px', 
-            borderRadius: '6px', 
-            cursor: 'pointer' 
-          }}
-        >
-          <span>➕</span> Tambah Penulis
-        </button>
+        <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕">
+          Tambah Penulis
+        </Button>
       </div>
 
       {/* Tabel Data */}
@@ -270,32 +250,27 @@ const PenulisManager: React.FC = () => {
                     <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>{p.institution || '-'}</div>
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <span style={{
-                      padding: '3px 8px',
-                      borderRadius: '12px',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      ...getStatusBadgeStyle(p.followup_status)
-                    }}>
-                      {p.followup_status || 'New'}
-                    </span>
+                    <Badge
+                      label={p.followup_status || 'New'}
+                      variant={followupVariantMap[p.followup_status || 'New']}
+                    />
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={(e) => handleEdit(p, e)}
-                        style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '600' }}
                       >
                         ✏️ Edit
-                      </button>
-                      <button
-                        className="btn-danger"
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={(e) => p.id && handleDelete(p.id, p.name, e)}
-                        style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '600' }}
                       >
                         🗑️ Hapus
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

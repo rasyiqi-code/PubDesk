@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { NaskahOrder } from '../../types/crm.types';
 import { useCrmContext } from '../../contexts/CrmContext';
 import { useAppContext } from '../../contexts/AppContext';
+import { TextField } from '../../ui/atoms/TextField';
+import { Select } from '../../ui/atoms/Select';
+import { Button } from '../../ui/atoms/Button';
 
 interface NaskahOrderFormProps {
   initialData?: NaskahOrder | null;
@@ -84,6 +87,42 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
     });
   };
 
+  const penulisOptions = [
+    { value: '', label: '-- Pilih Penulis --' },
+    ...penulis.map(p => ({ value: String(p.id), label: p.name }))
+  ];
+
+  const penerbitOptions = [
+    { value: '', label: '-- Pilih Penerbit --' },
+    ...penerbit.map(pub => ({ value: String(pub.id), label: pub.name }))
+  ];
+
+  const packageOptions = [
+    { value: 'Standar', label: 'Standar' },
+    { value: 'Populer', label: 'Populer' },
+    { value: 'Eksklusif', label: 'Eksklusif' },
+    { value: 'Kustom', label: 'Kustom' }
+  ];
+
+  const orderTypeOptions = [
+    { value: 'Baru', label: 'Baru' },
+    { value: 'Cetak Ulang', label: 'Cetak Ulang' },
+    { value: 'Revisi', label: 'Revisi' }
+  ];
+
+  const legalOptions = [
+    { value: 'ISBN', label: 'ISBN' },
+    { value: 'QRCBN', label: 'QRCBN' },
+    { value: 'Tanpa ISBN', label: 'Tanpa ISBN' }
+  ];
+
+  const statusOptions = [
+    { value: 'Belum Dimulai', label: 'Belum Dimulai' },
+    { value: 'Sedang Dikerjakan', label: 'Sedang Dikerjakan' },
+    { value: 'Selesai', label: 'Selesai' },
+    { value: 'Batal', label: 'Batal' }
+  ];
+
   const inputStyle = {
     width: '100%',
     padding: '10px 14px',
@@ -92,7 +131,8 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
     fontSize: '14px',
     background: 'var(--bg-card)',
     color: 'var(--text-primary)',
-    outline: 'none'
+    outline: 'none',
+    boxSizing: 'border-box' as const
   };
 
   return (
@@ -104,169 +144,105 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Kode ID Naskah
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={naskahIdCode}
-                onChange={(e) => setNaskahIdCode(e.target.value)}
-                placeholder="Contoh: NSK-010"
-              />
-            </div>
+            <TextField
+              label="Kode ID Naskah"
+              placeholder="Contoh: NSK-010"
+              value={naskahIdCode}
+              onChange={(e) => setNaskahIdCode(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Judul Naskah / Buku <span style={{ color: '#ff4d4f' }}>*</span>
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Masukkan judul lengkap..."
-                required
-                autoFocus
-              />
-            </div>
+            <TextField
+              label="Judul Naskah / Buku"
+              placeholder="Masukkan judul lengkap..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              fullWidth
+              autoFocus
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Penulis (Relasi CRM)
-              </label>
-              <select
-                style={inputStyle}
-                value={penulisId || ''}
-                onChange={(e) => setPenulisId(e.target.value ? Number(e.target.value) : undefined)}
-              >
-                <option value="">-- Pilih Penulis --</option>
-                {penulis.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Penulis (Relasi CRM)"
+              options={penulisOptions}
+              value={penulisId || ''}
+              onChange={(e) => setPenulisId(e.target.value ? Number(e.target.value) : undefined)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Penerbit Mitra (Relasi CRM)
-              </label>
-              <select
-                style={inputStyle}
-                value={penerbitId || ''}
-                onChange={(e) => setPenerbitId(e.target.value ? Number(e.target.value) : undefined)}
-              >
-                <option value="">-- Pilih Penerbit --</option>
-                {penerbit.map((pub) => (
-                  <option key={pub.id} value={pub.id}>{pub.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Penerbit Mitra (Relasi CRM)"
+              options={penerbitOptions}
+              value={penerbitId || ''}
+              onChange={(e) => setPenerbitId(e.target.value ? Number(e.target.value) : undefined)}
+              fullWidth
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Paket Penerbitan
-              </label>
-              <select
-                style={inputStyle}
-                value={packageType}
-                onChange={(e) => setPackageType(e.target.value)}
-              >
-                <option value="Standar">Standar</option>
-                <option value="Populer">Populer</option>
-                <option value="Eksklusif">Eksklusif</option>
-                <option value="Kustom">Kustom</option>
-              </select>
-            </div>
+            <Select
+              label="Paket Penerbitan"
+              options={packageOptions}
+              value={packageType}
+              onChange={(e) => setPackageType(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Tipe Order
-              </label>
-              <select
-                style={inputStyle}
-                value={orderType}
-                onChange={(e) => setOrderType(e.target.value)}
-              >
-                <option value="Baru">Baru</option>
-                <option value="Cetak Ulang">Cetak Ulang</option>
-                <option value="Revisi">Revisi</option>
-              </select>
-            </div>
+            <Select
+              label="Tipe Order"
+              options={orderTypeOptions}
+              value={orderType}
+              onChange={(e) => setOrderType(e.target.value)}
+              fullWidth
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Jumlah Cetak (Copies)
-              </label>
-              <input
-                type="number"
-                style={inputStyle}
-                value={copies}
-                onChange={(e) => setCopies(Number(e.target.value))}
-                min={0}
-              />
-            </div>
+            <TextField
+              label="Jumlah Cetak (Copies)"
+              type="number"
+              value={copies}
+              onChange={(e) => setCopies(Number(e.target.value))}
+              min={0}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Ukuran Buku
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={bookSize}
-                onChange={(e) => setBookSize(e.target.value)}
-                placeholder="Contoh: 14x20 cm atau A5"
-              />
-            </div>
+            <TextField
+              label="Ukuran Buku"
+              placeholder="Contoh: 14x20 cm atau A5"
+              value={bookSize}
+              onChange={(e) => setBookSize(e.target.value)}
+              fullWidth
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Legalitas / Perizinan
-              </label>
-              <select
-                style={inputStyle}
-                value={legalType}
-                onChange={(e) => setLegalType(e.target.value)}
-              >
-                <option value="ISBN">ISBN</option>
-                <option value="QRCBN">QRCBN</option>
-                <option value="Tanpa ISBN">Tanpa ISBN</option>
-              </select>
-            </div>
+            <Select
+              label="Legalitas / Perizinan"
+              options={legalOptions}
+              value={legalType}
+              onChange={(e) => setLegalType(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Status Naskah
-              </label>
-              <select
-                style={inputStyle}
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="Belum Dimulai">Belum Dimulai</option>
-                <option value="Sedang Dikerjakan">Sedang Dikerjakan</option>
-                <option value="Selesai">Selesai</option>
-                <option value="Batal">Batal</option>
-              </select>
-            </div>
+            <Select
+              label="Status Naskah"
+              options={statusOptions}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              fullWidth
+            />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
               Permintaan Awal Layout/Desain
             </label>
             <textarea
-              style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+              style={inputStyle}
+              rows={3}
               value={initialRequest}
               onChange={(e) => setInitialRequest(e.target.value)}
               placeholder="Masukkan catatan tata letak, warna cover, dsb..."
@@ -274,12 +250,13 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
           </div>
 
           {initialData && (
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
                 Catatan Revisi / Masukan Penulis
               </label>
               <textarea
-                style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+                style={inputStyle}
+                rows={3}
                 value={revisedRequest}
                 onChange={(e) => setRevisedRequest(e.target.value)}
                 placeholder="Detail revisi yang diajukan..."
@@ -287,12 +264,13 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
             </div>
           )}
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
               Alamat Pengiriman Hasil Cetak
             </label>
             <textarea
-              style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+              style={inputStyle}
+              rows={3}
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
               placeholder="Alamat lengkap penerima cetak buku..."
@@ -301,12 +279,12 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button type="submit" className="btn-primary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }}>
-            {initialData ? '💾 Perbarui & Catat' : '💾 Simpan & Catat'}
-          </button>
-          <button type="button" className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }} onClick={onCancel}>
+          <Button type="submit" variant="primary" style={{ flex: 1 }} size="lg">
+            💾 Simpan & Catat
+          </Button>
+          <Button type="button" variant="secondary" style={{ flex: 1 }} size="lg" onClick={onCancel}>
             ❌ Batal
-          </button>
+          </Button>
         </div>
       </form>
     </div>

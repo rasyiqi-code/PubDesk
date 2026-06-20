@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Layouter } from '../../types/crm.types';
 import { useAppContext } from '../../contexts/AppContext';
+import { TextField } from '../../ui/atoms/TextField';
+import { Select } from '../../ui/atoms/Select';
+import { Button } from '../../ui/atoms/Button';
 
 interface LayouterFormProps {
   initialData?: Layouter | null;
@@ -50,16 +53,12 @@ const LayouterForm: React.FC<LayouterFormProps> = ({ initialData, onSubmit, onCa
     });
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    border: '1px solid var(--border)',
-    borderRadius: '8px',
-    fontSize: '14px',
-    background: 'var(--bg-card)',
-    color: 'var(--text-primary)',
-    outline: 'none'
-  };
+  const roleOptions = [
+    { value: 'Layouter Utama', label: 'Layouter Utama' },
+    { value: 'Desainer Cover', label: 'Desainer Cover' },
+    { value: 'Editor/Korektor', label: 'Editor/Korektor' },
+    { value: 'Layouter Magang', label: 'Layouter Magang' }
+  ];
 
   return (
     <div className="customer-form" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
@@ -69,50 +68,33 @@ const LayouterForm: React.FC<LayouterFormProps> = ({ initialData, onSubmit, onCa
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Nama Lengkap Layouter <span style={{ color: '#ff4d4f' }}>*</span>
-            </label>
-            <input
-              type="text"
-              style={inputStyle}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Hana Salsabila"
-              required
-              autoFocus
-            />
-          </div>
+          <TextField
+            label="Nama Lengkap Layouter"
+            placeholder="Contoh: Hana Salsabila"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            fullWidth
+            autoFocus
+          />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Peran / Jabatan Layouter
-              </label>
-              <select
-                style={inputStyle}
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="Layouter Utama">Layouter Utama</option>
-                <option value="Desainer Cover">Desainer Cover</option>
-                <option value="Editor/Korektor">Editor/Korektor</option>
-                <option value="Layouter Magang">Layouter Magang</option>
-              </select>
-            </div>
+            <Select
+              label="Peran / Jabatan Layouter"
+              options={roleOptions}
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Target Kerja Mingguan (Naskah)
-              </label>
-              <input
-                type="number"
-                style={inputStyle}
-                value={weeklyTarget}
-                onChange={(e) => setWeeklyTarget(Number(e.target.value))}
-                min={0}
-              />
-            </div>
+            <TextField
+              label="Target Kerja Mingguan (Naskah)"
+              type="number"
+              value={weeklyTarget}
+              onChange={(e) => setWeeklyTarget(Number(e.target.value))}
+              min={0}
+              fullWidth
+            />
           </div>
 
           <div>
@@ -126,12 +108,24 @@ const LayouterForm: React.FC<LayouterFormProps> = ({ initialData, onSubmit, onCa
             </label>
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
               Keahlian Spesialis & Catatan
             </label>
             <textarea
-              style={{ ...inputStyle, height: '100px', resize: 'vertical' }}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                height: '100px',
+                resize: 'vertical',
+                boxSizing: 'border-box'
+              }}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Contoh: Ahli desain cover novel fantasi, mahir Adobe InDesign..."
@@ -140,12 +134,12 @@ const LayouterForm: React.FC<LayouterFormProps> = ({ initialData, onSubmit, onCa
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button type="submit" className="btn-primary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }}>
-            {initialData ? '💾 Perbarui & Catat' : '💾 Simpan & Catat'}
-          </button>
-          <button type="button" className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }} onClick={onCancel}>
+          <Button type="submit" variant="primary" style={{ flex: 1 }} size="lg">
+            💾 Simpan & Catat
+          </Button>
+          <Button type="button" variant="secondary" style={{ flex: 1 }} size="lg" onClick={onCancel}>
             ❌ Batal
-          </button>
+          </Button>
         </div>
       </form>
     </div>

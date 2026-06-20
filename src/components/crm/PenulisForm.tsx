@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Penulis } from '../../types/crm.types';
 import { useAppContext } from '../../contexts/AppContext';
+import { TextField } from '../../ui/atoms/TextField';
+import { Select } from '../../ui/atoms/Select';
+import { Button } from '../../ui/atoms/Button';
 
 interface PenulisFormProps {
   initialData?: Penulis | null;
@@ -78,16 +81,13 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
     });
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    border: '1px solid var(--border)',
-    borderRadius: '8px',
-    fontSize: '14px',
-    background: 'var(--bg-card)',
-    color: 'var(--text-primary)',
-    outline: 'none'
-  };
+  const statusOptions = [
+    { value: 'New', label: 'Baru (New)' },
+    { value: 'Contacted', label: 'Sudah Dihubungi' },
+    { value: 'Interested', label: 'Tertarik' },
+    { value: 'Deal', label: 'Deal (Naskah Masuk)' },
+    { value: 'Rejected', label: 'Menolak' }
+  ];
 
   return (
     <div className="customer-form" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
@@ -97,32 +97,25 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Nama Lengkap Penulis <span style={{ color: '#ff4d4f' }}>*</span>
-            </label>
-            <input
-              type="text"
-              style={inputStyle}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Prof. Dr. Budi Utomo"
-              required
-              autoFocus
-            />
-          </div>
+          <TextField
+            label="Nama Lengkap Penulis"
+            placeholder="Contoh: Prof. Dr. Budi Utomo"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            fullWidth
+            autoFocus
+          />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Email
-              </label>
-              <input
+              <TextField
+                label="Email"
                 type="email"
-                style={inputStyle}
+                placeholder="budi@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="budi@email.com"
+                fullWidth
               />
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 <input
@@ -135,15 +128,12 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Nomor WhatsApp
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
+              <TextField
+                label="Nomor WhatsApp"
+                placeholder="Contoh: 08123456789"
                 value={waNumber}
                 onChange={(e) => setWaNumber(e.target.value)}
-                placeholder="Contoh: 08123456789"
+                fullWidth
               />
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 <input
@@ -157,99 +147,77 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Provinsi
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={province}
-                onChange={(e) => setProvince(e.target.value)}
-                placeholder="Contoh: Jawa Timur"
-              />
-            </div>
+            <TextField
+              label="Provinsi"
+              placeholder="Contoh: Jawa Timur"
+              value={province}
+              onChange={(e) => setProvince(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Kota / Kabupaten
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Contoh: Surabaya"
-              />
-            </div>
+            <TextField
+              label="Kota / Kabupaten"
+              placeholder="Contoh: Surabaya"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              fullWidth
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Pekerjaan
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={job}
-                onChange={(e) => setJob(e.target.value)}
-                placeholder="Contoh: Dosen, Peneliti"
-              />
-            </div>
+            <TextField
+              label="Pekerjaan"
+              placeholder="Contoh: Dosen, Peneliti"
+              value={job}
+              onChange={(e) => setJob(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Institusi / Afiliasi
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={institution}
-                onChange={(e) => setInstitution(e.target.value)}
-                placeholder="Contoh: Universitas Airlangga"
-              />
-            </div>
+            <TextField
+              label="Institusi / Afiliasi"
+              placeholder="Contoh: Universitas Airlangga"
+              value={institution}
+              onChange={(e) => setInstitution(e.target.value)}
+              fullWidth
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Sumber Data
-              </label>
-              <input
-                type="text"
-                style={inputStyle}
-                value={dataSource}
-                onChange={(e) => setDataSource(e.target.value)}
-                placeholder="Contoh: Pendaftaran Mandiri"
-              />
-            </div>
+            <TextField
+              label="Sumber Data"
+              placeholder="Contoh: Pendaftaran Mandiri"
+              value={dataSource}
+              onChange={(e) => setDataSource(e.target.value)}
+              fullWidth
+            />
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Status Follow-Up
-              </label>
-              <select
-                style={inputStyle}
-                value={followupStatus}
-                onChange={(e) => setFollowupStatus(e.target.value)}
-              >
-                <option value="New">Baru (New)</option>
-                <option value="Contacted">Sudah Dihubungi</option>
-                <option value="Interested">Tertarik</option>
-                <option value="Deal">Deal (Naskah Masuk)</option>
-                <option value="Rejected">Menolak</option>
-              </select>
-            </div>
+            <Select
+              label="Status Follow-Up"
+              options={statusOptions}
+              value={followupStatus}
+              onChange={(e) => setFollowupStatus(e.target.value)}
+              fullWidth
+            />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
               Catatan Tambahan
             </label>
             <textarea
-              style={{ ...inputStyle, height: '100px', resize: 'vertical' }}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                height: '100px',
+                resize: 'vertical',
+                boxSizing: 'border-box'
+              }}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Masukkan informasi tambahan terkait penulis..."
@@ -258,12 +226,12 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button type="submit" className="btn-primary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }}>
-            {initialData ? '💾 Perbarui & Catat' : '💾 Simpan & Catat'}
-          </button>
-          <button type="button" className="btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '14px', fontWeight: '600' }} onClick={onCancel}>
+          <Button type="submit" variant="primary" style={{ flex: 1 }} size="lg">
+            💾 Simpan & Catat
+          </Button>
+          <Button type="button" variant="secondary" style={{ flex: 1 }} size="lg" onClick={onCancel}>
             ❌ Batal
-          </button>
+          </Button>
         </div>
       </form>
     </div>

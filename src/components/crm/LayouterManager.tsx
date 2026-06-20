@@ -4,6 +4,8 @@ import { useAppContext } from '../../contexts/AppContext';
 import { Layouter } from '../../types/crm.types';
 import LayouterForm from './LayouterForm';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
+import { Button } from '../../ui/atoms/Button';
+import { Badge } from '../../ui/atoms/Badge';
 
 const LayouterManager: React.FC = () => {
   const { layouters, addLayouter, updateLayouter, deleteLayouter } = useCrmContext();
@@ -125,22 +127,9 @@ const LayouterManager: React.FC = () => {
         </div>
 
         {/* Tombol Tambah */}
-        <button 
-          onClick={handleAddNew}
-          className="btn-primary" 
-          style={{ 
-            padding: '6px 14px', 
-            fontSize: '12px', 
-            fontWeight: '600', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '6px', 
-            borderRadius: '6px', 
-            cursor: 'pointer' 
-          }}
-        >
-          <span>➕</span> Tambah Layouter
-        </button>
+        <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕">
+          Tambah Layouter
+        </Button>
       </div>
 
       {/* Tabel Data */}
@@ -192,34 +181,27 @@ const LayouterManager: React.FC = () => {
                     🎯 {l.weekly_target} naskah
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <span style={{
-                      padding: '3px 8px',
-                      borderRadius: '12px',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      background: l.is_active === 1 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(107, 114, 128, 0.15)',
-                      color: l.is_active === 1 ? '#22c55e' : '#9ca3af',
-                      border: l.is_active === 1 ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(107, 114, 128, 0.3)'
-                    }}>
-                      {l.is_active === 1 ? 'Aktif' : 'Nonaktif'}
-                    </span>
+                    <Badge
+                      label={l.is_active === 1 ? 'Aktif' : 'Nonaktif'}
+                      variant={l.is_active === 1 ? 'success' : 'neutral'}
+                    />
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button
-                        className="btn-secondary"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={(e) => handleEdit(l, e)}
-                        style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '600' }}
                       >
                         ✏️ Edit
-                      </button>
-                      <button
-                        className="btn-danger"
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={(e) => l.id && handleDelete(l.id, l.name, e)}
-                        style={{ padding: '4px 8px', fontSize: '11px', fontWeight: '600' }}
                       >
                         🗑️ Hapus
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
