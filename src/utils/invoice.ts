@@ -44,7 +44,7 @@ export const getInvoiceMetadata = (invoice: any) => {
   }
   return {
     invoiceNo: '-', invoiceDate: '-', invoiceHal: '-',
-    invoiceLampiran: '-', paymentStatus: 'PENDING',
+    invoiceLampiran: '-', paymentStatus: 'BERMASALAH',
     customerName: 'Umum', customerWa: '-', customerAddress: '',
     spesifikasiFasilitas: ''
   };
