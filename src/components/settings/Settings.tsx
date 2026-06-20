@@ -41,7 +41,7 @@ const Settings: React.FC = () => {
   const [addingFolder, setAddingFolder] = useState(false);
 
   useEffect(() => {
-    if (activeSettingsTab === 'general' && token) {
+    if (activeSettingsTab === 'google-drive' && token) {
       testConnection(token);
     }
   }, [activeSettingsTab]);
@@ -467,7 +467,7 @@ const Settings: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSettingsTab('general')}
+            onClick={() => setActiveSettingsTab('local-folders')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -475,8 +475,8 @@ const Settings: React.FC = () => {
               padding: '8px 12px',
               border: 'none',
               background: 'transparent',
-              borderBottom: activeSettingsTab === 'general' ? '2px solid var(--accent)' : '2px solid transparent',
-              color: activeSettingsTab === 'general' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottom: activeSettingsTab === 'local-folders' ? '2px solid var(--accent)' : '2px solid transparent',
+              color: activeSettingsTab === 'local-folders' ? 'var(--text-primary)' : 'var(--text-secondary)',
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',
@@ -485,7 +485,29 @@ const Settings: React.FC = () => {
               marginBottom: '-1px'
             }}
           >
-            ⚙️ Pengaturan Umum
+            📁 Folder Lokal Dipantau
+          </button>
+
+          <button
+            onClick={() => setActiveSettingsTab('google-drive')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: activeSettingsTab === 'google-drive' ? '2px solid var(--accent)' : '2px solid transparent',
+              color: activeSettingsTab === 'google-drive' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+              marginBottom: '-1px'
+            }}
+          >
+            ☁️ Google Drive
           </button>
         </div>
       </div>
@@ -494,11 +516,92 @@ const Settings: React.FC = () => {
       <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
         {activeSettingsTab === 'invoice' && <InvoiceSettings />}
         {activeSettingsTab === 'services' && <ServiceManager />}
-        {activeSettingsTab === 'general' && (
+        
+        {/* TAB: Folder Lokal Dipantau */}
+        {activeSettingsTab === 'local-folders' && (
+          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Folder Lokal yang Dipantau Card */}
+            <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                  📁 Folder Lokal yang Dipantau
+                </h2>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                  Daftarkan folder lokal dari komputer Anda untuk dipantau secara real-time. Berkas di dalamnya akan otomatis diindeks secara offline-first.
+                </p>
+                
+                {watchFolders.length === 0 ? (
+                  <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', border: '1px dashed var(--border)', textAlign: 'center', marginBottom: '16px' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>Belum ada folder lokal yang dipantau.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '400px', overflowY: 'auto' }}>
+                    {watchFolders.map(folder => (
+                      <div key={folder.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={folder.path}>
+                            {folder.path.split('/').pop() || folder.path}
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={folder.path}>
+                            {folder.path}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-danger compact-btn"
+                          onClick={() => handleRemoveWatchFolder(folder.id!, folder.path)}
+                          style={{ padding: '4px 8px', fontSize: '11px', height: '24px', cursor: 'pointer', flexShrink: 0, marginLeft: '12px' }}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleAddLocalFolder} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="compact-form-group">
+                  <label className="compact-label" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>Path Folder Absolut</label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      className="compact-input"
+                      placeholder="Klik Pilih Folder..."
+                      value={localPathInput}
+                      readOnly
+                      onClick={handleSelectFolder}
+                      style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSelectFolder}
+                      className="btn-secondary compact-btn"
+                      style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                    >
+                      📂 Pilih Folder
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={addingFolder || !localPathInput.trim()}
+                      className="btn-primary compact-btn"
+                      style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                    >
+                      {addingFolder ? 'Menambah...' : '➕ Tambah'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: Google Drive */}
+        {activeSettingsTab === 'google-drive' && (
           <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', alignItems: 'stretch' }}>
               {/* Akun Google Drive Terhubung */}
-              <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
                 <div>
                   <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
                     👤 Akun Google Drive Terhubung
@@ -541,82 +644,8 @@ const Settings: React.FC = () => {
                 </button>
               </div>
 
-              {/* Folder Lokal yang Dipantau Card */}
-              <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                    📁 Folder Lokal yang Dipantau
-                  </h2>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
-                    Daftarkan folder lokal dari komputer Anda untuk dipantau secara real-time. Berkas di dalamnya akan otomatis diindeks secara offline-first.
-                  </p>
-                  
-                  {watchFolders.length === 0 ? (
-                    <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '8px', border: '1px dashed var(--border)', textAlign: 'center', marginBottom: '16px' }}>
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>Belum ada folder lokal yang dipantau.</p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
-                      {watchFolders.map(folder => (
-                        <div key={folder.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
-                            <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={folder.path}>
-                              {folder.path.split('/').pop() || folder.path}
-                            </span>
-                            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={folder.path}>
-                              {folder.path}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn-danger compact-btn"
-                            onClick={() => handleRemoveWatchFolder(folder.id!, folder.path)}
-                            style={{ padding: '4px 8px', fontSize: '11px', height: '24px', cursor: 'pointer', flexShrink: 0, marginLeft: '12px' }}
-                          >
-                            Hapus
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <form onSubmit={handleAddLocalFolder} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
-                  <div className="compact-form-group">
-                    <label className="compact-label" style={{ color: 'var(--text-primary)', fontWeight: '600' }}>Path Folder Absolut</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <input
-                        type="text"
-                        className="compact-input"
-                        placeholder="Klik Pilih Folder..."
-                        value={localPathInput}
-                        readOnly
-                        onClick={handleSelectFolder}
-                        style={{ flex: 1, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSelectFolder}
-                        className="btn-secondary compact-btn"
-                        style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                      >
-                        📂 Pilih Folder
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={addingFolder || !localPathInput.trim()}
-                        className="btn-primary compact-btn"
-                        style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                      >
-                        {addingFolder ? 'Menambah...' : '➕ Tambah'}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-
               {/* Integrasi Google Drive Card */}
-              <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
                 <div>
                   <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
                     ☁️ Integrasi Google Drive
@@ -812,7 +841,7 @@ const Settings: React.FC = () => {
                   <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <li>Buka <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Google Cloud Console</a> dan buat project baru.</li>
                     <li>Cari <strong>Google Drive API</strong> di kolom pencarian atas dan klik <strong>Enable</strong> (Aktifkan).</li>
-                    <li>Masuk ke menu <strong>OAuth consent screen</strong> di sidebar kiri, pilih User Type <strong>External</strong>, lalu isi form informasi aplikasi Anda. Pada bagian <em>Test Users</em>, tambahkan email Gmail Anda sendiri.</li>
+                    <li>Masuk to menu <strong>OAuth consent screen</strong> di sidebar kiri, pilih User Type <strong>External</strong>, lalu isi form informasi aplikasi Anda. Pada bagian <em>Test Users</em>, tambahkan email Gmail Anda sendiri.</li>
                     <li>Buka menu <strong>Credentials</strong> di sidebar kiri, klik <strong>Create Credentials</strong> &gt; <strong>OAuth client ID</strong>.</li>
                     <li>Pilih Application Type: <strong>Desktop app</strong>, beri nama bebas, lalu klik <strong>Create</strong>.</li>
                     <li>Salin nilai <strong>Client ID</strong> dan <strong>Client Secret</strong> yang didapatkan ke kolom input di atas.</li>
