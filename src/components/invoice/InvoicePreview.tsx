@@ -153,13 +153,8 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
     const color = activeProfile?.watermarkColor || baseColor;
     const opacityValue = activeProfile?.watermarkOpacity !== undefined ? activeProfile.watermarkOpacity / 100 : 0.08;
 
-    const isMultiLine = text === 'BELUM LUNAS';
-    const textContent = isMultiLine ? (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '0.9' }}>
-        <div>BELUM</div>
-        <div style={{ marginTop: '2px' }}>LUNAS</div>
-      </div>
-    ) : text;
+    const fontSize = text === 'BELUM LUNAS' ? '30px' : text === 'LUNAS' ? '44px' : '38px';
+    const letterSpacing = text === 'BELUM LUNAS' ? '4px' : text === 'LUNAS' ? '6px' : '5px';
 
     return (
       <div
@@ -167,33 +162,35 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           position: 'absolute',
           top: '55%',
           left: '50%',
-          transform: 'translate(-50%, -50%) rotate(-12deg)',
+          transform: 'translate(-50%, -50%) rotate(-15deg)',
           color: color,
-          border: `5px solid ${color}`,
-          padding: '3px',
-          borderRadius: '6px',
+          border: `4px solid ${color}`,
+          padding: '2px',
+          borderRadius: '8px',
           pointerEvents: 'none',
           userSelect: 'none',
           zIndex: 10,
           opacity: opacityValue,
-          fontFamily: '"Montserrat", sans-serif'
+          fontFamily: '"Montserrat", "Segoe UI", sans-serif',
+          display: 'inline-block'
         }}
       >
         <div
           style={{
-            border: `2px solid ${color}`,
-            padding: isMultiLine ? '8px 16px' : '6px 20px',
-            borderRadius: '3px',
-            fontSize: isMultiLine ? '40px' : '52px',
+            border: `1.5px solid ${color}`,
+            padding: '8px 20px',
+            borderRadius: '5px',
+            fontSize: fontSize,
             fontWeight: '900',
             textTransform: 'uppercase',
-            letterSpacing: '6px',
-            whiteSpace: isMultiLine ? 'normal' : 'nowrap',
+            letterSpacing: letterSpacing,
+            paddingLeft: `calc(20px + ${letterSpacing})`, // Menyeimbangkan letter-spacing di kanan karakter terakhir
+            whiteSpace: 'nowrap',
             textAlign: 'center',
             lineHeight: '1'
           }}
         >
-          {textContent}
+          {text}
         </div>
       </div>
     );
