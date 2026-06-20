@@ -25,7 +25,7 @@ const PanelKanan: React.FC = () => {
     setActiveModule,
   } = useAppContext();
 
-  const { selectedFileId } = useFileState();
+  const { files, selectedFileId, setSelectedFileId, setRightPanelVisible } = useFileState();
 
   const { activeModule } = appState;
 
@@ -39,13 +39,19 @@ const PanelKanan: React.FC = () => {
     case 'invoice-manager':
       return <FilePreviewPanel selectedFileId={selectedFileId} />;
 
-    // Invoice insight — panel ringkasan metrik
     case 'invoice-insight':
       return (
         <InsightPanel
           selectedMetric={selectedInsightMetric}
           invoices={invoices}
-          onNavigateToManager={() => setActiveModule('invoice-manager')}
+          onNavigateToManager={(invoiceId) => {
+            const fileEntry = files.find(f => f.type === 'invoice' && f.version_label === String(invoiceId));
+            if (fileEntry) {
+              setSelectedFileId(fileEntry.id || null);
+              setRightPanelVisible(true);
+            }
+            setActiveModule('invoice-manager');
+          }}
         />
       );
 
@@ -78,4 +84,5 @@ const PanelKanan: React.FC = () => {
   }
 };
 
+export { PanelKanan };
 export default PanelKanan;

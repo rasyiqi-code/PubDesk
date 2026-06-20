@@ -2,11 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useFileState } from '../../contexts/FileContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
-import { Invoice } from '../../types';
+import { Invoice } from '../../types/invoice.types';
 import { formatPrice } from '../../utils/format';
-import { StatusBadge } from '../../ui/Badge';
-import { TableEmptyState } from '../../ui/EmptyState';
-import { FilterBar, FilterGroup, FilterChip, FilterDivider } from '../../ui/FilterBar';
+import { getInvoiceMetadata } from '../../utils/invoice';
+import { StatusBadge } from '../../ui/atoms/Badge';
+import { FilterBar, FilterGroup, FilterChip, FilterDivider } from '../../ui/molecules/FilterBar';
+import { TableEmptyState } from '../../ui/molecules/EmptyState';
 
 interface InvoiceManagerProps {
   searchQuery?: string;
@@ -31,6 +32,7 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
   const {
     files,
     deleteFile,
+    selectedFileId,
     setSelectedFileId,
     setRightPanelVisible,
   } = useFileState();
@@ -59,25 +61,6 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
   
 
   
-  // Parse file_path (metadata JSON)
-  const getInvoiceMetadata = (invoice: Invoice) => {
-    try {
-      if (invoice.file_path) {
-        return JSON.parse(invoice.file_path);
-      }
-    } catch (e) {
-      console.error('Gagal memuat metadata invoice:', e);
-    }
-    return {
-      invoiceNo: '-',
-      invoiceDate: '-',
-      invoiceHal: '-',
-      paymentStatus: 'PENDING',
-      customerName: 'Umum',
-      customerWa: '-'
-    };
-  };
-
   // Filter, Search & Sort Invoices
   const filteredInvoices = useMemo(() => {
     const filtered = invoices.filter((inv) => {
@@ -348,21 +331,32 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
               filteredInvoices.map((inv) => {
                 const metadata = getInvoiceMetadata(inv);
                 const status = metadata.paymentStatus || 'PENDING';
-                const hasFile = files.some(f => f.type === 'invoice' && f.version_label === String(inv.id));
+                const fileEntry = files.find(f => f.type === 'invoice' && f.version_label === String(inv.id));
+                const hasFile = !!fileEntry;
+                const isSelected = fileEntry && fileEntry.id === selectedFileId;
                 
                 return (
                   <tr 
                     key={inv.id} 
-                    style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s ease', cursor: 'pointer' }}
+                    ref={isSelected ? (el) => {
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      }
+                    } : undefined}
+                    style={{ 
+                      borderBottom: '1px solid var(--border)', 
+                      transition: 'background 0.15s ease', 
+                      cursor: 'pointer',
+                      background: isSelected ? 'rgba(192, 28, 28, 0.12)' : 'transparent'
+                    }}
                     onClick={() => {
-                      const fileEntry = files.find(f => f.type === 'invoice' && f.version_label === String(inv.id));
                       if (fileEntry) {
                         setSelectedFileId(fileEntry.id || null);
                         setRightPanelVisible(true);
                       }
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.015)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    onMouseEnter={(e) => e.currentTarget.style.background = isSelected ? 'rgba(192, 28, 28, 0.18)' : 'rgba(0, 0, 0, 0.015)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = isSelected ? 'rgba(192, 28, 28, 0.12)' : 'transparent'}
                   >
                     {/* Tanggal */}
                     <td style={{ padding: '6px 12px', color: 'var(--text-primary)', fontWeight: '500' }}>

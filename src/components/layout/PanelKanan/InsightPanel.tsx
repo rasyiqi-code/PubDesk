@@ -4,7 +4,7 @@ import { formatPrice } from '../../../utils/format';
 interface InsightPanelProps {
   selectedMetric: string | null;
   invoices: any[];
-  onNavigateToManager: () => void;
+  onNavigateToManager: (invoiceId: number) => void;
 }
 
 // Judul panel per metrik
@@ -96,7 +96,7 @@ const InsightPanel: React.FC<InsightPanelProps> = ({
             return (
               <div
                 key={inv.id}
-                onClick={onNavigateToManager}
+                onClick={() => onNavigateToManager(inv.id)}
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border)',
