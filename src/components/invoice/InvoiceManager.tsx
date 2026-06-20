@@ -282,40 +282,40 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
             <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
               <th 
                 onClick={() => handleSort('date')}
-                style={{ padding: '12px 16px', fontWeight: '600', width: '15%', cursor: 'pointer', userSelect: 'none' }}
+                style={{ padding: '8px 12px', fontWeight: '600', width: '15%', cursor: 'pointer', userSelect: 'none' }}
                 title="Urutkan berdasarkan Tanggal"
               >
                 Tanggal{renderSortIcon('date')}
               </th>
               <th 
                 onClick={() => handleSort('invoiceNo')}
-                style={{ padding: '12px 16px', fontWeight: '600', width: '20%', cursor: 'pointer', userSelect: 'none' }}
+                style={{ padding: '8px 12px', fontWeight: '600', width: '20%', cursor: 'pointer', userSelect: 'none' }}
                 title="Urutkan berdasarkan Nomor Invoice"
               >
                 No. Invoice{renderSortIcon('invoiceNo')}
               </th>
               <th 
                 onClick={() => handleSort('customerName')}
-                style={{ padding: '12px 16px', fontWeight: '600', width: '25%', cursor: 'pointer', userSelect: 'none' }}
+                style={{ padding: '8px 12px', fontWeight: '600', width: '25%', cursor: 'pointer', userSelect: 'none' }}
                 title="Urutkan berdasarkan Nama Pelanggan"
               >
                 Pelanggan{renderSortIcon('customerName')}
               </th>
               <th 
                 onClick={() => handleSort('total')}
-                style={{ padding: '12px 16px', fontWeight: '600', width: '15%', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }}
+                style={{ padding: '8px 12px', fontWeight: '600', width: '15%', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }}
                 title="Urutkan berdasarkan Total Nominal"
               >
                 Total{renderSortIcon('total')}
               </th>
               <th 
                 onClick={() => handleSort('status')}
-                style={{ padding: '12px 16px', fontWeight: '600', width: '12%', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}
+                style={{ padding: '8px 12px', fontWeight: '600', width: '12%', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}
                 title="Urutkan berdasarkan Status Pembayaran"
               >
                 Status{renderSortIcon('status')}
               </th>
-              <th style={{ padding: '12px 16px', fontWeight: '600', width: '13%', textAlign: 'center' }}>Aksi</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', width: '13%', textAlign: 'center' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -347,17 +347,17 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     {/* Tanggal */}
-                    <td style={{ padding: '12px 16px', color: 'var(--text-primary)', fontWeight: '500' }}>
+                    <td style={{ padding: '6px 12px', color: 'var(--text-primary)', fontWeight: '500' }}>
                       {metadata.invoiceDate || new Date(inv.created_at).toLocaleDateString('id-ID')}
                     </td>
                     
                     {/* No Invoice */}
-                    <td style={{ padding: '12px 16px', color: 'var(--text-primary)', fontWeight: '600' }}>
+                    <td style={{ padding: '6px 12px', color: 'var(--text-primary)', fontWeight: '600' }}>
                       {metadata.invoiceNo || 'DRAF'}
                     </td>
                     
                     {/* Pelanggan */}
-                    <td style={{ padding: '12px 16px', color: 'var(--text-primary)' }}>
+                    <td style={{ padding: '6px 12px', color: 'var(--text-primary)' }}>
                       <div style={{ fontWeight: '600' }}>{metadata.customerName || 'Umum'}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         WA: {metadata.customerWa || '-'}
@@ -365,12 +365,12 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
                     </td>
                     
                     {/* Total */}
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    <td style={{ padding: '6px 12px', textAlign: 'right', fontWeight: '700', color: 'var(--text-primary)' }}>
                       {formatPrice(inv.total)}
                     </td>
                     
                     {/* Status Pembayaran */}
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                    <td style={{ padding: '6px 12px', textAlign: 'center' }}>
                       <span style={{
                         display: 'inline-block',
                         padding: '3px 8px',
@@ -384,7 +384,7 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
                     </td>
                     
                     {/* Aksi */}
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                    <td style={{ padding: '6px 12px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                         {/* Edit / Reload */}
                         <button

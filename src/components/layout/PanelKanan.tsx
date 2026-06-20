@@ -36,7 +36,7 @@ const PanelKanan: React.FC = () => {
 
   useEffect(() => {
     const fetchMetadata = async () => {
-      if (appState.activeModule !== 'files' || !selectedFileId) {
+      if ((appState.activeModule !== 'files' && appState.activeModule !== 'invoice-manager') || !selectedFileId) {
         setFileMetadata(null);
         setRelatedFiles([]);
         setCurrentTags([]);
@@ -123,6 +123,7 @@ const PanelKanan: React.FC = () => {
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>Preview Extractor akan segera tersedia</p>
           </div>
         );
+      case 'invoice-manager':
       case 'files': {
         const file = files.find(f => f.id === selectedFileId);
         if (!file) {
