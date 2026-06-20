@@ -722,11 +722,12 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                 <path d="M 538.25 20 H 1045 V 70 H 575.75 Z" fill={headerPrimaryColor} />
               </g>
 
-              {/* Teks Rekening Bank (Sebaris di dalam shape footer kiri) */}
+              {/* Teks Rekening Bank (Sebaris di dalam shape footer kanan) */}
               {activeProfile?.showBankInfo && (
                 <text 
-                  x="35" 
+                  x="1010" 
                   y="49" 
+                  textAnchor="end"
                   fill="#ffffff" 
                   fontFamily='"Montserrat", "Segoe UI", sans-serif' 
                   fontSize="12.5" 
