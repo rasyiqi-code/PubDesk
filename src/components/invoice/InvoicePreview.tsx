@@ -585,21 +585,18 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
             {activeProfile?.showBankInfo && (
               <div style={{ 
                 margin: '8px auto 4px', 
-                width: '280px', 
+                width: '100%', 
                 border: '1px solid #e5e7eb', 
                 borderRadius: '4px', 
-                padding: '8px 10px', 
-                fontSize: '8.5px', 
+                padding: '6px 12px', 
+                fontSize: '8px', 
                 color: '#1f2937', 
                 background: '#f9fafb',
                 lineHeight: '1.4',
                 textAlign: 'center'
               }}>
                 <div>
-                  Transfer melalui rekening bank:<br />
-                  <strong>{activeProfile.bankName}</strong><br />
-                  No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
-                  A.n. <strong>{activeProfile.bankAccountOwner}</strong>
+                  Transfer melalui rekening bank: <strong>{activeProfile.bankName}</strong> | No. Rekening: <strong>{activeProfile.bankAccountNo}</strong> | a/n. <strong>{activeProfile.bankAccountOwner}</strong>
                 </div>
               </div>
             )}
