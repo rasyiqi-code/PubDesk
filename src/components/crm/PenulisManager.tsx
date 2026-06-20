@@ -274,6 +274,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
         const contactId = -data.id;
         const originalContact = contacts.find(c => c.id === contactId);
         if (originalContact) {
+          // 1. Sinkronkan rincian kontak utama ke tabel contacts
           await updateContact({
             ...originalContact,
             name: data.name,
@@ -281,6 +282,44 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
             email: data.email,
             address: data.address
           });
+
+          // 2. Karena pelanggan murni diedit (dan mungkin memiliki job, institution, notes, followup_status),
+          // kita simpan dia ke database Penulis/Lead agar data spesifik CRM ini tersimpan!
+          const existingPenulis = penulis.find(p => 
+            p.name.toLowerCase() === originalContact.name.toLowerCase() ||
+            (originalContact.wa_number && p.wa_number === originalContact.wa_number)
+          );
+
+          if (existingPenulis) {
+            await updatePenulis({
+              ...existingPenulis,
+              name: data.name,
+              email: data.email,
+              wa_number: data.wa_number,
+              address: data.address,
+              job: data.job,
+              institution: data.institution,
+              notes: data.notes,
+              followup_status: data.followup_status || 'Pelanggan',
+              email_valid: data.email_valid,
+              wa_valid: data.wa_valid,
+            });
+          } else {
+            await addPenulis({
+              name: data.name,
+              email: data.email,
+              wa_number: data.wa_number,
+              address: data.address,
+              job: data.job,
+              institution: data.institution,
+              notes: data.notes,
+              followup_status: data.followup_status || 'Pelanggan',
+              email_valid: data.email_valid,
+              wa_valid: data.wa_valid,
+              data_source: data.data_source || 'Database Pelanggan',
+            });
+          }
+
           showToast('Data pelanggan berhasil diperbarui!', 'success');
         } else {
           showToast('Kontak pelanggan tidak ditemukan!', 'error');
@@ -288,10 +327,28 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
       } else if (data.id) {
         const original = penulis.find(p => p.id === data.id);
         if (original) {
+          // 1. Perbarui database penulis
           await updatePenulis({
             ...original,
             ...data,
           } as Penulis);
+
+          // 2. Jika penulis ini terhubung sebagai pelanggan, sinkronkan juga ke database kontak
+          const originalContact = contacts.find(c => 
+            c.type === 'customer' &&
+            (c.name.toLowerCase() === original.name.toLowerCase() ||
+              (original.wa_number && c.wa_number === original.wa_number))
+          );
+          if (originalContact) {
+            await updateContact({
+              ...originalContact,
+              name: data.name,
+              wa_number: data.wa_number,
+              email: data.email,
+              address: data.address
+            });
+          }
+
           showToast('Data penulis berhasil diperbarui!', 'success');
         }
       } else {
