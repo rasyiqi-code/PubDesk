@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
-import { InvoiceItem, Contact, InvoiceProfile } from '../types';
+import { InvoiceItem, InvoiceProfile } from '../types/invoice.types';
+import { Contact } from '../types/contact.types';
 import { invoiceTemplates } from '../data/invoiceTemplates';
+import { getIndonesianDate, evaluateItemFormula } from '../utils/invoice';
 
 const defaultProfiles: InvoiceProfile[] = invoiceTemplates.map(t => ({
   ...t.profile,
   id: t.templateId,
-  name: t.profile.name || t.label
+  name: t.profile.name || t.label,
+  invoiceNoFormat: (t.profile as any).invoiceNoFormat || 'KBM/{year}/{month}/{day}/{seq}'
 })) as InvoiceProfile[];
 
 interface InvoiceContextType {
@@ -53,15 +56,6 @@ interface InvoiceContextType {
 
 const InvoiceContext = createContext<InvoiceContextType | undefined>(undefined);
 
-const getIndonesianDate = () => {
-  const months = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-  const d = new Date();
-  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-};
-
 export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [customer, setCustomerState] = useState<Partial<Contact>>({
     name: '',
@@ -85,47 +79,6 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [spesifikasiFasilitas, setSpesifikasiFasilitas] = useState('Sesuai poster paket yang diambil');
   const [bankAccountInfo, setBankAccountInfo] = useState('');
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
-
-  // Helper to evaluate dynamic formulas
-  const evaluateItemFormula = (formulaStr: string, item: InvoiceItem): any => {
-    try {
-      let processed = formulaStr;
-      const tokenRegex = /\{([^}]+)\}/g;
-      
-      let match;
-      let containsString = false;
-      const keys: string[] = [];
-      while ((match = tokenRegex.exec(formulaStr)) !== null) {
-        keys.push(match[1]);
-      }
-      
-      keys.forEach(key => {
-        let val = item[key];
-        if (val === undefined || val === null) {
-          val = 0;
-        }
-        
-        if (typeof val === 'string' && isNaN(Number(val))) {
-          containsString = true;
-        }
-        
-        processed = processed.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val));
-      });
-      
-      const mathOperators = /[\+\-\*\/\(\)]/;
-      if (containsString || !mathOperators.test(processed)) {
-        return processed;
-      }
-      
-      const safeMathExpr = processed.replace(/[^0-9\+\-\*\/\.\(\)\s]/g, '');
-      // eslint-disable-next-line no-new-func
-      const result = new Function(`return (${safeMathExpr});`)();
-      return typeof result === 'number' && !isNaN(result) ? result : 0;
-    } catch (e) {
-      console.error('Gagal mengevaluasi formula:', formulaStr, e);
-      return 0;
-    }
-  };
 
   // Load profiles from localStorage on mount
   useEffect(() => {

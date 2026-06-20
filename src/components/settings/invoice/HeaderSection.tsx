@@ -13,7 +13,9 @@ const HeaderSection: React.FC = () => {
     companyLogo,
     setCompanyLogo,
     headerType,
-    setHeaderType
+    setHeaderType,
+    invoiceNoFormat,
+    setInvoiceNoFormat
   } = useSettingsForm();
 
   const { showToast, rightPanelVisible } = useAppContext();
@@ -55,6 +57,21 @@ const HeaderSection: React.FC = () => {
             onChange={(e) => setInvoiceTitleText(e.target.value)}
             placeholder="Contoh: INVOICE"
           />
+        </div>
+
+        <div className="compact-form-group">
+          <label className="compact-label">Format Nomor Invoice</label>
+          <input
+            type="text"
+            className="compact-input"
+            style={{ width: '100%', border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+            value={invoiceNoFormat}
+            onChange={(e) => setInvoiceNoFormat(e.target.value)}
+            placeholder="Contoh: KBM/{year}/{month}/{day}/{seq}"
+          />
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
+            Variabel: {"{year}"}, {"{month}"}, {"{day}"}, {"{seq}"} (no. urut 4 digit)
+          </span>
         </div>
 
         <div className="compact-form-group">

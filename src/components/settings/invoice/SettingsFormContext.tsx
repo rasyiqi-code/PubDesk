@@ -66,6 +66,8 @@ export interface SettingsFormContextType {
   setWatermarkColor: (v: string) => void;
   watermarkOpacity: number;
   setWatermarkOpacity: (v: number) => void;
+  invoiceNoFormat: string;
+  setInvoiceNoFormat: (v: string) => void;
 }
 
 export const SettingsFormContext = createContext<SettingsFormContextType | undefined>(undefined);

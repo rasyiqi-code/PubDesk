@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useFileState } from '../../contexts/FileContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
+import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 import { MetadataSection } from './generator-sections/MetadataSection';
 import { CustomerSection } from './generator-sections/CustomerSection';
 import { ItemsSection } from './generator-sections/ItemsSection';
@@ -31,17 +32,25 @@ const InvoiceGenerator: React.FC = () => {
 
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
-  // Auto-generate nomor invoice (diawali KBM) ketika kosong
+  // Auto-generate nomor invoice secara dinamis berdasarkan format profil aktif
   useEffect(() => {
-    if (!invoiceNo && invoices.length >= 0) {
+    if (!editingInvoiceId) {
+      const format = activeProfile?.invoiceNoFormat || 'KBM/{year}/{month}/{day}/{seq}';
       const now = new Date();
-      const year = now.getFullYear();
+      const year = String(now.getFullYear());
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
       const seq = String(invoices.length + 1).padStart(4, '0');
-      setInvoiceNo(`KBM/${year}/${month}/${day}/${seq}`);
+
+      const generatedNo = format
+        .replace(/{year}/g, year)
+        .replace(/{month}/g, month)
+        .replace(/{day}/g, day)
+        .replace(/{seq}/g, seq);
+
+      setInvoiceNo(generatedNo);
     }
-  }, [invoices, invoiceNo, setInvoiceNo]);
+  }, [invoices.length, activeProfile, setInvoiceNo, editingInvoiceId]);
 
   const handleSaveInvoice = async () => {
     if (!customer.name) {
@@ -204,43 +213,6 @@ const InvoiceGenerator: React.FC = () => {
     }
   };
 
-  const renderAccordionSection = (index: number, title: string, component: React.ReactNode) => {
-    const isOpen = expandedSection === index;
-    return (
-      <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-card)', marginBottom: '4px' }}>
-        <button
-          type="button"
-          onClick={() => setExpandedSection(isOpen ? null : index)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 16px',
-            background: isOpen ? 'var(--bg-panel)' : 'transparent',
-            border: 'none',
-            color: isOpen ? 'var(--accent)' : 'var(--text-primary)',
-            fontSize: '12px',
-            fontWeight: '700',
-            textAlign: 'left',
-            cursor: 'pointer',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            outline: 'none'
-          }}
-        >
-          <span>{title}</span>
-          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{isOpen ? '▲' : '▼'}</span>
-        </button>
-        {isOpen && (
-          <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
-            {component}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const showGlobalAdditions = !activeProfile?.tableColumns?.some(col => col.key === 'item_shipping_cost');
 
   return (
@@ -249,27 +221,25 @@ const InvoiceGenerator: React.FC = () => {
         {editingInvoiceId ? '📝 Edit Invoice' : 'Pembuat Invoice'}
       </h1>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '20px' }}>
-        {/* Section 1: Jenis & Metadata Invoice */}
-        {renderAccordionSection(1, '📄 Jenis & Metadata Invoice', (
+      <Accordion>
+        <AccordionSection index={1} title="📄 Jenis & Metadata Invoice" expandedSection={expandedSection} onToggle={setExpandedSection}>
           <MetadataSection rightPanelVisible={rightPanelVisible} />
-        ))}
+        </AccordionSection>
 
-        {/* Section 2: Data Pelanggan */}
-        {renderAccordionSection(2, '💬 Data Pelanggan', (
+        <AccordionSection index={2} title="💬 Data Pelanggan" expandedSection={expandedSection} onToggle={setExpandedSection}>
           <CustomerSection />
-        ))}
+        </AccordionSection>
 
-        {/* Section 3: Rincian Item */}
-        {renderAccordionSection(3, '📦 Rincian Item', (
+        <AccordionSection index={3} title="📦 Rincian Item" expandedSection={expandedSection} onToggle={setExpandedSection}>
           <ItemsSection />
-        ))}
+        </AccordionSection>
 
-        {/* Section 4: Biaya Tambahan (Global) */}
-        {showGlobalAdditions && renderAccordionSection(4, '💰 Biaya Tambahan (Global)', (
-          <GlobalCostsSection />
-        ))}
-      </div>
+        {showGlobalAdditions && (
+          <AccordionSection index={4} title="💰 Biaya Tambahan (Global)" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <GlobalCostsSection />
+          </AccordionSection>
+        )}
+      </Accordion>
 
       {/* Aksi Utama */}
       <div style={{ display: 'flex', gap: '12px' }}>

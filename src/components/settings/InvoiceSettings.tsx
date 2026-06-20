@@ -60,6 +60,7 @@ const InvoiceSettings: React.FC = () => {
   const [shippingType, setShippingType] = useState<'none' | 'global' | 'item'>('global');
   const [watermarkColor, setWatermarkColor] = useState('');
   const [watermarkOpacity, setWatermarkOpacity] = useState<number>(8); // Default 8%
+  const [invoiceNoFormat, setInvoiceNoFormat] = useState('KBM/{year}/{month}/{day}/{seq}');
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
@@ -157,6 +158,7 @@ const InvoiceSettings: React.FC = () => {
       setShippingType('global');
       setWatermarkColor('');
       setWatermarkOpacity(8);
+      setInvoiceNoFormat('KBM/{year}/{month}/{day}/{seq}');
     } else {
       const profile = profiles.find((p) => p.id === selectedProfileId);
       if (profile) {
@@ -201,6 +203,7 @@ const InvoiceSettings: React.FC = () => {
         // Muat watermark settings
         setWatermarkColor(profile.watermarkColor || '');
         setWatermarkOpacity(profile.watermarkOpacity !== undefined ? profile.watermarkOpacity : 8);
+        setInvoiceNoFormat(profile.invoiceNoFormat || 'KBM/{year}/{month}/{day}/{seq}');
       }
     }
   }, [selectedProfileId, isEditingNew, profiles]);
@@ -246,7 +249,8 @@ const InvoiceSettings: React.FC = () => {
     tableColumns: getFullTableColumns(tableColumns, shippingType),
     shippingType,
     watermarkColor,
-    watermarkOpacity
+    watermarkOpacity,
+    invoiceNoFormat
   };
 
   const handleSave = () => {
@@ -320,6 +324,7 @@ const InvoiceSettings: React.FC = () => {
     // Muat watermark dari template
     setWatermarkColor(p.watermarkColor || '');
     setWatermarkOpacity(p.watermarkOpacity !== undefined ? p.watermarkOpacity : 8);
+    setInvoiceNoFormat((p as any).invoiceNoFormat || 'KBM/{year}/{month}/{day}/{seq}');
 
     setShowTemplateModal(false);
   };
@@ -564,7 +569,9 @@ const InvoiceSettings: React.FC = () => {
               watermarkColor,
               setWatermarkColor,
               watermarkOpacity,
-              setWatermarkOpacity
+              setWatermarkOpacity,
+              invoiceNoFormat,
+              setInvoiceNoFormat
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

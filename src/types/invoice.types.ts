@@ -73,4 +73,5 @@ export interface InvoiceProfile {
   shippingType?: 'none' | 'global' | 'item';
   watermarkColor?: string;
   watermarkOpacity?: number;
+  invoiceNoFormat?: string;
 }

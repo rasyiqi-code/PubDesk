@@ -12,7 +12,6 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({ rightPanelVisi
     setActiveProfileId,
     activeProfile,
     invoiceNo,
-    setInvoiceNo,
     invoiceDate,
     setInvoiceDate,
     invoiceHal,
@@ -45,13 +44,38 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({ rightPanelVisi
       <div style={{ display: 'grid', gridTemplateColumns: rightPanelVisible ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>No. Invoice</label>
-          <input
-            type="text"
-            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-            value={invoiceNo}
-            onChange={(e) => setInvoiceNo(e.target.value)}
-            placeholder="Contoh: RA.01/11/06/2026"
-          />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="text"
+              style={{ 
+                width: '100%', 
+                padding: '10px 36px 10px 14px', 
+                border: '1px solid var(--border)', 
+                borderRadius: '8px', 
+                fontSize: '14px', 
+                background: 'var(--bg-panel)', 
+                color: 'var(--text-secondary)', 
+                cursor: 'not-allowed',
+                opacity: 0.85
+              }}
+              value={invoiceNo}
+              readOnly
+              placeholder="Otomatis"
+            />
+            <span 
+              style={{ 
+                position: 'absolute', 
+                right: '12px', 
+                color: 'var(--text-secondary)', 
+                fontSize: '14px', 
+                userSelect: 'none',
+                cursor: 'help' 
+              }}
+              title="Nomor invoice dikunci & dibuat otomatis sesuai format profil aktif. Atur format di Pengaturan."
+            >
+              🔒
+            </span>
+          </div>
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Tanggal Invoice</label>
