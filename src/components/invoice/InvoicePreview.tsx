@@ -576,6 +576,59 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
               </div>
             )}
 
+            {/* Informasi Kontak & Rekening Bank (Centered di bawah Note) */}
+            {(activeProfile?.showCompanyContact || activeProfile?.showBankInfo) && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '8px auto 4px', width: '100%', gap: '6px' }}>
+                {activeProfile?.showCompanyContact && (
+                  <div style={{ 
+                    fontSize: '7px', 
+                    color: '#4b5563',
+                    textAlign: 'center', 
+                    lineHeight: '1.3',
+                    fontFamily: '"Montserrat", "Segoe UI", sans-serif',
+                  }}>
+                    {activeProfile.companyWebsite && (
+                      <div>Website: {activeProfile.companyWebsite}</div>
+                    )}
+                    {(activeProfile.companyEmail || activeProfile.companyYoutube) && (
+                      <div>
+                        {activeProfile.companyEmail && `Email: ${activeProfile.companyEmail}`}
+                        {activeProfile.companyEmail && activeProfile.companyYoutube && ' | '}
+                        {activeProfile.companyYoutube && `Youtube: ${activeProfile.companyYoutube}`}
+                      </div>
+                    )}
+                    {activeProfile.companyInstagram && (
+                      <div>IG: {activeProfile.companyInstagram}</div>
+                    )}
+                    {activeProfile.companyPhone && (
+                      <div>Kontak Telp. {activeProfile.companyPhone}</div>
+                    )}
+                  </div>
+                )}
+
+                {activeProfile?.showBankInfo && (
+                  <div style={{ 
+                    width: '280px', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '4px', 
+                    padding: '8px 10px', 
+                    fontSize: '8.5px', 
+                    color: '#1f2937', 
+                    background: '#f9fafb',
+                    lineHeight: '1.4',
+                    textAlign: 'center'
+                  }}>
+                    <div>
+                      Transfer melalui rekening bank:<br />
+                      <strong>{activeProfile.bankName}</strong><br />
+                      No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
+                      A.n. <strong>{activeProfile.bankAccountOwner}</strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Penutup */}
             <div style={{ marginTop: '10px', fontSize: '9px', color: '#4b5563', lineHeight: '1.4' }}>
               Demikian rincian biaya {getInvoiceTypeActionLabel()} anda. Dan lembar ini kami buat untuk dipergunakan sebagaimana semestinya. Atas kepercayaan anda, kami ucapkan terimakasih.
@@ -583,7 +636,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           </div>
 
           {/* Middle Section (Contact & Totals) */}
-          <div style={{ padding: '10px 35px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontFamily: '"Montserrat", "Segoe UI", sans-serif', flexShrink: 0 }}>
+          <div style={{ padding: '10px 35px 12px', display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-end', fontFamily: '"Montserrat", "Segoe UI", sans-serif', flexShrink: 0 }}>
             {/* Tanda Tangan (Kiri) */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '220px', fontSize: '9.5px', color: '#1f2937', position: 'relative' }}>
               <div style={{ fontWeight: '600', color: '#4b5563', marginBottom: '2px' }}>{getSignatureOfficeLabel()}</div>
@@ -638,57 +691,6 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                   {getSignatureNameLabel()}
                 </div>
               </div>
-            </div>
-
-            {/* Sisi Kanan: Kontak & Bank Info */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end', width: '220px' }}>
-              {activeProfile?.showCompanyContact && (
-                <div style={{ 
-                  fontSize: '7px', 
-                  color: '#4b5563',
-                  textAlign: 'right', 
-                  lineHeight: '1.3',
-                  fontFamily: '"Montserrat", "Segoe UI", sans-serif',
-                  width: '100%'
-                }}>
-                  {activeProfile.companyWebsite && (
-                    <div>Website: {activeProfile.companyWebsite}</div>
-                  )}
-                  {(activeProfile.companyEmail || activeProfile.companyYoutube) && (
-                    <div>
-                      {activeProfile.companyEmail && `Email: ${activeProfile.companyEmail}`}
-                      {activeProfile.companyEmail && activeProfile.companyYoutube && ' | '}
-                      {activeProfile.companyYoutube && `Youtube: ${activeProfile.companyYoutube}`}
-                    </div>
-                  )}
-                  {activeProfile.companyInstagram && (
-                    <div>IG: {activeProfile.companyInstagram}</div>
-                  )}
-                  {activeProfile.companyPhone && (
-                    <div>Kontak Telp. {activeProfile.companyPhone}</div>
-                  )}
-                </div>
-              )}
-
-              {activeProfile?.showBankInfo ? (
-                <div style={{ 
-                  width: '100%', 
-                  border: '1px solid #e5e7eb', 
-                  borderRadius: '4px', 
-                  padding: '8px 10px', 
-                  fontSize: '8.5px', 
-                  color: '#1f2937', 
-                  background: '#f9fafb',
-                  lineHeight: '1.4'
-                }}>
-                  <div>
-                    Transfer melalui rekening bank:<br />
-                    <strong>{activeProfile.bankName}</strong><br />
-                    No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
-                    A.n. <strong>{activeProfile.bankAccountOwner}</strong>
-                  </div>
-                </div>
-              ) : null}
             </div>
           </div>
 
