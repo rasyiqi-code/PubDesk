@@ -38,7 +38,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
   const [fileTags, setFileTags] = React.useState<Record<number, string[]>>({});
   const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = React.useState<string | null>(null);
-  const [filterType, setFilterType] = React.useState<'none' | 'status' | 'tag'>('none');
+  const [filterType, setFilterType] = React.useState<'status' | 'tag'>('tag');
 
   const [sortBy, setSortBy] = React.useState<'name' | 'date' | 'size' | 'type' | 'status'>('name');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
@@ -576,32 +576,6 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
           <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)', marginRight: '4px', whiteSpace: 'nowrap' }}>
             🔍 Filter:
           </span>
-          <button
-            onClick={() => {
-              setFilterType('none');
-              setSelectedStatus(null);
-              setSelectedTag(null);
-            }}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '20px',
-              border: 'none',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              background: filterType === 'none' ? 'var(--accent)' : 'var(--bg-card)',
-              color: filterType === 'none' ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              height: '24px',
-              boxSizing: 'border-box'
-            }}
-          >
-            Semua
-          </button>
           <button
             onClick={() => {
               setFilterType('status');
