@@ -32,7 +32,7 @@ export const getCommonPrefix = (paths: string[]): string => {
   const first = splitPaths[0];
   let commonLength = 0;
 
-  for (let col = 0; col < first.length; col++) {
+  for (let col = 0; col < first.length - 1; col++) {
     const segment = first[col];
     const isCommon = splitPaths.every(p => p[col] === segment);
     if (isCommon) {
