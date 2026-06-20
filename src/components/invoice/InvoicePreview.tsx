@@ -154,8 +154,8 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
     const opacityValue = activeProfile?.watermarkOpacity !== undefined ? activeProfile.watermarkOpacity / 100 : 0.08;
 
     const isMultiLine = text === 'BELUM LUNAS';
-    const fontSize = isMultiLine ? '28px' : text === 'LUNAS' ? '40px' : '34px';
-    const letterSpacing = isMultiLine ? '2px' : text === 'LUNAS' ? '4px' : '3px';
+    const fontSize = isMultiLine ? '36px' : text === 'LUNAS' ? '54px' : '44px';
+    const letterSpacing = isMultiLine ? '3px' : text === 'LUNAS' ? '6px' : '4px';
 
     const textContent = isMultiLine ? (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -171,9 +171,9 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
         </div>
         <div style={{ 
           width: '100%', 
-          height: '1px', 
+          height: '1.5px', 
           background: '#ffffff', 
-          margin: '3px 0' 
+          margin: '4px 0' 
         }} />
         <div style={{ 
           fontSize: fontSize, 
@@ -206,7 +206,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
       <div
         style={{
           position: 'absolute',
-          top: '55%',
+          top: '62%',
           left: '50%',
           transform: 'translate(-50%, -50%) rotate(-15deg)',
           pointerEvents: 'none',
@@ -218,18 +218,18 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
       >
         {/* Border Luar Warna Stempel */}
         <div style={{
-          border: `3px solid ${color}`,
-          padding: '2px',
+          border: `4px solid ${color}`,
+          padding: '3px',
           background: 'transparent',
-          borderRadius: '6px'
+          borderRadius: '8px'
         }}>
           {/* Blok Solid dengan background warna stempel & noise grunge */}
           <div
             style={{
               background: `${color} ${grungePattern}`,
-              border: `1.2px solid #ffffff`, // Border dalam putih tipis
-              padding: isMultiLine ? '6px 12px' : '5px 15px',
-              borderRadius: '3px',
+              border: `1.8px solid #ffffff`, // Border dalam putih tipis
+              padding: isMultiLine ? '10px 22px' : '8px 26px',
+              borderRadius: '5px',
               whiteSpace: 'nowrap',
               textAlign: 'center',
               lineHeight: '1',
