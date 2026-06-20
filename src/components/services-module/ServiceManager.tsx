@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { Service } from '../../types';
 import { formatPrice } from '../../utils/format';
+import { TableEmptyState } from '../../ui/EmptyState';
+import { Badge } from '../../ui/Badge';
 
 const ServiceManager: React.FC = () => {
   const { services, addService, updateService, deleteService, showToast, selectedServiceId, setSelectedServiceId, addFile, files, showConfirm, rightPanelVisible } = useAppContext();
@@ -245,11 +247,12 @@ const ServiceManager: React.FC = () => {
             </thead>
             <tbody>
               {services.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                    Belum ada data master layanan.
-                  </td>
-                </tr>
+                <TableEmptyState
+                  colSpan={5}
+                  icon="🛠️"
+                  message="Belum ada data master layanan"
+                  description="Tambahkan layanan baru melalui form di atas"
+                />
               ) : (
                 services.map((service) => {
                   const isSelected = selectedServiceId === service.id;
@@ -270,7 +273,7 @@ const ServiceManager: React.FC = () => {
                       </td>
                       <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--text-primary)' }}>
                         {service.name}
-                        {isSelected && <span style={{ marginLeft: '8px', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'var(--accent)', color: '#ffffff' }}>Terpilih</span>}
+                        {isSelected && <Badge label="Terpilih" variant="accent" size="sm" style={{ marginLeft: '8px' }} />}
                       </td>
                       <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
                         <span style={{

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { formatPrice } from '../../utils/format';
 import { Book } from '../../types';
+import { TableEmptyState } from '../../ui/EmptyState';
 
 const BookManager: React.FC = () => {
   const { books, addBook, updateBook, deleteBook, showToast, selectedBookId, setSelectedBookId, addFile, files, showConfirm } = useAppContext();
@@ -312,11 +313,12 @@ const BookManager: React.FC = () => {
             </thead>
             <tbody>
               {books.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                    Belum ada data buku master.
-                  </td>
-                </tr>
+                <TableEmptyState
+                  colSpan={7}
+                  icon="📚"
+                  message="Belum ada data buku master"
+                  description="Tambahkan buku baru melalui form di atas"
+                />
               ) : (
                 books.map((book) => {
                   const isSelected = selectedBookId === book.id;

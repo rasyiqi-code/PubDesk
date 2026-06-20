@@ -3,6 +3,8 @@ import { useAppContext } from '../../contexts/AppContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { Invoice } from '../../types';
 import { formatPrice } from '../../utils/format';
+import { StatusBadge } from '../../ui/Badge';
+import { TableEmptyState } from '../../ui/EmptyState';
 
 interface InvoiceManagerProps {
   searchQuery?: string;
@@ -246,17 +248,7 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
     }
   };
 
-  const getStatusBadgeStyles = (status: string) => {
-    switch (status) {
-      case 'LUNAS':
-        return { background: 'rgba(22, 163, 74, 0.15)', color: '#16a34a', border: '1px solid rgba(22, 163, 74, 0.3)' };
-      case 'PENDING':
-        return { background: 'rgba(217, 119, 6, 0.15)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.3)' };
-      case 'BELUM LUNAS':
-      default:
-        return { background: 'rgba(220, 38, 38, 0.15)', color: '#dc2626', border: '1px solid rgba(220, 38, 38, 0.3)' };
-    }
-  };
+
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
@@ -398,17 +390,17 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
           </thead>
           <tbody>
             {filteredInvoices.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                  Tidak ada invoice yang ditemukan.
-                </td>
-              </tr>
+              <TableEmptyState
+                colSpan={6}
+                icon="🧾"
+                message="Tidak ada invoice yang ditemukan"
+                description={searchQuery ? `Tidak ada hasil untuk "${searchQuery}"` : undefined}
+              />
             ) : (
               filteredInvoices.map((inv) => {
                 const metadata = getInvoiceMetadata(inv);
                 const status = metadata.paymentStatus || 'PENDING';
                 const hasFile = files.some(f => f.type === 'invoice' && f.version_label === String(inv.id));
-                const badge = getStatusBadgeStyles(status);
                 
                 return (
                   <tr 
@@ -449,16 +441,7 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
                     
                     {/* Status Pembayaran */}
                     <td style={{ padding: '6px 12px', textAlign: 'center' }}>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        ...badge
-                      }}>
-                        {status}
-                      </span>
+                      <StatusBadge status={status} />
                     </td>
                     
                     {/* Aksi */}
