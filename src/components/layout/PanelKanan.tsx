@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import InvoicePreview from '../invoice/InvoicePreview';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -20,8 +21,11 @@ const PanelKanan: React.FC = () => {
     refreshAccountToken,
     addFileTag,
     removeFileTag,
-    getFileTags
+    getFileTags,
+    setActiveModule
   } = useAppContext();
+
+  const { loadInvoiceToForm } = useInvoiceContext();
 
   const [fileMetadata, setFileMetadata] = useState<any | null>(null);
   const [relatedFiles, setRelatedFiles] = useState<any[]>([]);
@@ -174,7 +178,26 @@ const PanelKanan: React.FC = () => {
               spesifikasiFasilitas: metadata.spesifikasiFasilitas || ''
             };
 
-            return <InvoicePreview overrideInvoice={overrideInvoice} />;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+                <div style={{ padding: '8px 16px', background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '8px', zIndex: 10 }}>
+                  <button
+                    className="btn-primary compact-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      loadInvoiceToForm(invoice);
+                      setActiveModule('invoice');
+                    }}
+                    style={{ height: '32px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 12px' }}
+                  >
+                    <span>📝</span> Edit / Muat ke Generator
+                  </button>
+                </div>
+                <div style={{ flex: 1, overflow: 'auto' }}>
+                  <InvoicePreview overrideInvoice={overrideInvoice} />
+                </div>
+              </div>
+            );
           }
         } else if (file.type === 'service') {
           const serviceId = file.version_label ? parseInt(file.version_label) : null;

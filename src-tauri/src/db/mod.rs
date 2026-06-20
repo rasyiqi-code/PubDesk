@@ -186,6 +186,26 @@ impl Database {
         Ok(())
     }
 
+    pub fn update_invoice(&self, invoice: &Invoice) -> Result<(), DbError> {
+        self.conn.execute(
+            "UPDATE invoices SET created_at = ?1, customer_id = ?2, items_json = ?3, shipping_cost = ?4, admin_fee = ?5, total = ?6, export_format = ?7, file_path = ?8, sync_status = ?9, cloud_file_url = ?10 WHERE id = ?11",
+            params![
+                invoice.created_at,
+                invoice.customer_id,
+                invoice.items_json,
+                invoice.shipping_cost,
+                invoice.admin_fee,
+                invoice.total,
+                invoice.export_format,
+                invoice.file_path,
+                invoice.sync_status.as_deref().unwrap_or("pending"),
+                invoice.cloud_file_url,
+                invoice.id
+            ]
+        )?;
+        Ok(())
+    }
+
     // Files
     pub fn add_file(&self, file: &File) -> Result<i64, DbError> {
         self.conn.execute(

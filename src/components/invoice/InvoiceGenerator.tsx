@@ -4,7 +4,7 @@ import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { InvoiceItem } from '../../types';
 
 const InvoiceGenerator: React.FC = () => {
-  const { services, addInvoice, addFile, showToast, rightPanelVisible, invoices } = useAppContext();
+  const { services, addInvoice, updateInvoice, addFile, updateFile, showToast, rightPanelVisible, invoices, files } = useAppContext();
   const {
     customer, setCustomer,
     items, addItem, removeItem,
@@ -22,7 +22,8 @@ const InvoiceGenerator: React.FC = () => {
     profiles,
     activeProfileId,
     setActiveProfileId,
-    activeProfile
+    activeProfile,
+    editingInvoiceId
   } = useInvoiceContext();
 
   const [waInput, setWaInput] = useState('');
@@ -259,6 +260,7 @@ const InvoiceGenerator: React.FC = () => {
     };
 
     const invoiceData = {
+      id: editingInvoiceId || undefined,
       items_json: JSON.stringify(items),
       shipping_cost: shippingCost,
       admin_fee: adminFee,
@@ -269,7 +271,14 @@ const InvoiceGenerator: React.FC = () => {
     };
 
     try {
-      const invoiceId = await addInvoice(invoiceData);
+      let invoiceId = editingInvoiceId;
+      if (editingInvoiceId) {
+        await updateInvoice(invoiceData as any);
+        showToast('Invoice berhasil diperbarui secara lokal!', 'success');
+      } else {
+        invoiceId = await addInvoice(invoiceData as any);
+      }
+
       const filename = `Invoice-${invoiceNo ? invoiceNo.replace(/\//g, '_') : 'DRAF'}-${Date.now()}.pdf`;
 
       // Generate PDF biner dari pratinjau invoice yang sedang aktif di panel kanan
@@ -282,27 +291,48 @@ const InvoiceGenerator: React.FC = () => {
         console.error('Gagal menghasilkan visual PDF:', err);
       }
 
-      // Buat file fisik di folder data aplikasi
+      // Buat/Perbarui file fisik di folder data aplikasi
       const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
-      const physicalPath = await tauriInvoke<string>('create_physical_file', { 
-        filename,
-        bytes: pdfBytes,
-        folder: 'invoices'
-      });
+      let physicalPath = '';
+      
+      const existingFile = editingInvoiceId ? files.find(f => f.type === 'invoice' && f.version_label === String(editingInvoiceId)) : null;
 
-      // Simpan berkas ke tabel files untuk modul Smart Folders
-      const fileData = {
-        filename: `Invoice-${invoiceNo || 'DRAF'}.pdf`,
-        path: physicalPath,
-        type: 'invoice',
-        project_id: undefined,
-        version_label: String(invoiceId),
-        status: 'Tersimpan',
-        last_modified: new Date().toISOString(),
-        is_readonly: false
-      };
+      if (existingFile) {
+        // Gunakan nama file lama untuk overwrite
+        const existingFilename = existingFile.path.split('/').pop() || filename;
+        physicalPath = await tauriInvoke<string>('create_physical_file', { 
+          filename: existingFilename,
+          bytes: pdfBytes,
+          folder: 'invoices'
+        });
 
-      await addFile(fileData);
+        // Update entri berkas di Smart Folders
+        await updateFile({
+          ...existingFile,
+          filename: `Invoice-${invoiceNo || 'DRAF'}.pdf`,
+          last_modified: new Date().toISOString()
+        });
+      } else {
+        physicalPath = await tauriInvoke<string>('create_physical_file', { 
+          filename,
+          bytes: pdfBytes,
+          folder: 'invoices'
+        });
+
+        // Simpan berkas ke tabel files untuk modul Smart Folders
+        const fileData = {
+          filename: `Invoice-${invoiceNo || 'DRAF'}.pdf`,
+          path: physicalPath,
+          type: 'invoice',
+          project_id: undefined,
+          version_label: String(invoiceId),
+          status: 'Tersimpan',
+          last_modified: new Date().toISOString(),
+          is_readonly: false
+        };
+
+        await addFile(fileData);
+      }
 
       // Coba kirim data ke Google Apps Script (Cloud Sheets & Google Drive)
       const { googleAppsScriptService } = await import('../../services/googleAppsScript');
@@ -407,7 +437,9 @@ const InvoiceGenerator: React.FC = () => {
 
   return (
     <div className="invoice-generator" style={{ padding: '20px' }}>
-      <h1 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px', color: 'var(--text-primary)' }}>Pembuat Invoice</h1>
+      <h1 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px', color: 'var(--text-primary)' }}>
+        {editingInvoiceId ? '📝 Edit Invoice' : 'Pembuat Invoice'}
+      </h1>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '20px' }}>
         {/* Section 1: Jenis & Metadata Invoice */}
@@ -688,7 +720,7 @@ const InvoiceGenerator: React.FC = () => {
       {/* Aksi Utama */}
       <div style={{ display: 'flex', gap: '12px' }}>
         <button className="btn-primary" style={{ flex: 1 }} onClick={handleSaveInvoice}>
-          💾 Simpan & Catat
+          {editingInvoiceId ? '💾 Perbarui & Catat' : '💾 Simpan & Catat'}
         </button>
         <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { resetInvoice(); setWaInput(''); }}>
           🔄 Reset

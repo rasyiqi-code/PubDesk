@@ -46,6 +46,9 @@ interface InvoiceContextType {
   addOrUpdateProfile: (profile: InvoiceProfile) => void;
   deleteProfile: (id: string) => void;
   resetProfilesToDefault: () => void;
+  editingInvoiceId: number | null;
+  setEditingInvoiceId: (id: number | null) => void;
+  loadInvoiceToForm: (invoice: any) => void;
 }
 
 const InvoiceContext = createContext<InvoiceContextType | undefined>(undefined);
@@ -81,6 +84,7 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [paymentStatus, setPaymentStatus] = useState('LUNAS');
   const [spesifikasiFasilitas, setSpesifikasiFasilitas] = useState('Sesuai poster paket yang diambil');
   const [bankAccountInfo, setBankAccountInfo] = useState('');
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
 
   // Helper to evaluate dynamic formulas
   const evaluateItemFormula = (formulaStr: string, item: InvoiceItem): any => {
@@ -245,6 +249,7 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
     setInvoiceNo('');
     setInvoiceDate(getIndonesianDate());
     setPaymentStatus('LUNAS');
+    setEditingInvoiceId(null);
     
     if (activeProfile) {
       setInvoiceHal(activeProfile.defaultHal);
@@ -279,6 +284,67 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
       return updated;
     });
+  };
+
+  const loadInvoiceToForm = (invoice: any) => {
+    try {
+      let metadata = {
+        invoiceNo: '',
+        invoiceDate: '',
+        invoiceHal: '',
+        invoiceLampiran: '',
+        paymentStatus: 'LUNAS',
+        spesifikasiFasilitas: '',
+        customerName: '',
+        customerWa: '',
+        customerAddress: ''
+      };
+      
+      if (invoice.file_path) {
+        try {
+          metadata = JSON.parse(invoice.file_path);
+        } catch (jsonErr) {
+          console.error("Gagal parse metadata JSON:", jsonErr);
+        }
+      }
+      
+      setCustomer({
+        name: metadata.customerName || '',
+        wa_number: metadata.customerWa || '',
+        address: metadata.customerAddress || ''
+      });
+      
+      let parsedItems = [];
+      if (invoice.items_json) {
+        try {
+          parsedItems = JSON.parse(invoice.items_json);
+        } catch (jsonErr) {
+          console.error("Gagal parse items JSON:", jsonErr);
+        }
+      }
+      setItems(parsedItems);
+      
+      setShippingCost(invoice.shipping_cost || 0);
+      setAdminFee(invoice.admin_fee || 0);
+      setInvoiceNo(metadata.invoiceNo || '');
+      setInvoiceHal(metadata.invoiceHal || '');
+      setInvoiceLampiran(metadata.invoiceLampiran || '-');
+      setInvoiceDate(metadata.invoiceDate || '');
+      setPaymentStatus(metadata.paymentStatus || 'LUNAS');
+      setSpesifikasiFasilitas(metadata.spesifikasiFasilitas || '');
+      
+      // Cocokkan profile dengan export_format
+      const matchingProfile = profiles.find(p => p.id === invoice.export_format || p.tableType === invoice.export_format);
+      if (matchingProfile) {
+        setActiveProfileIdState(matchingProfile.id);
+      }
+      
+      if (invoice.id) {
+        setEditingInvoiceId(invoice.id);
+      }
+    } catch (e) {
+      console.error("Gagal memuat invoice ke form:", e);
+    }
   };
 
   const resetProfilesToDefault = () => {
@@ -327,6 +393,9 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
       addOrUpdateProfile,
       deleteProfile,
       resetProfilesToDefault,
+      editingInvoiceId,
+      setEditingInvoiceId,
+      loadInvoiceToForm,
     }}>
       {children}
     </InvoiceContext.Provider>

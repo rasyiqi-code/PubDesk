@@ -1,5 +1,7 @@
 import React from 'react';
 import { FileIcon, formatDateTime, getDisplayType } from './fileHelpers';
+import { useAppContext } from '../../contexts/AppContext';
+import { useInvoiceContext } from '../../contexts/InvoiceContext';
 
 interface FileListProps {
   filteredFiles: any[];
@@ -46,6 +48,8 @@ export const FileList: React.FC<FileListProps> = ({
   setExpandedFolders,
   setRightPanelVisible
 }) => {
+  const { invoices, setActiveModule } = useAppContext();
+  const { loadInvoiceToForm } = useInvoiceContext();
   return (
     <>
       <style>{`
@@ -309,6 +313,47 @@ export const FileList: React.FC<FileListProps> = ({
                           </button>
                         )}
 
+                        {/* Tombol Edit Invoice */}
+                        {row.file.type === 'invoice' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const invoiceId = row.file.version_label ? parseInt(row.file.version_label) : null;
+                              const invoice = invoices.find(inv => inv.id === invoiceId);
+                              if (invoice) {
+                                loadInvoiceToForm(invoice);
+                                setActiveModule('invoice');
+                              }
+                            }}
+                            title="Edit / Muat Ulang ke Generator"
+                            style={{
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'background 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+                              e.currentTarget.style.color = 'var(--accent)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = 'var(--text-secondary)';
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                              <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                          </button>
+                        )}
+
                         {/* Tombol Hapus */}
                         <button
                           onClick={(e) => handleDelete(e, row.file.id!, row.file.filename)}
@@ -476,6 +521,47 @@ export const FileList: React.FC<FileListProps> = ({
                         >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Tombol Edit Invoice */}
+                      {file.type === 'invoice' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const invoiceId = file.version_label ? parseInt(file.version_label) : null;
+                            const invoice = invoices.find(inv => inv.id === invoiceId);
+                            if (invoice) {
+                              loadInvoiceToForm(invoice);
+                              setActiveModule('invoice');
+                            }
+                          }}
+                          title="Edit / Muat Ulang ke Generator"
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'background 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+                            e.currentTarget.style.color = 'var(--accent)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                          }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                           </svg>
                         </button>
                       )}
