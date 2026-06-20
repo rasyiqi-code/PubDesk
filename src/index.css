@@ -71,6 +71,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 /* Top Bar */
