@@ -481,6 +481,56 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                     );
                   })
                 )}
+                {/* Rincian Biaya Tambahan Global & Grand Total */}
+                {items.length > 0 && (
+                  <>
+                    {/* Subtotal (hanya jika ada ongkir global atau biaya admin) */}
+                    {((!hasItemShipping && shippingCost > 0) || adminFee > 0) && (
+                      <tr style={{ borderTop: '1.5px solid #d1d5db' }}>
+                        <td colSpan={4} style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9px', fontWeight: '600', color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>
+                          Subtotal
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9px', fontWeight: '600', color: '#1f2937', whiteSpace: 'nowrap', borderBottom: '1px solid #e5e7eb' }}>
+                          Rp {formatPrice(subtotal)}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Ongkos Kirim Global */}
+                    {!hasItemShipping && shippingCost > 0 && (
+                      <tr>
+                        <td colSpan={4} style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9px', fontWeight: '600', color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>
+                          Ongkos Kirim
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9px', fontWeight: '600', color: '#1f2937', whiteSpace: 'nowrap', borderBottom: '1px solid #e5e7eb' }}>
+                          Rp {formatPrice(shippingCost)}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Biaya Admin */}
+                    {adminFee > 0 && (
+                      <tr>
+                        <td colSpan={4} style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9px', fontWeight: '600', color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>
+                          Biaya Admin
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9px', fontWeight: '600', color: '#1f2937', whiteSpace: 'nowrap', borderBottom: '1px solid #e5e7eb' }}>
+                          Rp {formatPrice(adminFee)}
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Grand Total */}
+                    <tr style={{ borderTop: '1.5px solid #9ca3af' }}>
+                      <td colSpan={4} style={{ padding: '6px 8px', textAlign: 'right', fontSize: '9.5px', fontWeight: '700', color: '#1f2937' }}>
+                        Total
+                      </td>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '10px', fontWeight: '800', color: accentColorDark, whiteSpace: 'nowrap' }}>
+                        Rp {formatPrice(total)}
+                      </td>
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
 
@@ -600,6 +650,11 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                   <strong>{activeProfile.bankName}</strong><br />
                   No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
                   A.n. <strong>{activeProfile.bankAccountOwner}</strong>
+                </div>
+                {/* Total tagihan agar pembeli tahu jumlah yang harus ditransfer */}
+                <div style={{ marginTop: '8px', borderTop: '1px solid #e5e7eb', paddingTop: '6px', display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', fontWeight: '700' }}>
+                  <span>Total Tagihan:</span>
+                  <span style={{ color: accentColorDark }}>Rp {formatPrice(total)}</span>
                 </div>
               </div>
             ) : (
