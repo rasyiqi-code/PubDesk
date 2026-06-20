@@ -640,58 +640,57 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
               </div>
             </div>
 
-            {/* Total / Bank Info Box (Kanan) */}
-            {activeProfile?.showBankInfo ? (
-              <div style={{ 
-                width: '220px', 
-                border: '1px solid #e5e7eb', 
-                borderRadius: '4px', 
-                padding: '8px 10px', 
-                fontSize: '8.5px', 
-                color: '#1f2937', 
-                background: '#f9fafb',
-                lineHeight: '1.4'
-              }}>
-                <div>
-                  Transfer melalui rekening bank:<br />
-                  <strong>{activeProfile.bankName}</strong><br />
-                  No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
-                  A.n. <strong>{activeProfile.bankAccountOwner}</strong>
+            {/* Sisi Kanan: Kontak & Bank Info */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end', width: '220px' }}>
+              {activeProfile?.showCompanyContact && (
+                <div style={{ 
+                  fontSize: '7px', 
+                  color: '#4b5563',
+                  textAlign: 'right', 
+                  lineHeight: '1.3',
+                  fontFamily: '"Montserrat", "Segoe UI", sans-serif',
+                  width: '100%'
+                }}>
+                  {activeProfile.companyWebsite && (
+                    <div>Website: {activeProfile.companyWebsite}</div>
+                  )}
+                  {(activeProfile.companyEmail || activeProfile.companyYoutube) && (
+                    <div>
+                      {activeProfile.companyEmail && `Email: ${activeProfile.companyEmail}`}
+                      {activeProfile.companyEmail && activeProfile.companyYoutube && ' | '}
+                      {activeProfile.companyYoutube && `Youtube: ${activeProfile.companyYoutube}`}
+                    </div>
+                  )}
+                  {activeProfile.companyInstagram && (
+                    <div>IG: {activeProfile.companyInstagram}</div>
+                  )}
+                  {activeProfile.companyPhone && (
+                    <div>Kontak Telp. {activeProfile.companyPhone}</div>
+                  )}
                 </div>
-              </div>
-            ) : null}
-          </div>
+              )}
 
-          {/* Company Contact Info (Centered, di bawah Tanda Tangan & Bank, di atas Footer) */}
-          {activeProfile?.showCompanyContact && (
-            <div style={{ 
-              padding: '0 35px 8px', 
-              fontSize: '7.5px', 
-              color: '#4b5563',
-              textAlign: 'center',
-              lineHeight: '1.35',
-              fontFamily: '"Montserrat", "Segoe UI", sans-serif',
-              flexShrink: 0
-            }}>
-              {activeProfile.companyWebsite && (
-                <span>Website: {activeProfile.companyWebsite}<br /></span>
-              )}
-              {(activeProfile.companyEmail || activeProfile.companyYoutube) && (
-                <span>
-                  {activeProfile.companyEmail && `Email: ${activeProfile.companyEmail}`}
-                  {activeProfile.companyEmail && activeProfile.companyYoutube && ' | '}
-                  {activeProfile.companyYoutube && `Youtube: ${activeProfile.companyYoutube}`}
-                  <br />
-                </span>
-              )}
-              {activeProfile.companyInstagram && (
-                <span>IG: {activeProfile.companyInstagram}<br /></span>
-              )}
-              {activeProfile.companyPhone && (
-                <span>Kontak Telp. {activeProfile.companyPhone}</span>
-              )}
+              {activeProfile?.showBankInfo ? (
+                <div style={{ 
+                  width: '100%', 
+                  border: '1px solid #e5e7eb', 
+                  borderRadius: '4px', 
+                  padding: '8px 10px', 
+                  fontSize: '8.5px', 
+                  color: '#1f2937', 
+                  background: '#f9fafb',
+                  lineHeight: '1.4'
+                }}>
+                  <div>
+                    Transfer melalui rekening bank:<br />
+                    <strong>{activeProfile.bankName}</strong><br />
+                    No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
+                    A.n. <strong>{activeProfile.bankAccountOwner}</strong>
+                  </div>
+                </div>
+              ) : null}
             </div>
-          )}
+          </div>
 
           {/* Footer SVG */}
           <div className="invoice-footer" style={{ flexShrink: 0 }}>
