@@ -590,15 +590,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
               </tbody>
             </table>
 
-            {/* Status Akhir Pembayaran Box */}
-            <div style={{ marginTop: '8px', display: 'flex', width: '100%', border: '1px solid #e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ flex: 1, background: '#fdf2f2', padding: '6px 12px', fontSize: '9.5px', fontWeight: '700', color: '#1f2937', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                STATUS AKHIR PEMBAYARAN
-              </div>
-              <div style={{ width: '150px', background: '#ffffff', padding: '6px 12px', fontSize: '10px', fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', textAlign: 'right', borderLeft: '1px solid #e5e7eb' }}>
-                {paymentStatus || 'LUNAS'}
-              </div>
-            </div>
+
 
             {/* Spesifikasi & Fasilitas (SPT) */}
             {activeProfile?.showSpesifikasi && (
