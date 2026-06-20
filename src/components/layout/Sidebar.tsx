@@ -161,7 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                 <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px', marginTop: '2px' }}>
                   {[
                     { module: 'customer-manager' as const, label: 'Pelanggan', icon: '👥' },
-                    { module: 'crm-penulis' as const, label: 'CRM Penulis', icon: '👤' },
+                    { module: 'crm-penulis' as const, label: 'Lead Penulis', icon: '👤' },
                     { module: 'crm-penerbit' as const, label: 'CRM Penerbit', icon: '🏢' },
                     { module: 'naskah-orders' as const, label: 'Naskah & Orders', icon: '📚' },
                     { module: 'layouters' as const, label: 'Tim Layouter', icon: '🎨' },

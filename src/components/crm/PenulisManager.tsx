@@ -6,6 +6,17 @@ import PenulisForm from './PenulisForm';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
 import { Button } from '../../ui/atoms/Button';
 import { Badge } from '../../ui/atoms/Badge';
+import * as XLSX from 'xlsx';
+
+const getWhatsAppLink = (phone: string) => {
+  let cleaned = phone.replace(/\D/g, '');
+  if (cleaned.startsWith('0')) {
+    cleaned = '62' + cleaned.substring(1);
+  } else if (!cleaned.startsWith('62') && cleaned.length > 0) {
+    cleaned = '62' + cleaned;
+  }
+  return `https://wa.me/${cleaned}`;
+};
 
 const followupVariantMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'accent'> = {
   'New': 'info',
@@ -96,6 +107,115 @@ const PenulisManager: React.FC = () => {
       return matchesSearch && matchesStatus && matchesProvince;
     });
   }, [combinedPenulis, search, statusFilter, provinceFilter]);
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        if (data.length === 0) {
+          showToast('File Excel kosong!', 'error');
+          return;
+        }
+
+        let importedCount = 0;
+        let errorCount = 0;
+
+        for (const row of data) {
+          const name = row.Nama || row.nama || row.Name || row.name || row["Nama Penulis"];
+          if (!name) {
+            errorCount++;
+            continue;
+          }
+
+          const wa_number = row.WA || row.wa || row["No WA"] || row["No. WA"] || row["WhatsApp"] || row["wa_number"] || row.Phone || row.phone;
+          const email = row.Email || row.email || row.Mail || row.mail;
+          const address = row.Alamat || row.alamat || row.Address || row.address;
+          const job = row.Pekerjaan || row.pekerjaan || row.Job || row.job;
+          const institution = row.Institusi || row.institusi || row.Institution || row.institution;
+          const data_source = row.Sumber || row.sumber || row["Sumber Data"] || row.source;
+          const followup_status = row.Status || row.status || row["Status Follow-Up"] || 'New';
+          const notes = row.Catatan || row.catatan || row.Notes || row.notes;
+
+          try {
+            await addPenulis({
+              name: String(name).trim(),
+              wa_number: wa_number ? String(wa_number).trim() : undefined,
+              email: email ? String(email).trim() : undefined,
+              address: address ? String(address).trim() : undefined,
+              job: job ? String(job).trim() : undefined,
+              institution: institution ? String(institution).trim() : undefined,
+              data_source: data_source ? String(data_source).trim() : 'Impor Excel',
+              email_valid: email ? 1 : 0,
+              wa_valid: wa_number ? 1 : 0,
+              followup_status: String(followup_status).trim(),
+              notes: notes ? String(notes).trim() : undefined,
+            });
+            importedCount++;
+          } catch (err) {
+            console.error('Gagal mengimpor baris penulis:', err);
+            errorCount++;
+          }
+        }
+
+        showToast(`Impor berhasil! ${importedCount} data dimasukkan.${errorCount > 0 ? ` Gagal: ${errorCount}` : ''}`, 'success');
+        e.target.value = '';
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal memproses file Excel!', 'error');
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleExportExcel = () => {
+    try {
+      if (penulis.length === 0) {
+        showToast('Tidak ada data penulis untuk diekspor!', 'info');
+        return;
+      }
+
+      const exportData = penulis.map((p, idx) => ({
+        "No": idx + 1,
+        "Nama Penulis": p.name,
+        "WhatsApp": p.wa_number || '',
+        "Email": p.email || '',
+        "Alamat": p.address || (p.city ? `${p.city}, ${p.province}` : p.province || ''),
+        "Pekerjaan": p.job || '',
+        "Institusi": p.institution || '',
+        "Sumber Data": p.data_source || '',
+        "Status Follow-Up": p.followup_status || 'New',
+        "Catatan": p.notes || '',
+        "Tanggal Dibuat": p.created_at ? p.created_at.substring(0, 10) : ''
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      const maxLens = Object.keys(exportData[0] || {}).map(key => {
+        return Math.max(
+          key.length,
+          ...exportData.map(row => String((row as any)[key] || '').length)
+        );
+      });
+      ws['!cols'] = maxLens.map(len => ({ wch: Math.min(len + 3, 50) }));
+
+      XLSX.utils.book_append_sheet(wb, ws, "Lead Penulis");
+      XLSX.writeFile(wb, "Lead_Penulis_Export.xlsx");
+      showToast('Data Lead Penulis berhasil diekspor ke Excel!', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal mengekspor data ke Excel!', 'error');
+    }
+  };
 
   const handleAddNew = () => {
     setCurrentPenulis(null);
@@ -279,10 +399,37 @@ const PenulisManager: React.FC = () => {
           </select>
         </div>
 
-        {/* Tombol Tambah */}
-        <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕">
-          Tambah Penulis
-        </Button>
+        {/* Input File Tersembunyi untuk Impor Excel */}
+        <input
+          type="file"
+          id="excel-import-input"
+          accept=".xlsx, .xls"
+          style={{ display: 'none' }}
+          onChange={handleImportExcel}
+        />
+
+        {/* Tombol Aksi Toolbar */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button 
+            onClick={() => document.getElementById('excel-import-input')?.click()} 
+            variant="secondary" 
+            size="sm" 
+            icon="📥"
+          >
+            Impor Excel
+          </Button>
+          <Button 
+            onClick={handleExportExcel} 
+            variant="secondary" 
+            size="sm" 
+            icon="📤"
+          >
+            Ekspor Excel
+          </Button>
+          <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕">
+            Tambah Penulis
+          </Button>
+        </div>
       </div>
 
       {/* Tabel Data */}
@@ -330,7 +477,26 @@ const PenulisManager: React.FC = () => {
                       📧 {p.email || '-'} {p.email_valid === 1 && <span title="Email Valid" style={{ color: '#22c55e', marginLeft: '4px' }}>✓</span>}
                     </div>
                     <div style={{ marginTop: '2px' }}>
-                      💬 {p.wa_number || '-'} {p.wa_valid === 1 && <span title="WhatsApp Valid" style={{ color: '#22c55e', marginLeft: '4px' }}>✓</span>}
+                      💬 {p.wa_number ? (
+                        <a
+                          href={getWhatsAppLink(p.wa_number)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Klik untuk chat WhatsApp (Click to Chat)"
+                          style={{
+                            color: 'var(--text-primary)',
+                            textDecoration: 'none',
+                            fontWeight: '500',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                        >
+                          {p.wa_number} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
+                        </a>
+                      ) : '-'} {p.wa_valid === 1 && <span title="WhatsApp Valid" style={{ color: '#22c55e', marginLeft: '4px' }}>✓</span>}
                     </div>
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
