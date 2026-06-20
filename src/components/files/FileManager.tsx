@@ -585,10 +585,10 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
               setSelectedTag(null);
             }}
             style={{
-              padding: '2px 4px',
+              padding: '0 20px 0 8px',
               borderRadius: '4px',
               border: '1px solid var(--border)',
-              background: 'var(--bg-card)',
+              background: 'url("data:image/svg+xml;utf8,<svg fill=\'%235e5a55\' height=\'12\' viewBox=\'0 0 24 24\' width=\'12\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>\") no-repeat right 6px center var(--bg-card)',
               color: 'var(--text-primary)',
               fontSize: '11px',
               fontWeight: '500',
@@ -596,6 +596,11 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
               outline: 'none',
               minWidth: '80px',
               height: '24px',
+              lineHeight: '22px',
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              appearance: 'none',
+              boxSizing: 'border-box',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}
           >
