@@ -3,7 +3,12 @@ import { useAppContext } from '../../contexts/AppContext';
 import { Invoice } from '../../types';
 
 const InvoiceInsight: React.FC = () => {
-  const { invoices } = useAppContext();
+  const { 
+    invoices, 
+    selectedInsightMetric, 
+    setSelectedInsightMetric, 
+    setRightPanelVisible 
+  } = useAppContext();
 
   // Format harga Rupiah
   const formatPrice = (amount: number) => {
@@ -70,11 +75,20 @@ const InvoiceInsight: React.FC = () => {
   // Visualisasi lingkaran SVG
   const radius = 50;
   const circumference = 2 * Math.PI * radius;
-  
-  // Hitung offset stroke SVG
-  const strokeDashoffsetLunas = circumference - (percentLunas / 100) * circumference;
-  const strokeDashoffsetBelumLunas = circumference - (percentBelumLunas / 100) * circumference;
-  const strokeDashoffsetPending = circumference - (percentPending / 100) * circumference;
+
+  // Rumus panjang busur SVG strokeDasharray
+  const strokeLengthLunas = (percentLunas / 100) * circumference;
+  const strokeLengthBelumLunas = (percentBelumLunas / 100) * circumference;
+  const strokeLengthPending = (percentPending / 100) * circumference;
+
+  // Sudut rotasi kumulatif
+  const rotateBelumLunas = percentLunas * 3.6;
+  const rotatePending = (percentLunas + percentBelumLunas) * 3.6;
+
+  const handleMetricClick = (metric: 'total' | 'lunas' | 'belum_lunas' | 'pending') => {
+    setSelectedInsightMetric(metric);
+    setRightPanelVisible(true);
+  };
 
   return (
     <div className="invoice-insight" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', gap: '20px' }}>
@@ -84,22 +98,122 @@ const InvoiceInsight: React.FC = () => {
 
       {/* Ringkasan Statistik Kartu */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', flexShrink: 0 }}>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+        
+        {/* Kartu Total */}
+        <div 
+          onClick={() => handleMetricClick('total')}
+          style={{ 
+            background: selectedInsightMetric === 'total' ? 'rgba(0, 0, 0, 0.04)' : 'var(--bg-panel)',
+            border: selectedInsightMetric === 'total' ? '2px solid var(--accent)' : '1px solid var(--border)', 
+            borderRadius: '12px', 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            boxShadow: selectedInsightMetric === 'total' ? '0 4px 12px rgba(0,0,0,0.06)' : '0 2px 8px rgba(0,0,0,0.02)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            transform: selectedInsightMetric === 'total' ? 'translateY(-2px)' : 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            if (selectedInsightMetric !== 'total') e.currentTarget.style.borderColor = 'var(--text-secondary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = selectedInsightMetric === 'total' ? '0 4px 12px rgba(0,0,0,0.06)' : '0 2px 8px rgba(0,0,0,0.02)';
+            if (selectedInsightMetric !== 'total') e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
           <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Total Invoice Terbit</span>
           <strong style={{ fontSize: '24px', color: 'var(--text-primary)' }}>{stats.count} Lembar</strong>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Akumulasi omzet kotor: <strong>{formatPrice(stats.grandTotal)}</strong></span>
         </div>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+
+        {/* Kartu Lunas */}
+        <div 
+          onClick={() => handleMetricClick('lunas')}
+          style={{ 
+            background: selectedInsightMetric === 'lunas' ? 'rgba(22, 163, 74, 0.08)' : 'var(--bg-panel)',
+            border: selectedInsightMetric === 'lunas' ? '2px solid #16a34a' : '1px solid var(--border)', 
+            borderRadius: '12px', 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            boxShadow: selectedInsightMetric === 'lunas' ? '0 4px 12px rgba(22,163,74,0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            transform: selectedInsightMetric === 'lunas' ? 'translateY(-2px)' : 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            if (selectedInsightMetric !== 'lunas') e.currentTarget.style.borderColor = '#16a34a';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = selectedInsightMetric === 'lunas' ? '0 4px 12px rgba(22,163,74,0.1)' : '0 2px 8px rgba(0,0,0,0.02)';
+            if (selectedInsightMetric !== 'lunas') e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
           <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#16a34a' }}>Total Dana Diterima (Lunas)</span>
           <strong style={{ fontSize: '24px', color: '#16a34a' }}>{formatPrice(stats.lunas)}</strong>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Dari <strong>{stats.countLunas}</strong> invoice lunas</span>
         </div>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+
+        {/* Kartu Belum Lunas */}
+        <div 
+          onClick={() => handleMetricClick('belum_lunas')}
+          style={{ 
+            background: selectedInsightMetric === 'belum_lunas' ? 'rgba(220, 38, 38, 0.08)' : 'var(--bg-panel)',
+            border: selectedInsightMetric === 'belum_lunas' ? '2px solid #dc2626' : '1px solid var(--border)', 
+            borderRadius: '12px', 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            boxShadow: selectedInsightMetric === 'belum_lunas' ? '0 4px 12px rgba(220,38,38,0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            transform: selectedInsightMetric === 'belum_lunas' ? 'translateY(-2px)' : 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            if (selectedInsightMetric !== 'belum_lunas') e.currentTarget.style.borderColor = '#dc2626';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = selectedInsightMetric === 'belum_lunas' ? '0 4px 12px rgba(220,38,38,0.1)' : '0 2px 8px rgba(0,0,0,0.02)';
+            if (selectedInsightMetric !== 'belum_lunas') e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
           <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626' }}>Total Piutang (Belum Lunas)</span>
           <strong style={{ fontSize: '24px', color: '#dc2626' }}>{formatPrice(stats.belumLunas)}</strong>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Dari <strong>{stats.countBelumLunas}</strong> invoice belum lunas</span>
         </div>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+
+        {/* Kartu Pending */}
+        <div 
+          onClick={() => handleMetricClick('pending')}
+          style={{ 
+            background: selectedInsightMetric === 'pending' ? 'rgba(217, 119, 6, 0.08)' : 'var(--bg-panel)',
+            border: selectedInsightMetric === 'pending' ? '2px solid #d97706' : '1px solid var(--border)', 
+            borderRadius: '12px', 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            boxShadow: selectedInsightMetric === 'pending' ? '0 4px 12px rgba(217,119,6,0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            transform: selectedInsightMetric === 'pending' ? 'translateY(-2px)' : 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            if (selectedInsightMetric !== 'pending') e.currentTarget.style.borderColor = '#d97706';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = selectedInsightMetric === 'pending' ? '0 4px 12px rgba(217,119,6,0.1)' : '0 2px 8px rgba(0,0,0,0.02)';
+            if (selectedInsightMetric !== 'pending') e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
           <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#d97706' }}>Total Dana Tertunda (Pending)</span>
           <strong style={{ fontSize: '24px', color: '#d97706' }}>{formatPrice(stats.pending)}</strong>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Dari <strong>{stats.countPending}</strong> invoice pending</span>
@@ -120,37 +234,7 @@ const InvoiceInsight: React.FC = () => {
                 {/* Background circle */}
                 <circle cx="60" cy="60" r={radius} fill="transparent" stroke="var(--border)" strokeWidth="12" />
                 
-                {/* Pending segment */}
-                {stats.pending > 0 && (
-                  <circle 
-                    cx="60" 
-                    cy="60" 
-                    r={radius} 
-                    fill="transparent" 
-                    stroke="#d97706" 
-                    strokeWidth="12" 
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffsetPending}
-                    style={{ transition: 'stroke-dashoffset 0.5s ease' }}
-                  />
-                )}
-                
-                {/* Belum Lunas segment */}
-                {stats.belumLunas > 0 && (
-                  <circle 
-                    cx="60" 
-                    cy="60" 
-                    r={radius} 
-                    fill="transparent" 
-                    stroke="#dc2626" 
-                    strokeWidth="12" 
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffsetBelumLunas}
-                    style={{ transform: `rotate(${(percentPending * 3.6)}deg)`, transformOrigin: '60px 60px', transition: 'stroke-dashoffset 0.5s ease' }}
-                  />
-                )}
-
-                {/* Lunas segment */}
+                {/* Lunas segment (Green) - rotasi = 0 */}
                 {stats.lunas > 0 && (
                   <circle 
                     cx="60" 
@@ -158,10 +242,53 @@ const InvoiceInsight: React.FC = () => {
                     r={radius} 
                     fill="transparent" 
                     stroke="#16a34a" 
-                    strokeWidth="12" 
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffsetLunas}
-                    style={{ transform: `rotate(${((percentPending + percentBelumLunas) * 3.6)}deg)`, transformOrigin: '60px 60px', transition: 'stroke-dashoffset 0.5s ease' }}
+                    strokeWidth={selectedInsightMetric === 'lunas' ? '16' : '12'} 
+                    strokeDasharray={`${strokeLengthLunas} ${circumference}`}
+                    strokeDashoffset="0"
+                    style={{ transition: 'all 0.3s ease', cursor: 'pointer' }}
+                    onClick={() => handleMetricClick('lunas')}
+                  />
+                )}
+                
+                {/* Belum Lunas segment (Red) - rotasi = percentLunas * 3.6 */}
+                {stats.belumLunas > 0 && (
+                  <circle 
+                    cx="60" 
+                    cy="60" 
+                    r={radius} 
+                    fill="transparent" 
+                    stroke="#dc2626" 
+                    strokeWidth={selectedInsightMetric === 'belum_lunas' ? '16' : '12'} 
+                    strokeDasharray={`${strokeLengthBelumLunas} ${circumference}`}
+                    strokeDashoffset="0"
+                    style={{ 
+                      transform: `rotate(${rotateBelumLunas}deg)`, 
+                      transformOrigin: '60px 60px', 
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleMetricClick('belum_lunas')}
+                  />
+                )}
+
+                {/* Pending segment (Orange/Yellow) - rotasi = (percentLunas + percentBelumLunas) * 3.6 */}
+                {stats.pending > 0 && (
+                  <circle 
+                    cx="60" 
+                    cy="60" 
+                    r={radius} 
+                    fill="transparent" 
+                    stroke="#d97706" 
+                    strokeWidth={selectedInsightMetric === 'pending' ? '16' : '12'} 
+                    strokeDasharray={`${strokeLengthPending} ${circumference}`}
+                    strokeDashoffset="0"
+                    style={{ 
+                      transform: `rotate(${rotatePending}deg)`, 
+                      transformOrigin: '60px 60px', 
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleMetricClick('pending')}
                   />
                 )}
               </svg>
@@ -174,21 +301,30 @@ const InvoiceInsight: React.FC = () => {
 
             {/* Keterangan */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div 
+                onClick={() => handleMetricClick('lunas')}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', opacity: selectedInsightMetric && selectedInsightMetric !== 'lunas' ? 0.6 : 1 }}
+              >
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#16a34a', display: 'inline-block' }} />
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Lunas ({percentLunas.toFixed(1)}%)</span>
                   <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{formatPrice(stats.lunas)}</strong>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div 
+                onClick={() => handleMetricClick('belum_lunas')}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', opacity: selectedInsightMetric && selectedInsightMetric !== 'belum_lunas' ? 0.6 : 1 }}
+              >
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#dc2626', display: 'inline-block' }} />
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Belum Lunas ({percentBelumLunas.toFixed(1)}%)</span>
                   <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{formatPrice(stats.belumLunas)}</strong>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div 
+                onClick={() => handleMetricClick('pending')}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', opacity: selectedInsightMetric && selectedInsightMetric !== 'pending' ? 0.6 : 1 }}
+              >
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#d97706', display: 'inline-block' }} />
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pending ({percentPending.toFixed(1)}%)</span>

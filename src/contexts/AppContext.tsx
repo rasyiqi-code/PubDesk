@@ -98,6 +98,8 @@ interface AppContextType {
   getFileTags: (fileId: number) => Promise<string[]>;
   getAllTags: () => Promise<string[]>;
   getAllFileTags: () => Promise<Record<number, string[]>>;
+  selectedInsightMetric: 'total' | 'lunas' | 'belum_lunas' | 'pending' | null;
+  setSelectedInsightMetric: (metric: 'total' | 'lunas' | 'belum_lunas' | 'pending' | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -115,11 +117,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'service' | 'other' | 'gdrive' | 'pdf' | 'spreadsheet' | 'text' | 'image' | 'presentation'>('all');
-  const [rightPanelVisible, setRightPanelVisible] = useState(true);
+  const [rightPanelVisible, setRightPanelVisible] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [confirmOptions, setConfirmOptions] = useState<ConfirmOptions | null>(null);
   const [activeSettingsTab, setActiveSettingsTab] = useState<'invoice' | 'services' | 'local-folders' | 'google-drive' | 'google-apps-script'>('invoice');
+  const [selectedInsightMetric, setSelectedInsightMetric] = useState<'total' | 'lunas' | 'belum_lunas' | 'pending' | null>(null);
 
   const rootFolderId = localStorage.getItem('gdrive_parent_folder_id') || 'root';
   const [currentFolderId, setCurrentFolderId] = useState<string>(rootFolderId);
@@ -730,6 +733,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       getFileTags,
       getAllTags,
       getAllFileTags,
+      selectedInsightMetric,
+      setSelectedInsightMetric,
     }}>
       {children}
     </AppContext.Provider>

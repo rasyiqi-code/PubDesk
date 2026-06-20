@@ -22,7 +22,8 @@ const PanelKanan: React.FC = () => {
     addFileTag,
     removeFileTag,
     getFileTags,
-    setActiveModule
+    setActiveModule,
+    selectedInsightMetric
   } = useAppContext();
 
   const { loadInvoiceToForm } = useInvoiceContext();
@@ -1107,6 +1108,118 @@ const PanelKanan: React.FC = () => {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>Preview Settings akan segera tersedia</p>
+          </div>
+        );
+      }
+      case 'invoice-insight': {
+        const metric = selectedInsightMetric || 'total';
+        
+        // Filter invoice berdasarkan metrik
+        const filtered = invoices.filter(inv => {
+          let metadata = { paymentStatus: 'PENDING' };
+          try {
+            if (inv.file_path) metadata = JSON.parse(inv.file_path);
+          } catch {}
+          
+          const status = metadata.paymentStatus || 'PENDING';
+          
+          if (metric === 'lunas') return status === 'LUNAS';
+          if (metric === 'belum_lunas') return status === 'BELUM LUNAS';
+          if (metric === 'pending') return status === 'PENDING';
+          return true; // total
+        });
+
+        const formatPrice = (amount: number) => {
+          return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+        };
+
+        const getMetricTitle = () => {
+          switch (metric) {
+            case 'lunas': return '🟢 Pembayaran Lunas';
+            case 'belum_lunas': return '🔴 Piutang Belum Lunas';
+            case 'pending': return '🟡 Pembayaran Pending';
+            case 'total':
+            default:
+              return '📊 Ringkasan Total Invoice';
+          }
+        };
+
+        const getMetricDescription = () => {
+          switch (metric) {
+            case 'lunas':
+              return 'Dana dari invoice ini telah masuk ke rekening usaha Anda sepenuhnya. Transaksi selesai dan catatan keuangan bersih.';
+            case 'belum_lunas':
+              return 'Invoice ini merupakan piutang aktif yang belum dibayar oleh pelanggan. Disarankan untuk segera mengirimkan pengingat tagihan.';
+            case 'pending':
+              return 'Invoice ini sudah dibuat namun status pembayarannya masih tertunda atau dalam proses verifikasi bank.';
+            case 'total':
+            default:
+              return 'Menampilkan seluruh invoice yang terbit di sistem. Analisis ini mencakup omzet kotor baik yang sudah cair maupun piutang.';
+          }
+        };
+
+        const totalValue = filtered.reduce((acc, curr) => acc + curr.total, 0);
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', padding: '20px', overflowY: 'auto' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px 0' }}>{getMetricTitle()}</h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+              {getMetricDescription()}
+            </p>
+
+            {/* Total Ringkasan */}
+            <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Akumulasi Nominal:</span>
+              <strong style={{ fontSize: '16px', color: 'var(--text-primary)' }}>{formatPrice(totalValue)}</strong>
+            </div>
+
+            {/* Daftar Invoice */}
+            <h4 style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Daftar Invoice ({filtered.length})
+            </h4>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {filtered.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '13px' }}>
+                  Tidak ada invoice dalam kategori ini.
+                </div>
+              ) : (
+                filtered.map(inv => {
+                  let metadata = { invoiceNo: '-', customerName: 'Umum', invoiceDate: '-' };
+                  try {
+                    if (inv.file_path) metadata = JSON.parse(inv.file_path);
+                  } catch {}
+
+                  return (
+                    <div 
+                      key={inv.id} 
+                      style={{ 
+                        background: 'var(--bg-card)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: '8px', 
+                        padding: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        setActiveModule('invoice-manager');
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{metadata.invoiceNo || 'DRAF'}</strong>
+                        <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>{formatPrice(inv.total)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        <span>{metadata.customerName || 'Umum'}</span>
+                        <span>{metadata.invoiceDate || new Date(inv.created_at).toLocaleDateString('id-ID')}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         );
       }
