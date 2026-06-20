@@ -3,72 +3,14 @@ use std::collections::HashMap;
 use rusqlite::{params, Connection};
 use crate::db::Database;
 use super::extractor::extract_text;
-use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
-use std::fs::File as StdFile;
-use std::io::Read;
-
-#[allow(dead_code)]
-fn calculate_sha256(path: &Path) -> Result<String, String> {
-    let mut file = StdFile::open(path).map_err(|e| e.to_string())?;
-    let mut hasher = Sha256::new();
-    let mut buffer = [0; 4096];
-    loop {
-        let count = file.read(&mut buffer).map_err(|e| e.to_string())?;
-        if count == 0 {
-            break;
-        }
-        hasher.update(&buffer[..count]);
-    }
-    let result = hasher.finalize();
-    Ok(format!("{:x}", result))
-}
-
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct FileEntityInfo {
-    pub entity_type: String,
-    pub entity_value: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct FileMetadataPayload {
-    pub file_id: i64,
-    pub path: String,
-    pub filename: String,
-    pub r#type: String,
-    pub status: String,
-    pub version_label: Option<String>,
-    pub last_modified: String,
-    pub version_similarity: Option<f32>,
-    pub entities: Vec<FileEntityInfo>,
-    pub summary: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RelatedFileInfo {
-    pub file_id: i64,
-    pub path: String,
-    pub filename: String,
-    pub r#type: String,
-    pub relation_type: String, // "version_of", "related_to", "part_of"
-    pub confidence: f32,
-    pub last_modified: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchResultInfo {
-    pub id: i64,
-    pub path: String,
-    pub filename: String,
-    pub r#type: String,
-    pub last_modified: String,
-    pub score: f32,
-    pub version_label: Option<String>,
-}
-
 use tauri::{AppHandle, Manager};
 use crate::AppState;
+
+// Re-ekspor untuk mempertahankan kompatibilitas eksternal (misalnya dengan lib.rs)
+pub use super::types::{FileEntityInfo, FileMetadataPayload, RelatedFileInfo, SearchResultInfo};
+use super::nlp::{compute_tf_idf_vector, calculate_cosine_similarity, generate_summary};
+use super::classifier::classify_file_content;
+use super::utils::calculate_sha256;
 
 pub fn run_indexing_pipeline(app_handle: &AppHandle, file_id: i64) -> Result<(), String> {
     // 0. Ambil informasi berkas dari database (scope lock db sangat singkat)
@@ -330,36 +272,6 @@ pub fn run_indexing_pipeline(app_handle: &AppHandle, file_id: i64) -> Result<(),
     Ok(())
 }
 
-fn classify_file_content(filename: &str, extension: &str, text: &str) -> String {
-    let filename_lower = filename.to_lowercase();
-    let text_lower = text.to_lowercase();
-    
-    // 1. Klasifikasi Naskah
-    if filename_lower.contains("bab") || filename_lower.contains("chapter") 
-       || text_lower.contains("bab i") || text_lower.contains("bab 1") || text_lower.contains("chapter 1")
-       || (text_lower.contains("daftar isi") && text_lower.contains("naskah"))
-    {
-        return "naskah".to_string();
-    }
-    
-    // 2. Klasifikasi Kontrak / Legal
-    if filename_lower.contains("perjanjian") || filename_lower.contains("pasal") || filename_lower.contains("kontrak")
-       || text_lower.contains("pihak pertama") || text_lower.contains("pihak kedua") || text_lower.contains("surat perjanjian") 
-       || text_lower.contains("pasal 1") || text_lower.contains("pasal i")
-    {
-        return "kontrak".to_string();
-    }
-    
-    // 3. Klasifikasi Aset Grafis / Promo
-    if (extension == "png" || extension == "jpg" || extension == "jpeg")
-        && (filename_lower.contains("cover") || filename_lower.contains("banner") || filename_lower.contains("sampul") || filename_lower.contains("promo"))
-    {
-        return "aset".to_string();
-    }
-    
-    "other".to_string()
-}
-
 pub fn get_file_metadata(db: &Database, file_id: i64) -> Result<FileMetadataPayload, String> {
     let mut stmt = db.conn.prepare(
         "SELECT id, path, filename, type, status, version_label, last_modified, version_similarity 
@@ -456,8 +368,8 @@ pub fn record_file_access(db: &Database, file_id: i64) -> Result<(), String> {
          ON CONFLICT(file_id) DO UPDATE SET
              access_count = access_count + 1,
              last_accessed = ?2",
-        params![file_id, now]
-    ).map_err(|e| e.to_string())?;
+         params![file_id, now]
+     ).map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -565,39 +477,6 @@ pub fn global_semantic_search(db: &Database, query: &str) -> Result<Vec<SearchRe
     Ok(results)
 }
 
-fn compute_tf_idf_vector(text: &str) -> HashMap<String, f32> {
-    let mut tf = HashMap::new();
-    let stopwords = vec![
-        "yang", "di", "dan", "dari", "untuk", "dengan", "ke", "ini", "itu", "pada", "adalah", "sebagai",
-        "the", "of", "and", "in", "to", "a", "for", "with", "is", "on", "that", "by", "an"
-    ];
-    
-    let words: Vec<String> = text.split(|c: char| !c.is_alphanumeric())
-        .map(|w| w.to_lowercase())
-        .filter(|w| w.len() > 1 && !stopwords.contains(&w.as_str()))
-        .collect();
-        
-    let total_words = words.len() as f32;
-    if total_words == 0.0 {
-        return tf;
-    }
-    
-    for word in words {
-        *tf.entry(word).or_insert(0.0) += 1.0;
-    }
-    
-    // Normalisasi L2 Vector
-    let sum_squares: f32 = tf.values().map(|v| v * v).sum();
-    let norm = sum_squares.sqrt();
-    if norm > 0.0 {
-        for val in tf.values_mut() {
-            *val /= norm;
-        }
-    }
-    
-    tf
-}
-
 fn get_all_embeddings(conn: &Connection, exclude_id: i64) -> Result<Vec<(i64, HashMap<String, f32>)>, String> {
     let mut stmt = conn.prepare("SELECT file_id, vector FROM file_embeddings WHERE file_id != ?1")
         .map_err(|e| e.to_string())?;
@@ -616,136 +495,3 @@ fn get_all_embeddings(conn: &Connection, exclude_id: i64) -> Result<Vec<(i64, Ha
     }
     Ok(results)
 }
-
-fn calculate_cosine_similarity(vec1: &HashMap<String, f32>, vec2: &HashMap<String, f32>) -> f32 {
-    let mut dot_product = 0.0;
-    for (word, val1) in vec1 {
-        if let Some(val2) = vec2.get(word) {
-            dot_product += val1 * val2;
-        }
-    }
-    dot_product
-}
-
-fn generate_summary(text: &str) -> String {
-    if text.trim().is_empty() {
-        return "Tidak ada konten teks yang dapat diekstrak.".to_string();
-    }
-
-    // 1. Pemisahan teks menjadi kalimat-kalimat
-    let mut sentences = Vec::new();
-    let mut current_sentence = String::new();
-    
-    let chars: Vec<char> = text.chars().collect();
-    let mut i = 0;
-    while i < chars.len() {
-        let c = chars[i];
-        current_sentence.push(c);
-        
-        if (c == '.' || c == '?' || c == '!') && (i + 1 == chars.len() || chars[i + 1].is_whitespace()) {
-            let trimmed = current_sentence.trim().to_string();
-            if !trimmed.is_empty() {
-                sentences.push(trimmed);
-            }
-            current_sentence = String::new();
-        }
-        i += 1;
-    }
-    if !current_sentence.trim().is_empty() {
-        sentences.push(current_sentence.trim().to_string());
-    }
-
-    if sentences.is_empty() {
-        return "Tidak ada konten teks yang dapat diekstrak.".to_string();
-    }
-
-    // Jika jumlah kalimat sangat sedikit, langsung gabungkan saja
-    if sentences.len() <= 3 {
-        return sentences.join(" ");
-    }
-
-    // 2. Hitung frekuensi kata kunci penting (untuk scoring kalimat)
-    let stopwords = vec![
-        "yang", "di", "dan", "dari", "untuk", "dengan", "ke", "ini", "itu", "pada", "adalah", "sebagai",
-        "the", "of", "and", "in", "to", "a", "for", "with", "is", "on", "that", "by", "an", "kami", "kita",
-        "mereka", "dia", "ia", "kamu", "saya", "aku", "akan", "telah", "sudah", "dapat", "bisa", "ada",
-        "oleh", "atau", "juga", "bahwa", "seperti", "hanya", "untuk", "dalam", "namun", "tetapi", "karena"
-    ];
-
-    let mut word_freqs = HashMap::new();
-    for sentence in &sentences {
-        let words: Vec<&str> = sentence.split(|c: char| !c.is_alphanumeric())
-            .map(|w| w.trim())
-            .filter(|w| !w.is_empty())
-            .collect();
-        for word in words {
-            let w_lower = word.to_lowercase();
-            if w_lower.len() > 2 && !stopwords.contains(&w_lower.as_str()) {
-                *word_freqs.entry(w_lower).or_insert(0) += 1;
-            }
-        }
-    }
-
-    // 3. Beri skor pada setiap kalimat
-    let mut sentence_scores = Vec::new();
-    for (idx, sentence) in sentences.iter().enumerate() {
-        let words: Vec<&str> = sentence.split(|c: char| !c.is_alphanumeric())
-            .map(|w| w.trim())
-            .filter(|w| !w.is_empty())
-            .collect();
-        
-        if words.is_empty() {
-            sentence_scores.push((idx, 0.0f32));
-            continue;
-        }
-
-        let mut keyword_score = 0.0f32;
-        for word in &words {
-            let w_lower = word.to_lowercase();
-            if let Some(&freq) = word_freqs.get(&w_lower) {
-                keyword_score += freq as f32;
-            }
-        }
-        keyword_score /= words.len() as f32;
-
-        let position_weight = if idx == 0 {
-            1.5f32
-        } else if idx < 3 {
-            1.0f32
-        } else {
-            0.0f32
-        };
-
-        let word_count = words.len();
-        let length_weight = if word_count >= 12 && word_count <= 35 {
-            0.5f32
-        } else {
-            0.0f32
-        };
-
-        let total_score = keyword_score + position_weight + length_weight;
-        sentence_scores.push((idx, total_score));
-    }
-
-    // 4. Pilih 3 kalimat terbaik dengan skor tertinggi
-    sentence_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    let mut top_sentences = sentence_scores.into_iter().take(3).collect::<Vec<_>>();
-    top_sentences.sort_by_key(|a| a.0);
-
-    let summary_sentences: Vec<String> = top_sentences.into_iter()
-        .map(|(idx, _)| sentences[idx].clone())
-        .collect();
-
-    let mut result = summary_sentences.join(" ");
-    result = result.split_whitespace().collect::<Vec<&str>>().join(" ");
-    
-    let char_count = result.chars().count();
-    if char_count > 350 {
-        let mut truncated: String = result.chars().take(347).collect();
-        truncated.push_str("...");
-        result = truncated;
-    }
-
-    result
-}
-
