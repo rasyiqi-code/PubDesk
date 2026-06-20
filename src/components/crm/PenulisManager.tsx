@@ -627,8 +627,9 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                         >
                           📋
                         </button>
+                        {p.wa_valid === 1 && <span title="WhatsApp Valid" style={{ color: '#22c55e', marginLeft: '2px' }}>✓</span>}
                       </div>
-                    ) : '-'} {p.wa_valid === 1 && <span title="WhatsApp Valid" style={{ color: '#22c55e', marginLeft: '4px' }}>✓</span>}
+                    ) : '-'}
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
                     {p.email ? (
@@ -656,8 +657,9 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                         >
                           📋
                         </button>
+                        {p.email_valid === 1 && <span title="Email Valid" style={{ color: '#22c55e', marginLeft: '2px' }}>✓</span>}
                       </div>
-                    ) : '-'} {p.email_valid === 1 && <span title="Email Valid" style={{ color: '#22c55e', marginLeft: '4px' }}>✓</span>}
+                    ) : '-'}
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
                     {(() => {
