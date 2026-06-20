@@ -581,11 +581,17 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
               Demikian rincian biaya {getInvoiceTypeActionLabel()} anda. Dan lembar ini kami buat untuk dipergunakan sebagaimana semestinya. Atas kepercayaan anda, kami ucapkan terimakasih.
             </div>
 
-            {/* Rekening Bank (Centered di bawah Penutup) */}
-            {activeProfile?.showBankInfo && (
+          </div>
+
+          {/* Rekening Bank (Sebaris, di atas Tanda Tangan & Kontak) */}
+          {activeProfile?.showBankInfo && (
+            <div style={{ 
+              padding: '0 35px', 
+              width: '100%', 
+              boxSizing: 'border-box',
+              flexShrink: 0
+            }}>
               <div style={{ 
-                margin: '8px auto 4px', 
-                width: '100%', 
                 border: '1px solid #e5e7eb', 
                 borderRadius: '4px', 
                 padding: '6px 12px', 
@@ -593,14 +599,13 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                 color: '#1f2937', 
                 background: '#f9fafb',
                 lineHeight: '1.4',
-                textAlign: 'center'
+                textAlign: 'center',
+                fontFamily: '"Montserrat", "Segoe UI", sans-serif'
               }}>
-                <div>
-                  Transfer melalui rekening bank: <strong>{activeProfile.bankName}</strong> | No. Rekening: <strong>{activeProfile.bankAccountNo}</strong> | a/n. <strong>{activeProfile.bankAccountOwner}</strong>
-                </div>
+                Transfer melalui rekening bank: <strong>{activeProfile.bankName}</strong> | <strong>{activeProfile.bankAccountNo}</strong> | a/n. <strong>{activeProfile.bankAccountOwner}</strong>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Middle Section (Contact & Totals) */}
           <div style={{ padding: '10px 35px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontFamily: '"Montserrat", "Segoe UI", sans-serif', flexShrink: 0 }}>
