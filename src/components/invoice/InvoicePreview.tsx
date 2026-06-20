@@ -644,8 +644,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                 background: '#f9fafb',
                 lineHeight: '1.4'
               }}>
-                <strong style={{ color: accentColorDark }}>INFORMASI PEMBAYARAN:</strong>
-                <div style={{ marginTop: '4px' }}>
+                <div>
                   Transfer melalui rekening bank:<br />
                   <strong>{activeProfile.bankName}</strong><br />
                   No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
