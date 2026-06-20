@@ -555,22 +555,26 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
       </div>
 
       {/* Tabel Data */}
-      <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-card)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+      <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-card)' }}>
+        <table style={{ width: '100%', minWidth: '1600px', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <th style={{ padding: '8px 12px', fontWeight: '600', width: '22%', userSelect: 'none' }}>Nama Penulis</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', width: '15%', userSelect: 'none' }}>WhatsApp</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', width: '17%', userSelect: 'none' }}>Email</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', width: '18%', userSelect: 'none' }}>Lokasi & Afiliasi</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', width: '13%', userSelect: 'none' }}>Status</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', width: '15%', textAlign: 'center', userSelect: 'none' }}>Aksi</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Nama Penulis</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Pekerjaan</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Institusi / Afiliasi</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>WhatsApp</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Email</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Lokasi / Alamat</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Sumber Data</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Catatan Tambahan</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Status</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', width: '100px', textAlign: 'center', userSelect: 'none' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filteredPenulis.length === 0 ? (
               <TableEmptyState
-                colSpan={6}
+                colSpan={10}
                 icon="👤"
                 message="Tidak ada data penulis"
                 description={searchQuery ? `Tidak ada hasil untuk pencarian "${searchQuery}"` : "Belum ada penulis terdaftar. Klik tombol Tambah Penulis untuk membuat profil baru."}
@@ -605,11 +609,12 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                 >
                   <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-primary)' }}>
                     <div>{p.name}</div>
-                    {p.job && p.job !== 'Pelanggan' && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '400', marginTop: '2px' }}>
-                        Pekerjaan: {p.job}
-                      </div>
-                    )}
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                    {p.job || '-'}
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                    {p.institution || '-'}
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
                     {p.wa_number ? (
@@ -655,9 +660,12 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
                     <div style={{ whiteSpace: 'pre-line' }}>{p.address || (p.city ? `${p.city}, ${p.province || ''}` : p.province || '-')}</div>
-                    {p.institution && (
-                      <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>{p.institution}</div>
-                    )}
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                    {p.data_source || '-'}
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.notes}>
+                    {p.notes || '-'}
                   </td>
                   <td style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
