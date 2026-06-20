@@ -4,6 +4,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { Select } from '../../ui/atoms/Select';
 import { Button } from '../../ui/atoms/Button';
+import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 
 interface PenerbitFormProps {
   initialData?: Penerbit | null;
@@ -26,6 +27,8 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
   const [emailValid, setEmailValid] = useState(0);
   const [waValid, setWaValid] = useState(0);
   const [cooperationStatus, setCooperationStatus] = useState('Aktif');
+
+  const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
   useEffect(() => {
     if (initialData) {
@@ -95,114 +98,118 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
       </h1>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
-          <TextField
-            label="Nama Penerbit / Penerbitan"
-            placeholder="Contoh: PT. Aksara Nusantara"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            fullWidth
-            autoFocus
-          />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <TextField
-              label="Kota Asal Penerbit"
-              placeholder="Contoh: Yogyakarta"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              fullWidth
-            />
-
-            <Select
-              label="Status Kerja Sama"
-              options={statusOptions}
-              value={cooperationStatus}
-              onChange={(e) => setCooperationStatus(e.target.value)}
-              fullWidth
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
+        <Accordion>
+          <AccordionSection index={1} title="🏢 Informasi Profil Penerbit" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <TextField
-                label="Email Resmi"
-                type="email"
-                placeholder="redaksi@penerbit.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                label="Nama Penerbit / Penerbitan"
+                placeholder="Contoh: PT. Aksara Nusantara"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
                 fullWidth
+                autoFocus
               />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                <input
-                  type="checkbox"
-                  checked={emailValid === 1}
-                  onChange={(e) => setEmailValid(e.target.checked ? 1 : 0)}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <TextField
+                  label="Kota Asal Penerbit"
+                  placeholder="Contoh: Yogyakarta"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  fullWidth
                 />
-                Email Valid / Aktif
-              </label>
-            </div>
 
-            <div>
-              <TextField
-                label="Nomor WhatsApp PIC"
-                placeholder="Contoh: 08123456789"
-                value={waNumber}
-                onChange={(e) => setWaNumber(e.target.value)}
-                fullWidth
-              />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                <input
-                  type="checkbox"
-                  checked={waValid === 1}
-                  onChange={(e) => setWaValid(e.target.checked ? 1 : 0)}
+                <Select
+                  label="Status Kerja Sama"
+                  options={statusOptions}
+                  value={cooperationStatus}
+                  onChange={(e) => setCooperationStatus(e.target.value)}
+                  fullWidth
                 />
-                WhatsApp Valid / PIC Aktif
-              </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <TextField
+                    label="Email Resmi"
+                    type="email"
+                    placeholder="redaksi@penerbit.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    fullWidth
+                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <input
+                      type="checkbox"
+                      checked={emailValid === 1}
+                      onChange={(e) => setEmailValid(e.target.checked ? 1 : 0)}
+                    />
+                    Email Valid / Aktif
+                  </label>
+                </div>
+
+                <div>
+                  <TextField
+                    label="Nomor WhatsApp PIC"
+                    placeholder="Contoh: 08123456789"
+                    value={waNumber}
+                    onChange={(e) => setWaNumber(e.target.value)}
+                    fullWidth
+                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <input
+                      type="checkbox"
+                      checked={waValid === 1}
+                      onChange={(e) => setWaValid(e.target.checked ? 1 : 0)}
+                    />
+                    WhatsApp Valid / PIC Aktif
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
+          </AccordionSection>
 
-          <h3 style={{ fontSize: '14px', fontWeight: '600', marginTop: '10px', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
-            Media Sosial & Kontak Digital
-          </h3>
+          <AccordionSection index={2} title="📸 Media Sosial & Kontak Digital" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <TextField
+                  label="Instagram"
+                  placeholder="@username_penerbit"
+                  value={instagram}
+                  onChange={(e) => setInstagram(e.target.value)}
+                  fullWidth
+                />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <TextField
-              label="Instagram"
-              placeholder="@username_penerbit"
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value)}
-              fullWidth
-            />
+                <TextField
+                  label="Facebook Page"
+                  placeholder="Nama Halaman Facebook"
+                  value={facebook}
+                  onChange={(e) => setFacebook(e.target.value)}
+                  fullWidth
+                />
+              </div>
 
-            <TextField
-              label="Facebook Page"
-              placeholder="Nama Halaman Facebook"
-              value={facebook}
-              onChange={(e) => setFacebook(e.target.value)}
-              fullWidth
-            />
-          </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <TextField
+                  label="LinkedIn Company Page"
+                  placeholder="nama-perusahaan"
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  fullWidth
+                />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <TextField
-              label="LinkedIn Company Page"
-              placeholder="nama-perusahaan"
-              value={linkedin}
-              onChange={(e) => setLinkedin(e.target.value)}
-              fullWidth
-            />
-
-            <TextField
-              label="TikTok"
-              placeholder="@tiktok_penerbit"
-              value={tiktok}
-              onChange={(e) => setTiktok(e.target.value)}
-              fullWidth
-            />
-          </div>
-        </div>
+                <TextField
+                  label="TikTok"
+                  placeholder="@tiktok_penerbit"
+                  value={tiktok}
+                  onChange={(e) => setTiktok(e.target.value)}
+                  fullWidth
+                />
+              </div>
+            </div>
+          </AccordionSection>
+        </Accordion>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <Button type="submit" variant="primary" style={{ flex: 1 }} size="lg">

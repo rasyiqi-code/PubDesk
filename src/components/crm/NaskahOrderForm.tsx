@@ -5,6 +5,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { Select } from '../../ui/atoms/Select';
 import { Button } from '../../ui/atoms/Button';
+import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 
 interface NaskahOrderFormProps {
   initialData?: NaskahOrder | null;
@@ -29,6 +30,8 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
   const [legalType, setLegalType] = useState('ISBN');
   const [shippingAddress, setShippingAddress] = useState('');
   const [status, setStatus] = useState('Belum Dimulai');
+
+  const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
   useEffect(() => {
     if (initialData) {
@@ -142,141 +145,149 @@ const NaskahOrderForm: React.FC<NaskahOrderFormProps> = ({ initialData, onSubmit
       </h1>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <TextField
-              label="Kode ID Naskah"
-              placeholder="Contoh: NSK-010"
-              value={naskahIdCode}
-              onChange={(e) => setNaskahIdCode(e.target.value)}
-              fullWidth
-            />
+        <Accordion>
+          <AccordionSection index={1} title="📚 Informasi Buku & Order" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <TextField
+                  label="Kode ID Naskah"
+                  placeholder="Contoh: NSK-010"
+                  value={naskahIdCode}
+                  onChange={(e) => setNaskahIdCode(e.target.value)}
+                  fullWidth
+                />
 
-            <TextField
-              label="Judul Naskah / Buku"
-              placeholder="Masukkan judul lengkap..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              fullWidth
-              autoFocus
-            />
-          </div>
+                <TextField
+                  label="Judul Naskah / Buku"
+                  placeholder="Masukkan judul lengkap..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  fullWidth
+                  autoFocus
+                />
+              </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <Select
-              label="Penulis (Relasi CRM)"
-              options={penulisOptions}
-              value={penulisId || ''}
-              onChange={(e) => setPenulisId(e.target.value ? Number(e.target.value) : undefined)}
-              fullWidth
-            />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Select
+                  label="Penulis (Relasi CRM)"
+                  options={penulisOptions}
+                  value={penulisId || ''}
+                  onChange={(e) => setPenulisId(e.target.value ? Number(e.target.value) : undefined)}
+                  fullWidth
+                />
 
-            <Select
-              label="Penerbit Mitra (Relasi CRM)"
-              options={penerbitOptions}
-              value={penerbitId || ''}
-              onChange={(e) => setPenerbitId(e.target.value ? Number(e.target.value) : undefined)}
-              fullWidth
-            />
-          </div>
+                <Select
+                  label="Penerbit Mitra (Relasi CRM)"
+                  options={penerbitOptions}
+                  value={penerbitId || ''}
+                  onChange={(e) => setPenerbitId(e.target.value ? Number(e.target.value) : undefined)}
+                  fullWidth
+                />
+              </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <Select
-              label="Paket Penerbitan"
-              options={packageOptions}
-              value={packageType}
-              onChange={(e) => setPackageType(e.target.value)}
-              fullWidth
-            />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Select
+                  label="Paket Penerbitan"
+                  options={packageOptions}
+                  value={packageType}
+                  onChange={(e) => setPackageType(e.target.value)}
+                  fullWidth
+                />
 
-            <Select
-              label="Tipe Order"
-              options={orderTypeOptions}
-              value={orderType}
-              onChange={(e) => setOrderType(e.target.value)}
-              fullWidth
-            />
-          </div>
+                <Select
+                  label="Tipe Order"
+                  options={orderTypeOptions}
+                  value={orderType}
+                  onChange={(e) => setOrderType(e.target.value)}
+                  fullWidth
+                />
+              </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <TextField
-              label="Jumlah Cetak (Copies)"
-              type="number"
-              value={copies}
-              onChange={(e) => setCopies(Number(e.target.value))}
-              min={0}
-              fullWidth
-            />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <TextField
+                  label="Jumlah Cetak (Copies)"
+                  type="number"
+                  value={copies}
+                  onChange={(e) => setCopies(Number(e.target.value))}
+                  min={0}
+                  fullWidth
+                />
 
-            <TextField
-              label="Ukuran Buku"
-              placeholder="Contoh: 14x20 cm atau A5"
-              value={bookSize}
-              onChange={(e) => setBookSize(e.target.value)}
-              fullWidth
-            />
-          </div>
+                <TextField
+                  label="Ukuran Buku"
+                  placeholder="Contoh: 14x20 cm atau A5"
+                  value={bookSize}
+                  onChange={(e) => setBookSize(e.target.value)}
+                  fullWidth
+                />
+              </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <Select
-              label="Legalitas / Perizinan"
-              options={legalOptions}
-              value={legalType}
-              onChange={(e) => setLegalType(e.target.value)}
-              fullWidth
-            />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Select
+                  label="Legalitas / Perizinan"
+                  options={legalOptions}
+                  value={legalType}
+                  onChange={(e) => setLegalType(e.target.value)}
+                  fullWidth
+                />
 
-            <Select
-              label="Status Naskah"
-              options={statusOptions}
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              fullWidth
-            />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Permintaan Awal Layout/Desain
-            </label>
-            <textarea
-              style={inputStyle}
-              rows={3}
-              value={initialRequest}
-              onChange={(e) => setInitialRequest(e.target.value)}
-              placeholder="Masukkan catatan tata letak, warna cover, dsb..."
-            />
-          </div>
-
-          {initialData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                Catatan Revisi / Masukan Penulis
-              </label>
-              <textarea
-                style={inputStyle}
-                rows={3}
-                value={revisedRequest}
-                onChange={(e) => setRevisedRequest(e.target.value)}
-                placeholder="Detail revisi yang diajukan..."
-              />
+                <Select
+                  label="Status Naskah"
+                  options={statusOptions}
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  fullWidth
+                />
+              </div>
             </div>
-          )}
+          </AccordionSection>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Alamat Pengiriman Hasil Cetak
-            </label>
-            <textarea
-              style={inputStyle}
-              rows={3}
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
-              placeholder="Alamat lengkap penerima cetak buku..."
-            />
-          </div>
-        </div>
+          <AccordionSection index={2} title="🚛 Pengiriman & Permintaan Desain" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Permintaan Awal Layout/Desain
+                </label>
+                <textarea
+                  style={inputStyle}
+                  rows={3}
+                  value={initialRequest}
+                  onChange={(e) => setInitialRequest(e.target.value)}
+                  placeholder="Masukkan catatan tata letak, warna cover, dsb..."
+                />
+              </div>
+
+              {initialData && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                    Catatan Revisi / Masukan Penulis
+                  </label>
+                  <textarea
+                    style={inputStyle}
+                    rows={3}
+                    value={revisedRequest}
+                    onChange={(e) => setRevisedRequest(e.target.value)}
+                    placeholder="Detail revisi yang diajukan..."
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Alamat Pengiriman Hasil Cetak
+                </label>
+                <textarea
+                  style={inputStyle}
+                  rows={3}
+                  value={shippingAddress}
+                  onChange={(e) => setShippingAddress(e.target.value)}
+                  placeholder="Alamat lengkap penerima cetak buku..."
+                />
+              </div>
+            </div>
+          </AccordionSection>
+        </Accordion>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <Button type="submit" variant="primary" style={{ flex: 1 }} size="lg">

@@ -4,6 +4,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { Select } from '../../ui/atoms/Select';
 import { Button } from '../../ui/atoms/Button';
+import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 
 interface LayouterFormProps {
   initialData?: Layouter | null;
@@ -19,6 +20,8 @@ const LayouterForm: React.FC<LayouterFormProps> = ({ initialData, onSubmit, onCa
   const [isActive, setIsActive] = useState(1);
   const [weeklyTarget, setWeeklyTarget] = useState(3);
   const [notes, setNotes] = useState('');
+
+  const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
   useEffect(() => {
     if (initialData) {
@@ -67,71 +70,75 @@ const LayouterForm: React.FC<LayouterFormProps> = ({ initialData, onSubmit, onCa
       </h1>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
-          <TextField
-            label="Nama Lengkap Layouter"
-            placeholder="Contoh: Hana Salsabila"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            fullWidth
-            autoFocus
-          />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <Select
-              label="Peran / Jabatan Layouter"
-              options={roleOptions}
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              fullWidth
-            />
-
-            <TextField
-              label="Target Kerja Mingguan (Naskah)"
-              type="number"
-              value={weeklyTarget}
-              onChange={(e) => setWeeklyTarget(Number(e.target.value))}
-              min={0}
-              fullWidth
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)', marginTop: '8px' }}>
-              <input
-                type="checkbox"
-                checked={isActive === 1}
-                onChange={(e) => setIsActive(e.target.checked ? 1 : 0)}
+        <Accordion>
+          <AccordionSection index={1} title="🎨 Informasi Profil Layouter" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <TextField
+                label="Nama Lengkap Layouter"
+                placeholder="Contoh: Hana Salsabila"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                fullWidth
+                autoFocus
               />
-              Anggota Aktif (Siap Menerima Tugas Layout/Desain)
-            </label>
-          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Keahlian Spesialis & Catatan
-            </label>
-            <textarea
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                border: '1px solid var(--border)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-                outline: 'none',
-                height: '100px',
-                resize: 'vertical',
-                boxSizing: 'border-box'
-              }}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Contoh: Ahli desain cover novel fantasi, mahir Adobe InDesign..."
-            />
-          </div>
-        </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Select
+                  label="Peran / Jabatan Layouter"
+                  options={roleOptions}
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  fullWidth
+                />
+
+                <TextField
+                  label="Target Kerja Mingguan (Naskah)"
+                  type="number"
+                  value={weeklyTarget}
+                  onChange={(e) => setWeeklyTarget(Number(e.target.value))}
+                  min={0}
+                  fullWidth
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={isActive === 1}
+                    onChange={(e) => setIsActive(e.target.checked ? 1 : 0)}
+                  />
+                  Anggota Aktif (Siap Menerima Tugas Layout/Desain)
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Keahlian Spesialis & Catatan
+                </label>
+                <textarea
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                    height: '100px',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Contoh: Ahli desain cover novel fantasi, mahir Adobe InDesign..."
+                />
+              </div>
+            </div>
+          </AccordionSection>
+        </Accordion>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <Button type="submit" variant="primary" style={{ flex: 1 }} size="lg">
