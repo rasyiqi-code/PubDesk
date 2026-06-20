@@ -154,8 +154,8 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
     const opacityValue = activeProfile?.watermarkOpacity !== undefined ? activeProfile.watermarkOpacity / 100 : 0.08;
 
     const isMultiLine = text === 'BELUM LUNAS';
-    const fontSize = isMultiLine ? '28px' : text === 'LUNAS' ? '44px' : '38px';
-    const letterSpacing = isMultiLine ? '5px' : text === 'LUNAS' ? '6px' : '5px';
+    const fontSize = isMultiLine ? '28px' : text === 'LUNAS' ? '40px' : '34px';
+    const letterSpacing = isMultiLine ? '2px' : text === 'LUNAS' ? '4px' : '3px';
 
     const textContent = isMultiLine ? (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -164,22 +164,22 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           fontWeight: '900', 
           letterSpacing: letterSpacing, 
           paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
-          lineHeight: '1.1' 
+          lineHeight: '0.95' 
         }}>
           BELUM
         </div>
         <div style={{ 
           width: '100%', 
-          height: '1.5px', 
+          height: '1px', 
           background: color, 
-          margin: '6px 0' 
+          margin: '3px 0' 
         }} />
         <div style={{ 
           fontSize: fontSize, 
           fontWeight: '900', 
           letterSpacing: letterSpacing, 
           paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
-          lineHeight: '1.1' 
+          lineHeight: '0.95' 
         }}>
           LUNAS
         </div>
@@ -204,22 +204,22 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           left: '50%',
           transform: 'translate(-50%, -50%) rotate(-15deg)',
           color: color,
-          border: `4px solid ${color}`,
-          padding: '2px',
-          borderRadius: '8px',
+          border: `3px solid ${color}`,
+          padding: '1.5px',
+          borderRadius: '5px',
           pointerEvents: 'none',
           userSelect: 'none',
           zIndex: 10,
           opacity: opacityValue,
-          fontFamily: '"Montserrat", "Segoe UI", sans-serif',
+          fontFamily: '"Impact", "Arial Black", "Montserrat", "Segoe UI", sans-serif',
           display: 'inline-block'
         }}
       >
         <div
           style={{
-            border: `1.5px solid ${color}`,
-            padding: isMultiLine ? '10px 16px' : '8px 20px',
-            borderRadius: '5px',
+            border: `1px solid ${color}`,
+            padding: isMultiLine ? '5px 12px' : '4px 14px',
+            borderRadius: '3px',
             whiteSpace: 'nowrap',
             textAlign: 'center',
             lineHeight: '1'
