@@ -9,7 +9,7 @@ import { ItemsSection } from './generator-sections/ItemsSection';
 import { GlobalCostsSection } from './generator-sections/GlobalCostsSection';
 
 const InvoiceGenerator: React.FC = () => {
-  const { addInvoice, updateInvoice, showToast, rightPanelVisible, invoices } = useAppContext();
+  const { addInvoice, updateInvoice, showToast, rightPanelVisible, invoices, contacts, addContact, updateContact } = useAppContext();
   const { addFile, updateFile, files } = useFileState();
   const {
     customer,
@@ -62,6 +62,39 @@ const InvoiceGenerator: React.FC = () => {
       return;
     }
 
+    // Auto-save/update pelanggan ke database SQLite tabel contacts saat invoice disimpan
+    const customerNameTrimmed = customer.name.trim();
+    const existingContact = contacts.find(c => c.type === 'customer' && c.name.toLowerCase() === customerNameTrimmed.toLowerCase());
+    let contactId = existingContact?.id;
+
+    if (!existingContact) {
+      try {
+        contactId = await addContact({
+          name: customerNameTrimmed,
+          wa_number: customer.wa_number?.trim() || undefined,
+          address: customer.address?.trim() || undefined,
+          type: 'customer',
+          created_at: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('Gagal menyimpan pelanggan baru secara otomatis:', err);
+      }
+    } else {
+      const hasWaChanged = (customer.wa_number?.trim() || '') !== (existingContact.wa_number || '');
+      const hasAddressChanged = (customer.address?.trim() || '') !== (existingContact.address || '');
+      if (hasWaChanged || hasAddressChanged) {
+        try {
+          await updateContact({
+            ...existingContact,
+            wa_number: customer.wa_number?.trim() || existingContact.wa_number,
+            address: customer.address?.trim() || existingContact.address
+          });
+        } catch (err) {
+          console.error('Gagal memperbarui data kontak secara otomatis:', err);
+        }
+      }
+    }
+
     const itemsTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
     // Deteksi ongkir per item secara dinamis agar tidak bergantung pada tableType tertentu
     const hasItemShipping = activeProfile?.tableColumns?.some(col => col.key === 'item_shipping_cost');
@@ -76,18 +109,19 @@ const InvoiceGenerator: React.FC = () => {
       paymentStatus,
       spesifikasiFasilitas,
       invoiceType,
-      customerName: customer.name || '',
+      customerName: customerNameTrimmed,
       customerWa: customer.wa_number || '',
       customerAddress: customer.address || ''
     };
 
     const invoiceData = {
       id: editingInvoiceId || undefined,
+      created_at: new Date().toISOString(),
+      customer_id: contactId || null,
       items_json: JSON.stringify(items),
       shipping_cost: shippingCost,
       admin_fee: adminFee,
       total,
-      created_at: new Date().toISOString(),
       export_format: invoiceType,
       file_path: JSON.stringify(metadata)
     };

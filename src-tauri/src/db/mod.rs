@@ -22,6 +22,10 @@ pub fn get_db_path(app_handle: &tauri::AppHandle) -> Result<PathBuf, DbError> {
 pub fn init_db(db_path: &PathBuf) -> Result<(), DbError> {
     let conn = Connection::open(db_path)?;
     schema::create_tables(&conn)?;
+    
+    // Sinkronisasi data pelanggan dari invoice lama ke tabel contacts jika contacts kosong
+    let _ = sync_contacts_from_invoices(&conn);
+    
     Ok(())
 }
 
@@ -87,10 +91,8 @@ impl Database {
     }
 
     pub fn delete_contact(&self, id: i64) -> Result<(), DbError> {
-        self.conn.execute(
-            "DELETE FROM contacts WHERE id = ?1",
-            params![id],
-        )?;
+        self.conn
+            .execute("DELETE FROM contacts WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -201,10 +203,15 @@ impl Database {
         Ok(result)
     }
 
-    pub fn update_invoice_sync_status(&self, id: i64, sync_status: &str, cloud_file_url: &str) -> Result<(), DbError> {
+    pub fn update_invoice_sync_status(
+        &self,
+        id: i64,
+        sync_status: &str,
+        cloud_file_url: &str,
+    ) -> Result<(), DbError> {
         self.conn.execute(
             "UPDATE invoices SET sync_status = ?1, cloud_file_url = ?2 WHERE id = ?3",
-            params![sync_status, cloud_file_url, id]
+            params![sync_status, cloud_file_url, id],
         )?;
         Ok(())
     }
@@ -230,7 +237,8 @@ impl Database {
     }
 
     pub fn delete_invoice(&self, id: i64) -> Result<(), DbError> {
-        self.conn.execute("DELETE FROM invoices WHERE id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM invoices WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -447,12 +455,12 @@ impl Database {
             "INSERT OR IGNORE INTO tags (name) VALUES (?1)",
             params![tag],
         )?;
-        
-        let tag_id: i64 = self.conn.query_row(
-            "SELECT id FROM tags WHERE name = ?1",
-            params![tag],
-            |row| row.get(0),
-        )?;
+
+        let tag_id: i64 =
+            self.conn
+                .query_row("SELECT id FROM tags WHERE name = ?1", params![tag], |row| {
+                    row.get(0)
+                })?;
 
         self.conn.execute(
             "INSERT OR IGNORE INTO file_tags (file_id, tag_id) VALUES (?1, ?2)",
@@ -463,11 +471,11 @@ impl Database {
 
     #[allow(dead_code)]
     pub fn remove_file_tag(&self, file_id: i64, tag: &str) -> Result<(), DbError> {
-        let tag_id_res = self.conn.query_row(
-            "SELECT id FROM tags WHERE name = ?1",
-            params![tag],
-            |row| row.get::<_, i64>(0),
-        );
+        let tag_id_res =
+            self.conn
+                .query_row("SELECT id FROM tags WHERE name = ?1", params![tag], |row| {
+                    row.get::<_, i64>(0)
+                });
         if let Ok(tag_id) = tag_id_res {
             self.conn.execute(
                 "DELETE FROM file_tags WHERE file_id = ?1 AND tag_id = ?2",
@@ -482,7 +490,7 @@ impl Database {
         let mut stmt = self.conn.prepare(
             "SELECT t.name FROM tags t 
              JOIN file_tags ft ON t.id = ft.tag_id 
-             WHERE ft.file_id = ?1"
+             WHERE ft.file_id = ?1",
         )?;
         let rows = stmt.query_map(params![file_id], |row| row.get(0))?;
         let mut tags = Vec::new();
@@ -494,7 +502,9 @@ impl Database {
 
     #[allow(dead_code)]
     pub fn get_all_tags(&self) -> Result<Vec<String>, DbError> {
-        let mut stmt = self.conn.prepare("SELECT name FROM tags ORDER BY name ASC")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name FROM tags ORDER BY name ASC")?;
         let rows = stmt.query_map([], |row| row.get(0))?;
         let mut tags = Vec::new();
         for r in rows {
@@ -504,15 +514,17 @@ impl Database {
     }
 
     #[allow(dead_code)]
-    pub fn get_all_file_tags(&self) -> Result<std::collections::HashMap<i64, Vec<String>>, DbError> {
+    pub fn get_all_file_tags(
+        &self,
+    ) -> Result<std::collections::HashMap<i64, Vec<String>>, DbError> {
         let mut stmt = self.conn.prepare(
             "SELECT ft.file_id, t.name FROM file_tags ft 
-             JOIN tags t ON ft.tag_id = t.id"
+             JOIN tags t ON ft.tag_id = t.id",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
         })?;
-        
+
         let mut map = std::collections::HashMap::new();
         for r in rows {
             let (file_id, tag_name) = r?;
@@ -594,7 +606,8 @@ impl Database {
     }
 
     pub fn delete_penulis(&self, id: i64) -> Result<(), DbError> {
-        self.conn.execute("DELETE FROM penulis WHERE id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM penulis WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -671,7 +684,8 @@ impl Database {
     }
 
     pub fn delete_penerbit(&self, id: i64) -> Result<(), DbError> {
-        self.conn.execute("DELETE FROM penerbit WHERE id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM penerbit WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -751,7 +765,8 @@ impl Database {
     }
 
     pub fn delete_naskah_order(&self, id: i64) -> Result<(), DbError> {
-        self.conn.execute("DELETE FROM naskah_orders WHERE id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM naskah_orders WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -807,7 +822,8 @@ impl Database {
     }
 
     pub fn delete_layouter(&self, id: i64) -> Result<(), DbError> {
-        self.conn.execute("DELETE FROM layouters WHERE id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM layouters WHERE id = ?1", params![id])?;
         Ok(())
     }
 
@@ -865,3 +881,52 @@ impl Database {
     }
 }
 
+// Fungsi pembantu untuk menyinkronkan data pelanggan lama dari invoices ke tabel contacts
+fn sync_contacts_from_invoices(conn: &Connection) -> Result<(), DbError> {
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM contacts WHERE type = 'customer'",
+        [],
+        |row| row.get(0)
+    )?;
+    
+    if count > 0 {
+        return Ok(());
+    }
+    
+    let mut stmt = conn.prepare("SELECT file_path FROM invoices")?;
+    let rows = stmt.query_map([], |row| {
+        let file_path: Option<String> = row.get(0)?;
+        Ok(file_path)
+    })?;
+    
+    let created_at = chrono::Local::now().to_rfc3339();
+    
+    for row in rows {
+        if let Ok(Some(file_path_str)) = row {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&file_path_str) {
+                if let Some(customer_name) = v.get("customerName").and_then(|n| n.as_str()) {
+                    let customer_name_trimmed = customer_name.trim();
+                    if !customer_name_trimmed.is_empty() {
+                        let customer_wa = v.get("customerWa").and_then(|w| w.as_str()).unwrap_or("");
+                        let customer_address = v.get("customerAddress").and_then(|a| a.as_str()).unwrap_or("");
+                        
+                        let exists: i64 = conn.query_row(
+                            "SELECT COUNT(*) FROM contacts WHERE name = ?1 AND type = 'customer'",
+                            params![customer_name_trimmed],
+                            |r| r.get(0)
+                        )?;
+                        
+                        if exists == 0 {
+                            conn.execute(
+                                "INSERT INTO contacts (name, wa_number, address, type, created_at) VALUES (?1, ?2, ?3, 'customer', ?4)",
+                                params![customer_name_trimmed, customer_wa, customer_address, created_at]
+                            )?;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(())
+}
