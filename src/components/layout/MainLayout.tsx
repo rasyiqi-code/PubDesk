@@ -11,7 +11,7 @@ import Toast from '../shared/Toast';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import FileManager from '../files/FileManager';
 import BookManager from '../books/BookManager';
-import ServiceManager from '../services/ServiceManager';
+import ServiceManager from '../services-module/ServiceManager';
 
 
 const MainLayout = () => {
