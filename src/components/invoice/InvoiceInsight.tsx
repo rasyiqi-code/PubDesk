@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { Invoice } from '../../types';
+import { formatPrice } from '../../utils/format';
 
 const InvoiceInsight: React.FC = () => {
   const { 
@@ -10,10 +11,7 @@ const InvoiceInsight: React.FC = () => {
     setRightPanelVisible 
   } = useAppContext();
 
-  // Format harga Rupiah
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-  };
+
 
   // Parse file_path (metadata JSON)
   const getInvoiceMetadata = (invoice: Invoice) => {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { Service } from '../../types';
+import { formatPrice } from '../../utils/format';
 
 const ServiceManager: React.FC = () => {
   const { services, addService, updateService, deleteService, showToast, selectedServiceId, setSelectedServiceId, addFile, files, showConfirm, rightPanelVisible } = useAppContext();
@@ -125,9 +126,7 @@ const ServiceManager: React.FC = () => {
     });
   };
 
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-  };
+
 
   const getCategoryLabel = (cat: string) => {
     switch (cat) {

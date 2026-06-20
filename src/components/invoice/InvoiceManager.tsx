@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { Invoice } from '../../types';
+import { formatPrice } from '../../utils/format';
 
 interface InvoiceManagerProps {
   searchQuery?: string;
@@ -49,10 +50,7 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
     return sortDirection === 'asc' ? ' ▴' : ' ▾';
   };
   
-  // Format harga Rupiah
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-  };
+
   
   // Parse file_path (metadata JSON)
   const getInvoiceMetadata = (invoice: Invoice) => {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { formatPrice } from '../../utils/format';
 import { Book } from '../../types';
 
 const BookManager: React.FC = () => {
@@ -149,9 +150,7 @@ const BookManager: React.FC = () => {
     });
   };
 
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-  };
+
 
   return (
     <div className="book-manager" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '24px', height: '100%', overflow: 'auto' }}>
