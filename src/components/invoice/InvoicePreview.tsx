@@ -153,8 +153,48 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
     const color = activeProfile?.watermarkColor || baseColor;
     const opacityValue = activeProfile?.watermarkOpacity !== undefined ? activeProfile.watermarkOpacity / 100 : 0.08;
 
-    const fontSize = text === 'BELUM LUNAS' ? '30px' : text === 'LUNAS' ? '44px' : '38px';
-    const letterSpacing = text === 'BELUM LUNAS' ? '4px' : text === 'LUNAS' ? '6px' : '5px';
+    const isMultiLine = text === 'BELUM LUNAS';
+    const fontSize = isMultiLine ? '28px' : text === 'LUNAS' ? '44px' : '38px';
+    const letterSpacing = isMultiLine ? '5px' : text === 'LUNAS' ? '6px' : '5px';
+
+    const textContent = isMultiLine ? (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ 
+          fontSize: fontSize, 
+          fontWeight: '900', 
+          letterSpacing: letterSpacing, 
+          paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
+          lineHeight: '1.1' 
+        }}>
+          BELUM
+        </div>
+        <div style={{ 
+          width: '100%', 
+          height: '1.5px', 
+          background: color, 
+          margin: '6px 0' 
+        }} />
+        <div style={{ 
+          fontSize: fontSize, 
+          fontWeight: '900', 
+          letterSpacing: letterSpacing, 
+          paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
+          lineHeight: '1.1' 
+        }}>
+          LUNAS
+        </div>
+      </div>
+    ) : (
+      <div style={{ 
+        fontSize: fontSize, 
+        fontWeight: '900', 
+        letterSpacing: letterSpacing, 
+        paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
+        lineHeight: '1' 
+      }}>
+        {text}
+      </div>
+    );
 
     return (
       <div
@@ -178,19 +218,14 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
         <div
           style={{
             border: `1.5px solid ${color}`,
-            padding: '8px 20px',
+            padding: isMultiLine ? '10px 16px' : '8px 20px',
             borderRadius: '5px',
-            fontSize: fontSize,
-            fontWeight: '900',
-            textTransform: 'uppercase',
-            letterSpacing: letterSpacing,
-            paddingLeft: `calc(20px + ${letterSpacing})`, // Menyeimbangkan letter-spacing di kanan karakter terakhir
             whiteSpace: 'nowrap',
             textAlign: 'center',
             lineHeight: '1'
           }}
         >
-          {text}
+          {textContent}
         </div>
       </div>
     );
