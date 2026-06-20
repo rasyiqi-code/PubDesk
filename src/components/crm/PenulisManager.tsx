@@ -224,6 +224,42 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
     }
   };
 
+  const handleDownloadTemplate = () => {
+    try {
+      const templateData = [
+        {
+          "Nama Penulis": "Budi Santoso",
+          "No WA": "081234567890",
+          "Email": "budi.santoso@email.com",
+          "Alamat": "Jl. Kaliurang Km 5, Sleman, Yogyakarta",
+          "Pekerjaan": "Dosen / Penulis",
+          "Institusi": "Universitas Gadjah Mada",
+          "Sumber Data": "Website",
+          "Status": "New",
+          "Catatan": "Tertarik menerbitkan buku tentang kecerdasan buatan."
+        }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(templateData);
+      
+      const maxLens = Object.keys(templateData[0] || {}).map(key => {
+        return Math.max(
+          key.length,
+          ...templateData.map(row => String((row as any)[key] || '').length)
+        );
+      });
+      ws['!cols'] = maxLens.map(len => ({ wch: Math.min(len + 3, 50) }));
+
+      XLSX.utils.book_append_sheet(wb, ws, "Template Lead Penulis");
+      XLSX.writeFile(wb, "Template_Lead_Penulis.xlsx");
+      showToast('Template Excel Lead Penulis berhasil diunduh!', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal mengunduh template Excel!', 'error');
+    }
+  };
+
   const handleAddNew = () => {
     setCurrentPenulis(null);
     setIsEditing(true);
@@ -509,6 +545,20 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
 
         {/* Tombol Aksi Toolbar */}
         <div style={{ display: 'flex', gap: '8px' }}>
+          <Button 
+            onClick={handleDownloadTemplate} 
+            variant="secondary" 
+            size="sm" 
+            title="Unduh Template Excel"
+            icon={
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <polyline points="9 15 12 18 15 15" />
+              </svg>
+            }
+          />
           <Button 
             onClick={() => document.getElementById('excel-import-input')?.click()} 
             variant="secondary" 
