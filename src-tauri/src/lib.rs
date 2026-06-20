@@ -137,7 +137,6 @@ async fn add_watch_folder(
     watcher_state: State<'_, WatcherState>,
     path: String
 ) -> Result<String, String> {
-    use tauri::Manager;
     let db_lock = state.db.lock().unwrap();
     let db = db_lock.as_ref().ok_or("Database tidak diinisialisasi")?;
     
@@ -156,12 +155,8 @@ async fn add_watch_folder(
     let path_abs_clone = path_abs.clone();
     
     std::thread::spawn(move || {
-        let state = app_handle_clone.state::<AppState>();
-        let db_lock = state.db.lock().unwrap();
-        if let Some(db) = db_lock.as_ref() {
-            let _ = watcher::scan_directory_recursive(db, std::path::Path::new(&path_abs_clone));
-            let _ = app_handle_clone.emit("local-files-changed", ());
-        }
+        let _ = watcher::scan_directory_recursive(&app_handle_clone, std::path::Path::new(&path_abs_clone));
+        let _ = app_handle_clone.emit("local-files-changed", ());
     });
 
     let watch_folders = db.get_watch_folders().map_err(|e| e.to_string())?;
