@@ -261,12 +261,15 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
             </div>
 
             {/* Lokasi */}
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Lokasi Wilayah</span>
-              <strong style={{ color: 'var(--text-primary)' }}>
+              <strong 
+                style={{ color: 'var(--text-primary)', textAlign: 'right', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} 
+                title={penulisData.address || (penulisData.city || penulisData.province ? `${penulisData.city || ''}, ${penulisData.province || ''}` : '')}
+              >
                 {penulisData.city || penulisData.province ? (
                   `${penulisData.city || ''}${penulisData.city && penulisData.province ? ', ' : ''}${penulisData.province || ''}`
-                ) : '-'}
+                ) : (penulisData.address || '-')}
               </strong>
             </div>
 
