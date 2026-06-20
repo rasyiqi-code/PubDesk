@@ -92,6 +92,22 @@ const PanelKanan: React.FC = () => {
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    const file = files.find(f => f.id === selectedFileId);
+    if (!file) return;
+    try {
+      await updateFile({
+        ...file,
+        status: newStatus
+      });
+      setFileMetadata((prev: any) => prev ? { ...prev, status: newStatus } : null);
+      showToast('Status berkas berhasil diperbarui', 'success');
+    } catch (err) {
+      console.error("Gagal memperbarui status berkas:", err);
+      showToast('Gagal memperbarui status berkas', 'error');
+    }
+  };
+
   const renderPreview = () => {
     switch (appState.activeModule) {
       case 'invoice':
@@ -559,6 +575,50 @@ const PanelKanan: React.FC = () => {
                   {fileMetadata.version_label || 'Lokal'}
                 </span>
               </div>
+            </div>
+
+            {/* Status Berkas */}
+            <div style={{ marginBottom: '20px' }}>
+              <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                Status Berkas
+              </h5>
+              {file?.type === 'gdrive' ? (
+                <span style={{
+                  display: 'inline-block',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  background: file.status === 'Tersimpan' ? 'rgba(46, 194, 126, 0.15)' : 'rgba(0, 0, 0, 0.06)',
+                  color: file.status === 'Tersimpan' ? '#2ec27e' : 'var(--text-secondary)'
+                }}>
+                  {file.status === 'Tersimpan' ? 'Tersimpan Lokal' : 'Tersedia di Cloud'}
+                </span>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select
+                    value={fileMetadata.status || 'draft'}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-card)',
+                      color: 'var(--text-primary)',
+                      fontSize: '13px',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="review">Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="final">Final</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Entitas Terdeteksi */}

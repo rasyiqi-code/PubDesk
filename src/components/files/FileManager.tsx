@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCommonPrefix, buildLocalFileTree, flattenTree } from '../../utils/fileTree';
 import { parseModifiedBy, getParentId, getIsShared } from './fileHelpers';
 import { TagFilter } from './TagFilter';
+import { StatusFilter } from './StatusFilter';
 import { FileGrid } from './FileGrid';
 import { FileList } from './FileList';
 
@@ -36,6 +37,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
   const [allTags, setAllTags] = React.useState<string[]>([]);
   const [fileTags, setFileTags] = React.useState<Record<number, string[]>>({});
   const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = React.useState<string | null>(null);
 
   const [sortBy, setSortBy] = React.useState<'name' | 'date' | 'size' | 'type' | 'status'>('name');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
@@ -524,7 +526,13 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
       matchesTag = tagsForFile.includes(selectedTag);
     }
 
-    return matchesCategory && matchesFolder && matchesTag;
+    // Filter by selected status
+    let matchesStatus = true;
+    if (selectedStatus) {
+      matchesStatus = file.status === selectedStatus;
+    }
+
+    return matchesCategory && matchesFolder && matchesTag && matchesStatus;
   });
 
   const filteredFiles = sortFiles(preFilteredFiles);
@@ -550,7 +558,11 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
-      {/* Baris Filter Tag */}
+      {/* Baris Filter Status & Tag */}
+      <StatusFilter
+        selectedStatus={selectedStatus}
+        setSelectedStatus={setSelectedStatus}
+      />
       <TagFilter
         allTags={allTags}
         selectedTag={selectedTag}
