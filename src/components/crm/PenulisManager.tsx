@@ -76,7 +76,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
           address: c.address || '',
           province: '',
           city: '',
-          job: 'Pelanggan',
+          job: '',
           institution: '',
           data_source: 'Database Pelanggan',
           email_valid: c.email ? 1 : 0,
@@ -548,9 +548,11 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                 >
                   <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-primary)' }}>
                     <div>{p.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '400', marginTop: '2px' }}>
-                      Pekerjaan: {p.job || '-'}
-                    </div>
+                    {p.job && p.job !== 'Pelanggan' && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '400', marginTop: '2px' }}>
+                        Pekerjaan: {p.job}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
                     {p.wa_number ? (
