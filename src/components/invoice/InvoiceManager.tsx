@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useFileState } from '../../contexts/FileContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { Invoice } from '../../types';
 import { formatPrice } from '../../utils/format';
@@ -21,15 +22,18 @@ const PAYMENT_STATUSES = [
 const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => {
   const { 
     invoices, 
-    files, 
     deleteInvoice, 
-    deleteFile, 
     showConfirm, 
     showToast, 
     setActiveModule, 
-    setRightPanelVisible,
-    setSelectedFileId
   } = useAppContext();
+
+  const {
+    files,
+    deleteFile,
+    setSelectedFileId,
+    setRightPanelVisible,
+  } = useFileState();
   
   const { loadInvoiceToForm } = useInvoiceContext();
 

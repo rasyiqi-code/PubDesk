@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { InvoiceProfile, InvoiceItem } from '../../types';
+import { formatPrice } from '../../utils/format';
 
 const evaluateItemFormula = (formulaStr: string, item: InvoiceItem): any => {
   try {
@@ -113,13 +114,6 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
     
     return () => resizeObserver.disconnect();
   }, []);
-
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(amount);
-  };
 
   const itemsTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
   const subtotal = itemsTotal;

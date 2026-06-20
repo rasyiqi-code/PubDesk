@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useFileState } from '../../contexts/FileContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { InvoiceItem } from '../../types';
+import { formatPrice } from '../../utils/format';
 
 const InvoiceGenerator: React.FC = () => {
-  const { services, addInvoice, updateInvoice, addFile, updateFile, showToast, rightPanelVisible, invoices, files } = useAppContext();
+  const { services, addInvoice, updateInvoice, showToast, rightPanelVisible, invoices } = useAppContext();
+  const { addFile, updateFile, files } = useFileState();
   const {
     customer, setCustomer,
     items, addItem, removeItem,
@@ -390,10 +393,6 @@ const InvoiceGenerator: React.FC = () => {
       console.error(error);
       showToast(`Gagal menyimpan: ${error instanceof Error ? error.message : String(error)}`, 'error');
     }
-  };
-
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('id-ID').format(amount);
   };
 
   const renderAccordionSection = (index: number, title: string, component: React.ReactNode) => {

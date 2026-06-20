@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useFileState } from '../../contexts/FileContext';
 import { invoke } from '@tauri-apps/api/core';
 import { getCommonPrefix, buildLocalFileTree, flattenTree } from '../../utils/fileTree';
 import { parseModifiedBy, getParentId, getIsShared } from './fileHelpers';
@@ -15,25 +16,28 @@ interface FileManagerProps {
 }
 
 export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
+  const {
+    showToast,
+    showConfirm,
+    refreshAccessToken,
+    gdriveAccounts,
+    refreshAccountToken
+  } = useAppContext();
+
   const { 
     files, 
     deleteFile, 
     updateFile, 
     selectedFileId, 
     setSelectedFileId, 
-    showToast, 
     fileCategory, 
-    showConfirm, 
     fileLayoutMode, 
     currentFolderId, 
     navigateFolder, 
-    refreshAccessToken, 
-    gdriveAccounts, 
-    refreshAccountToken,
     getAllTags,
     getAllFileTags,
     setRightPanelVisible
-  } = useAppContext();
+  } = useFileState();
 
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
   const [allTags, setAllTags] = React.useState<string[]>([]);

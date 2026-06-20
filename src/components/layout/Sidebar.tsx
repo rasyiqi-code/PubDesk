@@ -1,12 +1,14 @@
 import React from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useFileState } from '../../contexts/FileContext';
 
 interface SidebarProps {
   collapsed: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
-  const { appState, setActiveModule, fileCategory, setFileCategory, connectedUser } = useAppContext();
+  const { appState, setActiveModule, connectedUser } = useAppContext();
+  const { fileCategory, setFileCategory } = useFileState();
 
   const menuItems = [
     { id: 'invoice' as const, label: 'Invoice', icon: '🧾' },

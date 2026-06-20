@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../../contexts/AppContext';
+import { useFileState } from '../../contexts/FileContext';
 import InvoicePreview from '../invoice/InvoicePreview';
 import FilePreviewPanel from './PanelKanan/FilePreviewPanel';
 import ServicePreviewPanel from './PanelKanan/ServicePreviewPanel';
@@ -21,9 +22,10 @@ const PanelKanan: React.FC = () => {
     activeSettingsTab,
     selectedInsightMetric,
     invoices,
-    selectedFileId,
     setActiveModule,
   } = useAppContext();
+
+  const { selectedFileId } = useFileState();
 
   const { activeModule } = appState;
 

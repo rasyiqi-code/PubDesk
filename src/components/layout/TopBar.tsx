@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAppContext } from '../../contexts/AppContext';
+import { useFileState } from '../../contexts/FileContext';
 
 interface TopBarProps {
   onToggleSidebar?: () => void;
@@ -22,7 +22,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
     fileCategory,
     currentFolderId,
     files
-  } = useAppContext();
+  } = useFileState();
   const [appWindow, setAppWindow] = useState<any>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 

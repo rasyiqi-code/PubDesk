@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppContext } from '../../../contexts/AppContext';
+import { useFileState } from '../../../contexts/FileContext';
 import { useInvoiceContext } from '../../../contexts/InvoiceContext';
 import InvoicePreview from '../../invoice/InvoicePreview';
 
@@ -49,18 +50,21 @@ const getMimeLabel = (mime?: string): string => {
  */
 const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) => {
   const {
-    files,
     invoices,
-    updateFile,
     showToast,
     refreshAccessToken,
     gdriveAccounts,
     refreshAccountToken,
+    setActiveModule,
+  } = useAppContext();
+
+  const {
+    files,
+    updateFile,
     addFileTag,
     removeFileTag,
     getFileTags,
-    setActiveModule,
-  } = useAppContext();
+  } = useFileState();
 
   const { loadInvoiceToForm } = useInvoiceContext();
 
