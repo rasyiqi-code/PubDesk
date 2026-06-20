@@ -162,6 +162,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
         <div style={{ 
           fontSize: fontSize, 
           fontWeight: '900', 
+          color: '#ffffff',
           letterSpacing: letterSpacing, 
           paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
           lineHeight: '0.95' 
@@ -171,12 +172,13 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
         <div style={{ 
           width: '100%', 
           height: '1px', 
-          background: color, 
+          background: '#ffffff', 
           margin: '3px 0' 
         }} />
         <div style={{ 
           fontSize: fontSize, 
           fontWeight: '900', 
+          color: '#ffffff',
           letterSpacing: letterSpacing, 
           paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
           lineHeight: '0.95' 
@@ -188,6 +190,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
       <div style={{ 
         fontSize: fontSize, 
         fontWeight: '900', 
+        color: '#ffffff',
         letterSpacing: letterSpacing, 
         paddingLeft: letterSpacing, // Menyeimbangkan letter-spacing
         lineHeight: '1' 
@@ -196,6 +199,9 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
       </div>
     );
 
+    // SVG Data URI untuk efek grunge/noise bintik-bintik putih
+    const grungePattern = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><circle cx='5' cy='15' r='1' fill='%23ffffff' opacity='0.35'/><circle cx='35' cy='8' r='1.5' fill='%23ffffff' opacity='0.4'/><circle cx='60' cy='25' r='0.8' fill='%23ffffff' opacity='0.25'/><circle cx='20' cy='55' r='1.2' fill='%23ffffff' opacity='0.35'/><circle cx='55' cy='60' r='1.8' fill='%23ffffff' opacity='0.45'/><circle cx='10' cy='35' r='1' fill='%23ffffff' opacity='0.35'/><circle cx='65' cy='45' r='1.3' fill='%23ffffff' opacity='0.4'/><circle cx='40' cy='40' r='0.9' fill='%23ffffff' opacity='0.3'/><circle cx='15' cy='65' r='1.4' fill='%23ffffff' opacity='0.35'/><circle cx='70' cy='12' r='1.1' fill='%23ffffff' opacity='0.3'/><circle cx='30' cy='70' r='0.7' fill='%23ffffff' opacity='0.25'/><circle cx='50' cy='20' r='1.6' fill='%23ffffff' opacity='0.4'/></svg>")`;
+
     return (
       <div
         style={{
@@ -203,29 +209,36 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           top: '55%',
           left: '50%',
           transform: 'translate(-50%, -50%) rotate(-15deg)',
-          color: color,
-          border: `3px solid ${color}`,
-          padding: '1.5px',
-          borderRadius: '5px',
           pointerEvents: 'none',
           userSelect: 'none',
           zIndex: 10,
           opacity: opacityValue,
-          fontFamily: '"Impact", "Arial Black", "Montserrat", "Segoe UI", sans-serif',
           display: 'inline-block'
         }}
       >
-        <div
-          style={{
-            border: `1px solid ${color}`,
-            padding: isMultiLine ? '5px 12px' : '4px 14px',
-            borderRadius: '3px',
-            whiteSpace: 'nowrap',
-            textAlign: 'center',
-            lineHeight: '1'
-          }}
-        >
-          {textContent}
+        {/* Border Luar Warna Stempel */}
+        <div style={{
+          border: `3px solid ${color}`,
+          padding: '2px',
+          background: 'transparent',
+          borderRadius: '6px'
+        }}>
+          {/* Blok Solid dengan background warna stempel & noise grunge */}
+          <div
+            style={{
+              background: `${color} ${grungePattern}`,
+              border: `1.2px solid #ffffff`, // Border dalam putih tipis
+              padding: isMultiLine ? '6px 12px' : '5px 15px',
+              borderRadius: '3px',
+              whiteSpace: 'nowrap',
+              textAlign: 'center',
+              lineHeight: '1',
+              fontFamily: '"Impact", "Arial Black", "Montserrat", "Segoe UI", sans-serif',
+              boxShadow: `0 0 1px ${color}`
+            }}
+          >
+            {textContent}
+          </div>
         </div>
       </div>
     );
