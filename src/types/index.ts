@@ -90,7 +90,7 @@ export interface Service {
 }
 
 export interface AppState {
-  activeModule: 'invoice' | 'invoice-manager' | 'extractor' | 'files' | 'ledger' | 'settings' | 'books' | 'services';
+  activeModule: 'invoice' | 'invoice-manager' | 'invoice-insight' | 'extractor' | 'files' | 'ledger' | 'settings' | 'books' | 'services';
 }
 
 export interface InvoiceProfile {

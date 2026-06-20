@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       <nav style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
         {menuItems.map((item) => {
           const isActive = item.id === 'invoice'
-            ? (appState.activeModule === 'invoice' || appState.activeModule === 'invoice-manager')
+            ? (appState.activeModule === 'invoice' || appState.activeModule === 'invoice-manager' || appState.activeModule === 'invoice-insight')
             : appState.activeModule === item.id;
           const showSubmenu = item.id === 'files' && !collapsed;
           const showInvoiceSubmenu = item.id === 'invoice' && !collapsed;
@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                 }}
                 onClick={() => {
                   if (item.id === 'invoice') {
-                    if (appState.activeModule !== 'invoice' && appState.activeModule !== 'invoice-manager') {
+                    if (appState.activeModule !== 'invoice' && appState.activeModule !== 'invoice-manager' && appState.activeModule !== 'invoice-insight') {
                       setActiveModule('invoice');
                     }
                   } else {
@@ -85,6 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                   {[
                     { module: 'invoice' as const, label: 'Invoice Generator', icon: '✍️' },
                     { module: 'invoice-manager' as const, label: 'Managemen Invoice', icon: '🗃️' },
+                    { module: 'invoice-insight' as const, label: 'Invoice Insight', icon: '📊' },
                   ].map((sub) => {
                     const isSubActive = appState.activeModule === sub.module;
                     return (

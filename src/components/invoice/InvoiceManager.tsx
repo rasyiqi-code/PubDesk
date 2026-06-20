@@ -62,31 +62,7 @@ const InvoiceManager: React.FC = () => {
     });
   }, [invoices, searchQuery, statusFilter]);
 
-  // Hitung ringkasan statistik
-  const stats = useMemo(() => {
-    let totalLunas = 0;
-    let totalBelumLunas = 0;
-    let totalPending = 0;
 
-    invoices.forEach((inv) => {
-      const metadata = getInvoiceMetadata(inv);
-      const status = metadata.paymentStatus || 'PENDING';
-      if (status === 'LUNAS') {
-        totalLunas += inv.total;
-      } else if (status === 'BELUM LUNAS') {
-        totalBelumLunas += inv.total;
-      } else {
-        totalPending += inv.total;
-      }
-    });
-
-    return {
-      count: invoices.length,
-      lunas: totalLunas,
-      belumLunas: totalBelumLunas,
-      pending: totalPending
-    };
-  }, [invoices]);
 
   // Aksi Buka File PDF Secara Native
   const handleOpenPDF = async (invoiceId: number) => {
@@ -243,25 +219,7 @@ const InvoiceManager: React.FC = () => {
         </button>
       </div>
 
-      {/* Ringkasan Statistik Kartu */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px', flexShrink: 0 }}>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Total Invoice</span>
-          <strong style={{ fontSize: '22px', color: 'var(--text-primary)' }}>{stats.count} Lembar</strong>
-        </div>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#16a34a' }}>Total Lunas</span>
-          <strong style={{ fontSize: '22px', color: '#16a34a' }}>{formatPrice(stats.lunas)}</strong>
-        </div>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#dc2626' }}>Total Belum Lunas</span>
-          <strong style={{ fontSize: '22px', color: '#dc2626' }}>{formatPrice(stats.belumLunas)}</strong>
-        </div>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#d97706' }}>Total Pending</span>
-          <strong style={{ fontSize: '22px', color: '#d97706' }}>{formatPrice(stats.pending)}</strong>
-        </div>
-      </div>
+
 
       {/* Filter Section */}
       <div style={{ display: 'flex', gap: '12px', background: 'var(--bg-panel)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
