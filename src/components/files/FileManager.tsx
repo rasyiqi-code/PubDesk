@@ -7,6 +7,8 @@ import { TagFilter } from './TagFilter';
 import { StatusFilter } from './StatusFilter';
 import { FileGrid } from './FileGrid';
 import { FileList } from './FileList';
+import { FilterBar, FilterGroup, FilterChip, FilterDivider } from '../../ui/FilterBar';
+import { EmptyState } from '../../ui/EmptyState';
 
 interface FileManagerProps {
   searchQuery: string;
@@ -559,108 +561,39 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
-      {/* Baris Filter Status & Tag Terpadu (Satu baris compact dinamis) */}
-      <div style={{
-        display: 'flex',
-        gap: '20px',
-        padding: '10px 16px',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--bg-panel)',
-        alignItems: 'center',
-        flexWrap: 'nowrap',
-        overflowX: 'auto',
-        flexShrink: 0
-      }}>
-        {/* Jenis Filter Utama (Badge) */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)', marginRight: '4px', whiteSpace: 'nowrap' }}>
-            🔍 Filter:
-          </span>
-          <button
-            onClick={() => {
-              setFilterType('status');
-              setSelectedStatus(null);
-              setSelectedTag(null);
-            }}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '20px',
-              border: 'none',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              background: filterType === 'status' ? 'var(--accent)' : 'var(--bg-card)',
-              color: filterType === 'status' ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              height: '24px',
-              boxSizing: 'border-box'
-            }}
-          >
-            Status
-          </button>
-          <button
-            onClick={() => {
-              setFilterType('tag');
-              setSelectedStatus(null);
-              setSelectedTag(null);
-            }}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '20px',
-              border: 'none',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              background: filterType === 'tag' ? 'var(--accent)' : 'var(--bg-card)',
-              color: filterType === 'tag' ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              height: '24px',
-              boxSizing: 'border-box'
-            }}
-          >
-            Tag
-          </button>
-        </div>
+      <FilterBar>
+        <FilterGroup label="🔍 Filter:">
+          <FilterChip
+            label="Status"
+            active={filterType === 'status'}
+            onClick={() => { setFilterType('status'); setSelectedStatus(null); setSelectedTag(null); }}
+          />
+          <FilterChip
+            label="Tag"
+            active={filterType === 'tag'}
+            onClick={() => { setFilterType('tag'); setSelectedStatus(null); setSelectedTag(null); }}
+          />
+        </FilterGroup>
 
-        {/* Dropdown Nilai Status (Kondisional) */}
         {filterType === 'status' && (
           <>
-            <div style={{ width: '1px', height: '16px', background: 'var(--border)', flexShrink: 0 }} />
-            <StatusFilter
-              selectedStatus={selectedStatus}
-              setSelectedStatus={setSelectedStatus}
-            />
+            <FilterDivider />
+            <StatusFilter selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus} />
           </>
         )}
 
-        {/* Dropdown Nilai Tag (Kondisional) */}
         {filterType === 'tag' && allTags.length > 0 && (
           <>
-            <div style={{ width: '1px', height: '16px', background: 'var(--border)', flexShrink: 0 }} />
-            <TagFilter
-              allTags={allTags}
-              selectedTag={selectedTag}
-              setSelectedTag={setSelectedTag}
-            />
+            <FilterDivider />
+            <TagFilter allTags={allTags} selectedTag={selectedTag} setSelectedTag={setSelectedTag} />
           </>
         )}
-      </div>
+      </FilterBar>
 
       {/* Daftar Berkas */}
       <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-card)', padding: fileLayoutMode === 'grid' ? '16px' : '0' }}>
         {filteredFiles.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', alignItems: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-            <span style={{ fontSize: '32px', marginBottom: '8px' }}>📂</span>
-            <p style={{ fontSize: '13px', fontWeight: '500' }}>Tidak ada berkas yang ditemukan</p>
-          </div>
+          <EmptyState icon="📂" message="Tidak ada berkas yang ditemukan" />
         ) : fileLayoutMode === 'grid' ? (
           // Grid View Layout
           <FileGrid

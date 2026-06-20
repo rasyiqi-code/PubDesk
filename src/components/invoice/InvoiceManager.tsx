@@ -5,6 +5,7 @@ import { Invoice } from '../../types';
 import { formatPrice } from '../../utils/format';
 import { StatusBadge } from '../../ui/Badge';
 import { TableEmptyState } from '../../ui/EmptyState';
+import { FilterBar, FilterGroup, FilterChip, FilterDivider } from '../../ui/FilterBar';
 
 interface InvoiceManagerProps {
   searchQuery?: string;
@@ -253,18 +254,7 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
 
-      {/* Filter Bar — identik pola Smart Folders */}
-      <div style={{
-        display: 'flex',
-        gap: '20px',
-        padding: '10px 16px',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--bg-panel)',
-        alignItems: 'center',
-        flexWrap: 'nowrap',
-        overflowX: 'auto',
-        flexShrink: 0
-      }}>
+      <FilterBar>
         {/* Tombol Buat Invoice Baru */}
         <button
           className="btn-primary"
@@ -273,77 +263,31 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
             setActiveModule('invoice');
           }}
           style={{
-            padding: '4px 10px',
-            borderRadius: '6px',
-            border: 'none',
-            fontSize: '12px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            background: 'var(--accent)',
-            color: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            height: '24px',
-            flexShrink: 0
+            padding: '4px 10px', borderRadius: '6px', border: 'none',
+            fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+            background: 'var(--accent)', color: '#ffffff',
+            display: 'flex', alignItems: 'center', gap: '6px',
+            height: '24px', flexShrink: 0
           }}
         >
           <span>➕</span> Buat Invoice
         </button>
 
-        {/* Pemisah vertikal */}
-        <div style={{ width: '1px', height: '16px', background: 'var(--border)', flexShrink: 0 }} />
+        <FilterDivider />
 
-        {/* Filter Status Pembayaran */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)', marginRight: '4px', whiteSpace: 'nowrap' }}>
-            🚦 Status:
-          </span>
-          <button
-            onClick={() => setSelectedStatus(null)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '20px',
-              border: 'none',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              background: selectedStatus === null ? 'var(--accent)' : 'var(--bg-card)',
-              color: selectedStatus === null ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap',
-              height: '24px',
-              display: 'inline-flex',
-              alignItems: 'center',
-            }}
-          >
-            Semua
-          </button>
+        <FilterGroup label="🚦 Status:">
+          <FilterChip label="Semua" active={selectedStatus === null} onClick={() => setSelectedStatus(null)} />
           {PAYMENT_STATUSES.map((s) => (
-            <button
+            <FilterChip
               key={s.value}
+              label={s.label}
+              active={selectedStatus === s.value}
+              inactiveColor={s.color}
               onClick={() => setSelectedStatus(selectedStatus === s.value ? null : s.value)}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '20px',
-                border: selectedStatus === s.value ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                background: selectedStatus === s.value ? 'var(--accent)' : 'var(--bg-card)',
-                color: selectedStatus === s.value ? '#ffffff' : s.color,
-                transition: 'all 0.15s ease',
-                whiteSpace: 'nowrap',
-                height: '24px',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-            >
-              {s.label}
-            </button>
+            />
           ))}
-        </div>
-      </div>
+        </FilterGroup>
+      </FilterBar>
 
       {/* Invoice Table Container */}
       <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-card)' }}>

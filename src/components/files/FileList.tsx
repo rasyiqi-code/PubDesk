@@ -2,6 +2,7 @@ import React from 'react';
 import { FileIcon, formatDateTime, getDisplayType } from './fileHelpers';
 import { useAppContext } from '../../contexts/AppContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
+import { StatusBadge } from '../../ui/Badge';
 
 interface FileListProps {
   filteredFiles: any[];
@@ -230,21 +231,7 @@ export const FileList: React.FC<FileListProps> = ({
                     {isFolder ? '-' : formatDateTime(row.file?.last_modified)}
                   </td>
                   <td className="file-col-status" style={{ padding: '10px 12px' }}>
-                    {isFolder ? '-' : (
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          background: row.file?.status === 'Tersimpan' ? 'rgba(46, 194, 126, 0.15)' : 'rgba(0, 0, 0, 0.06)',
-                          color: row.file?.status === 'Tersimpan' ? '#2ec27e' : 'var(--text-secondary)'
-                        }}
-                      >
-                        {row.file?.status}
-                      </span>
-                    )}
+                    {isFolder ? '-' : <StatusBadge status={row.file?.status || 'draft'} size="sm" />}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     {!isFolder && (
