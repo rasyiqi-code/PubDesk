@@ -90,7 +90,7 @@ const MainLayout = () => {
       case 'services':
         return <ServiceManager />;
       case 'crm-penulis':
-        return <PenulisManager />;
+        return <PenulisManager searchQuery={fileSearchQuery} />;
       case 'crm-penerbit':
         return <PenerbitManager />;
       case 'naskah-orders':

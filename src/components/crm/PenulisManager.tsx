@@ -27,7 +27,11 @@ const followupVariantMap: Record<string, 'success' | 'warning' | 'danger' | 'inf
   'Pelanggan': 'success'
 };
 
-const PenulisManager: React.FC = () => {
+interface PenulisManagerProps {
+  searchQuery?: string;
+}
+
+const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => {
   const { penulis, addPenulis, updatePenulis, deletePenulis } = useCrmContext();
   const { showConfirm, showToast, contacts, addContact, updateContact, selectedPenulisId, setSelectedPenulisId, setRightPanelVisible } = useAppContext();
   
@@ -35,7 +39,6 @@ const PenulisManager: React.FC = () => {
   const [currentPenulis, setCurrentPenulis] = useState<Penulis | null>(null);
   
   // State filter
-  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [provinceFilter, setProvinceFilter] = useState('');
   const [contactTypeFilter, setContactTypeFilter] = useState<'all' | 'penulis' | 'customer'>('all');
@@ -100,9 +103,9 @@ const PenulisManager: React.FC = () => {
   // Filter data penulis
   const filteredPenulis = useMemo(() => {
     return combinedPenulis.filter((p) => {
-      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-        (p.email && p.email.toLowerCase().includes(search.toLowerCase())) ||
-        (p.wa_number && p.wa_number.includes(search));
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.email && p.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.wa_number && p.wa_number.includes(searchQuery));
       const matchesStatus = statusFilter ? p.followup_status === statusFilter : true;
       const matchesProvince = provinceFilter ? p.province === provinceFilter : true;
       
@@ -115,7 +118,7 @@ const PenulisManager: React.FC = () => {
       
       return matchesSearch && matchesStatus && matchesProvince && matchesType;
     });
-  }, [combinedPenulis, search, statusFilter, provinceFilter, contactTypeFilter]);
+  }, [combinedPenulis, searchQuery, statusFilter, provinceFilter, contactTypeFilter]);
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -406,26 +409,7 @@ const PenulisManager: React.FC = () => {
             })}
           </div>
 
-          {/* Input Pencarian */}
-          <div style={{ position: 'relative', width: '250px' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', fontSize: '14px' }}>🔍</span>
-            <input
-              type="text"
-              placeholder="Cari nama, email, WA..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ 
-                width: '100%', 
-                padding: '6px 12px 6px 36px', 
-                border: '1px solid var(--border)', 
-                borderRadius: '20px', 
-                fontSize: '12px', 
-                background: 'var(--bg-card)', 
-                color: 'var(--text-primary)', 
-                outline: 'none'
-              }}
-            />
-          </div>
+
 
           {/* Filter Status */}
           <select
@@ -523,7 +507,7 @@ const PenulisManager: React.FC = () => {
                 colSpan={6}
                 icon="👤"
                 message="Tidak ada data penulis"
-                description={search ? `Tidak ada hasil untuk pencarian "${search}"` : "Belum ada penulis terdaftar. Klik tombol Tambah Penulis untuk membuat profil baru."}
+                description={searchQuery ? `Tidak ada hasil untuk pencarian "${searchQuery}"` : "Belum ada penulis terdaftar. Klik tombol Tambah Penulis untuk membuat profil baru."}
               />
             ) : (
               filteredPenulis.map((p) => (
