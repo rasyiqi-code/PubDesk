@@ -42,38 +42,32 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
   const calculateItemTotal = contextData.calculateItemTotal;
   const profiles = contextData.profiles;
 
-  const profile = previewProfile || (overrideInvoice ? profiles.find(p => p.id === invoiceType) : contextData.activeProfile) || profiles[0];
+  const profile = previewProfile || (overrideInvoice ? profiles.find(p => p.id === invoiceType) : contextData.activeProfile) || (profiles.length > 0 ? profiles[0] : null);
   const activeProfile = profile;
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
 
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
   const a4Width = 595;
   const a4Height = 842;
 
   useEffect(() => {
     const updateScale = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.clientWidth;
-        const containerHeight = containerRef.current.clientHeight;
-        
-        const scaleX = containerWidth / a4Width;
-        const scaleY = containerHeight / a4Height;
-        const newScale = Math.min(scaleX, scaleY);
-        
-        setScale(newScale);
+      if (panelRef.current) {
+        const panelWidth = panelRef.current.clientWidth;
+        const panelHeight = panelRef.current.clientHeight;
+        const pad = 40;
+        const scaleX = (panelWidth - pad) / a4Width;
+        const scaleY = (panelHeight - pad) / a4Height;
+        setScale(Math.min(scaleX, scaleY));
       }
     };
 
     updateScale();
-    
-    const resizeObserver = new ResizeObserver(updateScale);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
+    const ro = new ResizeObserver(updateScale);
+    if (panelRef.current) {
+      ro.observe(panelRef.current);
     }
-    
-    return () => resizeObserver.disconnect();
+    return () => ro.disconnect();
   }, []);
 
   const itemsTotal = items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
@@ -159,6 +153,14 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
     const color = activeProfile?.watermarkColor || baseColor;
     const opacityValue = activeProfile?.watermarkOpacity !== undefined ? activeProfile.watermarkOpacity / 100 : 0.08;
 
+    const isMultiLine = text === 'BELUM LUNAS';
+    const textContent = isMultiLine ? (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '0.9' }}>
+        <div>BELUM</div>
+        <div style={{ marginTop: '2px' }}>LUNAS</div>
+      </div>
+    ) : text;
+
     return (
       <div
         style={{
@@ -166,15 +168,16 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           top: '55%',
           left: '50%',
           transform: 'translate(-50%, -50%) rotate(-25deg)',
-          fontSize: '72px',
+          fontSize: isMultiLine ? '56px' : '72px',
           fontWeight: '900',
           color: color,
           border: `10px double ${color}`,
-          padding: '10px 30px',
+          padding: isMultiLine ? '14px 24px' : '10px 30px',
           borderRadius: '16px',
           textTransform: 'uppercase',
           letterSpacing: '8px',
-          whiteSpace: 'nowrap',
+          whiteSpace: isMultiLine ? 'normal' : 'nowrap',
+          textAlign: 'center',
           pointerEvents: 'none',
           userSelect: 'none',
           zIndex: 10,
@@ -182,7 +185,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
           fontFamily: '"Montserrat", sans-serif'
         }}
       >
-        {text}
+        {textContent}
       </div>
     );
   };
@@ -197,45 +200,31 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
 
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', overflow: 'auto', padding: '20px', alignItems: 'center', justifyContent: 'center' }}>
-      {/* Mengimpor font Montserrat dan Playball dari Google Fonts */}
+    <div 
+      ref={panelRef}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: 'var(--bg-panel)', overflow: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Playball&display=swap');
       `}</style>
 
       <div 
-        ref={containerRef}
-        style={{ 
-          background: 'transparent', 
-          overflow: 'hidden', 
-          width: '100%', 
-          maxWidth: `${a4Width * 0.8}px`,
-          aspectRatio: `${a4Width} / ${a4Height}`,
-          margin: '0 auto',
-          position: 'relative',
-          flexShrink: 0
+        id="invoice-preview-content"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          flexShrink: 0,
+          width: `${a4Width}px`,
+          height: `${a4Height}px`,
+          background: '#ffffff',
+          borderRadius: '8px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+          overflow: 'hidden',
+          fontFamily: '"Montserrat", "Segoe UI", sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
         }}>
-        <div 
-          ref={contentRef}
-          id="invoice-preview-content"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: `translate(-50%, -50%) scale(${scale})`,
-            transformOrigin: 'center center',
-            display: 'flex',
-            flexDirection: 'column',
-            width: `${a4Width}px`,
-            height: `${a4Height}px`,
-            background: '#ffffff',
-            borderRadius: '8px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-            overflow: 'hidden',
-            fontFamily: '"Montserrat", "Segoe UI", sans-serif'
-          }}>
-          
-          {/* Header SVG */}
+        
+        {/* Header SVG */}
           <div className="invoice-header" style={{ flexShrink: 0 }}>
             <svg
               viewBox="0 0 657 139"
@@ -709,7 +698,6 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
 
           {renderWatermark()}
         </div>
-      </div>
     </div>
   );
 };
