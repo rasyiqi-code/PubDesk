@@ -722,7 +722,22 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                 <path d="M 538.25 20 H 1045 V 70 H 575.75 Z" fill={headerPrimaryColor} />
               </g>
 
-              {/* Teks Rekening Bank (Sebaris di dalam shape footer kanan) */}
+              {/* Teks Pengantar Transfer (di dalam shape footer kiri) */}
+              {activeProfile?.showBankInfo && (
+                <text 
+                  x="35" 
+                  y="49" 
+                  fill="#ffffff" 
+                  fontFamily='"Montserrat", "Segoe UI", sans-serif' 
+                  fontSize="12.5" 
+                  fontWeight="600"
+                  letterSpacing="0.2"
+                >
+                  Silahkan transfer ke Rekening:
+                </text>
+              )}
+
+              {/* Teks Rekening Bank (di dalam shape footer kanan) */}
               {activeProfile?.showBankInfo && (
                 <text 
                   x="1010" 
@@ -734,7 +749,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                   fontWeight="600"
                   letterSpacing="0.2"
                 >
-                  Transfer: {activeProfile.bankName} | {activeProfile.bankAccountNo} | a/n. {activeProfile.bankAccountOwner}
+                  {activeProfile.bankName} | {activeProfile.bankAccountNo} | a/n. {activeProfile.bankAccountOwner}
                 </text>
               )}
 
