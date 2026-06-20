@@ -32,6 +32,22 @@ const InvoiceGenerator: React.FC = () => {
   const [customTitle, setCustomTitle] = useState('');
   const [dynamicInputs, setDynamicInputs] = useState<Record<string, any>>({});
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
+  const [gasUrlInput, setGasUrlInput] = useState('');
+  const [gasTokenInput, setGasTokenInput] = useState('');
+
+  // Muat setelan GAS dari service saat mount
+  useEffect(() => {
+    import('../../services/googleAppsScript').then(({ googleAppsScriptService }) => {
+      const { url, token } = googleAppsScriptService.getSettings();
+      setGasUrlInput(url);
+      setGasTokenInput(token);
+    });
+  }, []);
+
+  const handleSaveGASSettings = async (url: string, token: string) => {
+    const { googleAppsScriptService } = await import('../../services/googleAppsScript');
+    googleAppsScriptService.saveSettings(url, token);
+  };
 
   // Dynamically set default values when activeProfile changes
   useEffect(() => {
@@ -291,7 +307,48 @@ const InvoiceGenerator: React.FC = () => {
       };
 
       await addFile(fileData);
-      showToast('Invoice berhasil disimpan dan dicatat ke Smart Folders!', 'success');
+
+      // Coba kirim data ke Google Apps Script (Cloud Sheets & Google Drive)
+      const { googleAppsScriptService } = await import('../../services/googleAppsScript');
+      if (googleAppsScriptService.isConfigured()) {
+        try {
+          const itemsPayload = items.map(item => ({
+            item_title: item.item_title,
+            quantity: item.quantity,
+            price: item.price
+          }));
+
+          const gasPayload = {
+            invoice_no: invoiceNo || undefined,
+            id_invoice: invoiceId, // opsional: sertakan id dari database lokal
+            tanggal: invoiceDate || new Date().toISOString().split('T')[0],
+            pelanggan: customer.name || '',
+            whatsapp: customer.wa_number || '',
+            alamat: customer.address || '',
+            items: itemsPayload,
+            shipping_cost: shippingCost,
+            admin_fee: adminFee,
+            total
+          };
+
+          showToast('Menyinkronkan data ke Cloud Google Sheets...', 'info');
+          const cloudResult = await googleAppsScriptService.sendInvoiceToCloud(
+            gasPayload,
+            pdfBytes,
+            filename
+          );
+
+          if (cloudResult.success) {
+            showToast(`Invoice berhasil disinkronkan ke Cloud!`, 'success');
+          }
+        } catch (cloudError) {
+          console.error('Gagal sinkronisasi cloud:', cloudError);
+          showToast(`Invoice disimpan lokal. Gagal ke Cloud: ${cloudError instanceof Error ? cloudError.message : String(cloudError)}`, 'error');
+        }
+      } else {
+        showToast('Invoice berhasil disimpan di lokal!', 'success');
+      }
+
       resetInvoice();
       setWaInput('');
     } catch (error) {
@@ -617,6 +674,43 @@ const InvoiceGenerator: React.FC = () => {
                 placeholder="0"
               />
             </div>
+          </>
+        ))}
+
+        {/* Section 5: Setelan Cloud (Google Apps Script) */}
+        {renderAccordionSection(5, '⚙️ Setelan Cloud (Google Sheets & Drive)', (
+          <>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>URL Web App Google Apps Script</label>
+              <input
+                type="text"
+                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }}
+                value={gasUrlInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setGasUrlInput(val);
+                  handleSaveGASSettings(val, gasTokenInput);
+                }}
+                placeholder="https://script.google.com/macros/s/.../exec"
+              />
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Token Keamanan (Pre-shared Key)</label>
+              <input
+                type="password"
+                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }}
+                value={gasTokenInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setGasTokenInput(val);
+                  handleSaveGASSettings(gasUrlInput, val);
+                }}
+                placeholder="Masukkan token rahasia..."
+              />
+            </div>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+              ℹ️ URL & Token ini digunakan untuk mencatat data invoice baru ke Google Sheets secara real-time dan mengunggah PDF aslinya ke Google Drive.
+            </p>
           </>
         ))}
       </div>
