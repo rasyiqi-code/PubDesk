@@ -254,7 +254,7 @@ const InvoiceGenerator: React.FC = () => {
   const showGlobalAdditions = !activeProfile?.tableColumns?.some(col => col.key === 'item_shipping_cost');
 
   return (
-    <div className="invoice-generator" style={{ padding: '20px' }}>
+    <div className="invoice-generator" style={{ padding: '20px', height: '100%', overflowY: 'auto' }}>
       <h1 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px', color: 'var(--text-primary)' }}>
         {editingInvoiceId ? '📝 Edit Invoice' : 'Pembuat Invoice'}
       </h1>

@@ -68,8 +68,9 @@ body {
   flex: 1;
   padding: 0;
   background: var(--bg-dark);
-  overflow-y: auto;
-  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Top Bar */

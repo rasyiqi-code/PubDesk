@@ -539,19 +539,19 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
 
       {/* Tabel Data */}
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-card)' }}>
-        <table style={{ width: '100%', minWidth: '1600px', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+        <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Nama Penulis</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Pekerjaan</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Institusi / Afiliasi</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>WhatsApp</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Email</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Lokasi / Alamat</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Sumber Data</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Catatan Tambahan</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Status</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', width: '100px', textAlign: 'center', userSelect: 'none' }}>Aksi</th>
+            <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Nama Penulis</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Pekerjaan</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Institusi / Afiliasi</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>WhatsApp</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Email</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Lokasi / Alamat</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Sumber Data</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Catatan Tambahan</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Status</th>
+              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', width: '100px', textAlign: 'center', userSelect: 'none' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
