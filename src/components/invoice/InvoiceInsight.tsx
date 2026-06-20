@@ -22,10 +22,17 @@ const InvoiceInsight: React.FC = () => {
     let countBelumLunas = 0;
     let countDp = 0;
     let countBermasalah = 0;
+    const uniqueCustomers = new Set();
 
     invoices.forEach((inv) => {
       const metadata = getInvoiceMetadata(inv);
       const status = metadata.paymentStatus || 'BERMASALAH';
+      
+      const customerName = (metadata.customerName || 'Umum').trim();
+      if (customerName && customerName !== '-') {
+        uniqueCustomers.add(customerName.toLowerCase());
+      }
+
       if (status === 'LUNAS') {
         totalLunas += inv.total;
         countLunas++;
@@ -54,7 +61,8 @@ const InvoiceInsight: React.FC = () => {
       countLunas,
       countBelumLunas,
       countDp,
-      countBermasalah
+      countBermasalah,
+      uniqueCustomersCount: uniqueCustomers.size
     };
   }, [invoices]);
 
@@ -241,6 +249,87 @@ const InvoiceInsight: React.FC = () => {
           <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#d97706' }}>Total Dana Bermasalah</span>
           <strong style={{ fontSize: '24px', color: '#d97706' }}>{formatPrice(stats.bermasalah)}</strong>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Dari <strong>{stats.countBermasalah}</strong> invoice bermasalah</span>
+        </div>
+
+        {/* Kartu Rata-rata Nilai Invoice */}
+        <div 
+          style={{ 
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--border)', 
+            borderRadius: '12px', 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            e.currentTarget.style.borderColor = '#8b5cf6';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8b5cf6' }}>Rata-Rata Nilai Invoice</span>
+          <strong style={{ fontSize: '24px', color: '#8b5cf6' }}>{formatPrice(stats.count > 0 ? stats.grandTotal / stats.count : 0)}</strong>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Nilai rata-rata per lembar tagihan</span>
+        </div>
+
+        {/* Kartu Rasio Pelunasan */}
+        <div 
+          style={{ 
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--border)', 
+            borderRadius: '12px', 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            e.currentTarget.style.borderColor = '#6366f1';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#6366f1' }}>Rasio Pelunasan</span>
+          <strong style={{ fontSize: '24px', color: '#6366f1' }}>{(stats.grandTotal > 0 ? ((stats.lunas + stats.dp) / stats.grandTotal) * 100 : 0).toFixed(1)}%</strong>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Persentase pelunasan dari omzet</span>
+        </div>
+
+        {/* Kartu Mitra/Pelanggan Unik */}
+        <div 
+          style={{ 
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--border)', 
+            borderRadius: '12px', 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '8px', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+            e.currentTarget.style.borderColor = '#06b6d4';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
+          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#06b6d4' }}>Mitra & Pelanggan Unik</span>
+          <strong style={{ fontSize: '24px', color: '#06b6d4' }}>{stats.uniqueCustomersCount} Pelanggan</strong>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Jumlah kontak bisnis aktif</span>
         </div>
       </div>
 
