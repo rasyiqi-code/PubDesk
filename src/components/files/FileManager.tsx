@@ -38,6 +38,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
   const [fileTags, setFileTags] = React.useState<Record<number, string[]>>({});
   const [selectedTag, setSelectedTag] = React.useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = React.useState<string | null>(null);
+  const [filterType, setFilterType] = React.useState<'none' | 'status' | 'tag'>('none');
 
   const [sortBy, setSortBy] = React.useState<'name' | 'date' | 'size' | 'type' | 'status'>('name');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
@@ -558,7 +559,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
-      {/* Baris Filter Status & Tag Terpadu (Satu baris compact) */}
+      {/* Baris Filter Status & Tag Terpadu (Satu baris compact dinamis) */}
       <div style={{
         display: 'flex',
         gap: '20px',
@@ -569,21 +570,61 @@ export const FileManager: React.FC<FileManagerProps> = ({ searchQuery }) => {
         flexWrap: 'wrap',
         flexShrink: 0
       }}>
-        <StatusFilter
-          selectedStatus={selectedStatus}
-          setSelectedStatus={setSelectedStatus}
-        />
-        
-        {/* Garis Pemisah Vertikal */}
-        {allTags.length > 0 && (
-          <div style={{ width: '1px', height: '16px', background: 'var(--border)', flexShrink: 0 }} />
+        {/* Dropdown Jenis Filter Utama */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+            🔍 Filter Berdasarkan:
+          </span>
+          <select
+            value={filterType}
+            onChange={(e) => {
+              const val = e.target.value as 'none' | 'status' | 'tag';
+              setFilterType(val);
+              setSelectedStatus(null);
+              setSelectedTag(null);
+            }}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '6px',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              outline: 'none',
+              minWidth: '120px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
+            <option value="none">Tanpa Filter</option>
+            <option value="status">Status</option>
+            <option value="tag">Tag</option>
+          </select>
+        </div>
+
+        {/* Dropdown Nilai Status (Kondisional) */}
+        {filterType === 'status' && (
+          <>
+            <div style={{ width: '1px', height: '16px', background: 'var(--border)', flexShrink: 0 }} />
+            <StatusFilter
+              selectedStatus={selectedStatus}
+              setSelectedStatus={setSelectedStatus}
+            />
+          </>
         )}
 
-        <TagFilter
-          allTags={allTags}
-          selectedTag={selectedTag}
-          setSelectedTag={setSelectedTag}
-        />
+        {/* Dropdown Nilai Tag (Kondisional) */}
+        {filterType === 'tag' && allTags.length > 0 && (
+          <>
+            <div style={{ width: '1px', height: '16px', background: 'var(--border)', flexShrink: 0 }} />
+            <TagFilter
+              allTags={allTags}
+              selectedTag={selectedTag}
+              setSelectedTag={setSelectedTag}
+            />
+          </>
+        )}
       </div>
 
       {/* Daftar Berkas */}
