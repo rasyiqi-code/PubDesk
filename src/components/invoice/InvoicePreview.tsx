@@ -658,38 +658,40 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
                   No. Rekening: <strong>{activeProfile.bankAccountNo}</strong><br />
                   A.n. <strong>{activeProfile.bankAccountOwner}</strong>
                 </div>
-                {activeProfile?.showCompanyContact && (
-                  <div style={{ 
-                    marginTop: '6px', 
-                    paddingTop: '6px', 
-                    borderTop: '1px solid #e5e7eb', 
-                    fontSize: '6.5px', 
-                    color: '#6b7280',
-                    textAlign: 'center',
-                    lineHeight: '1.3'
-                  }}>
-                    {activeProfile.companyWebsite && (
-                      <span>Website: {activeProfile.companyWebsite}<br /></span>
-                    )}
-                    {(activeProfile.companyEmail || activeProfile.companyYoutube) && (
-                      <span>
-                        {activeProfile.companyEmail && `Email: ${activeProfile.companyEmail}`}
-                        {activeProfile.companyEmail && activeProfile.companyYoutube && ' | '}
-                        {activeProfile.companyYoutube && `Youtube: ${activeProfile.companyYoutube}`}
-                        <br />
-                      </span>
-                    )}
-                    {activeProfile.companyInstagram && (
-                      <span>IG: {activeProfile.companyInstagram}<br /></span>
-                    )}
-                    {activeProfile.companyPhone && (
-                      <span>Kontak Telp. {activeProfile.companyPhone}</span>
-                    )}
-                  </div>
-                )}
               </div>
             ) : null}
           </div>
+
+          {/* Company Contact Info (Centered, di bawah Tanda Tangan & Bank, di atas Footer) */}
+          {activeProfile?.showCompanyContact && (
+            <div style={{ 
+              padding: '0 35px 8px', 
+              fontSize: '7.5px', 
+              color: '#4b5563',
+              textAlign: 'center',
+              lineHeight: '1.35',
+              fontFamily: '"Montserrat", "Segoe UI", sans-serif',
+              flexShrink: 0
+            }}>
+              {activeProfile.companyWebsite && (
+                <span>Website: {activeProfile.companyWebsite}<br /></span>
+              )}
+              {(activeProfile.companyEmail || activeProfile.companyYoutube) && (
+                <span>
+                  {activeProfile.companyEmail && `Email: ${activeProfile.companyEmail}`}
+                  {activeProfile.companyEmail && activeProfile.companyYoutube && ' | '}
+                  {activeProfile.companyYoutube && `Youtube: ${activeProfile.companyYoutube}`}
+                  <br />
+                </span>
+              )}
+              {activeProfile.companyInstagram && (
+                <span>IG: {activeProfile.companyInstagram}<br /></span>
+              )}
+              {activeProfile.companyPhone && (
+                <span>Kontak Telp. {activeProfile.companyPhone}</span>
+              )}
+            </div>
+          )}
 
           {/* Footer SVG */}
           <div className="invoice-footer" style={{ flexShrink: 0 }}>
