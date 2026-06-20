@@ -33,7 +33,7 @@ interface PenulisManagerProps {
 
 const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => {
   const { penulis, addPenulis, updatePenulis, deletePenulis } = useCrmContext();
-  const { showConfirm, showToast, contacts, addContact, updateContact, selectedPenulisId, setSelectedPenulisId, setRightPanelVisible } = useAppContext();
+  const { showConfirm, showToast, contacts, addContact, updateContact, deleteContact, selectedPenulisId, setSelectedPenulisId, setRightPanelVisible } = useAppContext();
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentPenulis, setCurrentPenulis] = useState<Penulis | null>(null);
@@ -242,18 +242,27 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
 
   const handleDelete = (id: number, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const isCustomerOnly = id < 0;
+    
     showConfirm({
-      title: 'Hapus Penulis',
-      message: `Apakah Anda yakin ingin menghapus penulis "${name}"?`,
+      title: isCustomerOnly ? 'Hapus Pelanggan' : 'Hapus Penulis',
+      message: isCustomerOnly 
+        ? `Apakah Anda yakin ingin menghapus pelanggan "${name}"?`
+        : `Apakah Anda yakin ingin menghapus penulis "${name}"?`,
       confirmText: 'Hapus',
       type: 'danger',
       onConfirm: async () => {
         try {
-          await deletePenulis(id);
-          showToast('Data penulis berhasil dihapus!', 'success');
+          if (isCustomerOnly) {
+            await deleteContact(-id);
+            showToast('Data pelanggan berhasil dihapus!', 'success');
+          } else {
+            await deletePenulis(id);
+            showToast('Data penulis berhasil dihapus!', 'success');
+          }
         } catch (err) {
           console.error(err);
-          showToast('Gagal menghapus penulis!', 'error');
+          showToast(isCustomerOnly ? 'Gagal menghapus pelanggan!' : 'Gagal menghapus penulis!', 'error');
         }
       }
     });
@@ -635,17 +644,15 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                       >
                         ✏️
                       </Button>
-                      {!p.is_customer_only && (
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={(e) => p.id && handleDelete(p.id, p.name, e)}
-                          style={{ padding: '6px 10px' }}
-                          title="Hapus Lead"
-                        >
-                          🗑️
-                        </Button>
-                      )}
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={(e) => p.id !== undefined && handleDelete(p.id, p.name, e)}
+                        style={{ padding: '6px 10px' }}
+                        title={p.is_customer_only ? "Hapus Pelanggan" : "Hapus Lead"}
+                      >
+                        🗑️
+                      </Button>
                     </div>
                   </td>
                 </tr>
