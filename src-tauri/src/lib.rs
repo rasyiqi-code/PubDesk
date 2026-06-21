@@ -184,6 +184,8 @@ pub fn run() {
             commands::file::write_binary_file,
             commands::file::open_file_physically,
             commands::file::open_file_location_physically,
+            commands::file::get_custom_work_dir,
+            commands::file::set_custom_work_dir,
             commands::file::get_watch_folders,
             commands::file::add_watch_folder,
             commands::file::remove_watch_folder,

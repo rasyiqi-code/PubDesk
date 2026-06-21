@@ -41,18 +41,90 @@ pub async fn write_binary_file(path: String, bytes: Vec<u8>) -> Result<(), Strin
     Ok(())
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+pub struct AppConfig {
+    pub work_files_dir: Option<String>,
+}
+
+fn get_config_path(app_handle: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+    Ok(app_data_dir.join("app_config.json"))
+}
+
+fn load_app_config(app_handle: &tauri::AppHandle) -> AppConfig {
+    if let Ok(config_path) = get_config_path(app_handle) {
+        if config_path.exists() {
+            if let Ok(file_content) = std::fs::read_to_string(&config_path) {
+                if let Ok(config) = serde_json::from_str::<AppConfig>(&file_content) {
+                    return config;
+                }
+            }
+        }
+    }
+    AppConfig::default()
+}
+
+#[tauri::command]
+pub fn get_custom_work_dir(app_handle: tauri::AppHandle) -> Result<Option<String>, String> {
+    let config = load_app_config(&app_handle);
+    Ok(config.work_files_dir)
+}
+
+#[tauri::command]
+pub fn set_custom_work_dir(app_handle: tauri::AppHandle, path: Option<String>) -> Result<(), String> {
+    let mut config = load_app_config(&app_handle);
+    if let Some(ref p) = path {
+        if p.trim().is_empty() {
+            config.work_files_dir = None;
+        } else {
+            let path_buf = std::path::PathBuf::from(p);
+            if !path_buf.exists() || !path_buf.is_dir() {
+                return Err("Direktori tidak ditemukan atau bukan folder valid".to_string());
+            }
+            config.work_files_dir = Some(p.trim().to_string());
+        }
+    } else {
+        config.work_files_dir = None;
+    }
+
+    let config_path = get_config_path(&app_handle)?;
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let json_str = serde_json::to_string_pretty(&config).map_err(|e| e.to_string())?;
+    std::fs::write(&config_path, json_str).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn create_physical_file(app_handle: tauri::AppHandle, filename: String, bytes: Vec<u8>, folder: String) -> Result<String, String> {
     use tauri::Manager;
     use std::fs::File as StdFile;
     use std::io::Write;
+    use std::path::PathBuf;
 
-    let app_data_dir = app_handle
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?;
+    let config = load_app_config(&app_handle);
     
-    let target_dir = app_data_dir.join(&folder);
+    let base_dir = if let Some(ref custom_dir) = config.work_files_dir {
+        if !custom_dir.trim().is_empty() {
+            PathBuf::from(custom_dir)
+        } else {
+            app_handle
+                .path()
+                .app_data_dir()
+                .map_err(|e| e.to_string())?
+        }
+    } else {
+        app_handle
+            .path()
+            .app_data_dir()
+            .map_err(|e| e.to_string())?
+    };
+    
+    let target_dir = base_dir.join(&folder);
     std::fs::create_dir_all(&target_dir).map_err(|e| e.to_string())?;
     
     let file_path = target_dir.join(&filename);

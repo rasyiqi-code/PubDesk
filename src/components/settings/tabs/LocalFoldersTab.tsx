@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { invoke } from '@tauri-apps/api/core';
 import { useAppContext } from '../../../contexts/AppContext';
 
 /**
@@ -11,6 +12,42 @@ const LocalFoldersTab: React.FC = () => {
 
   const [localPathInput, setLocalPathInput] = useState('');
   const [addingFolder, setAddingFolder] = useState(false);
+  const [customWorkDir, setCustomWorkDir] = useState<string | null>(null);
+
+  useEffect(() => {
+    invoke<string | null>('get_custom_work_dir')
+      .then(dir => setCustomWorkDir(dir))
+      .catch(err => console.error('Gagal mengambil folder penyimpanan:', err));
+  }, []);
+
+  const handleSelectWorkDir = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        directory: true,
+        title: 'Pilih Folder Penyimpanan Berkas Pekerjaan'
+      });
+      if (selected && typeof selected === 'string') {
+        await invoke('set_custom_work_dir', { path: selected });
+        setCustomWorkDir(selected);
+        showToast('Folder penyimpanan berkas pekerjaan berhasil diubah!', 'success');
+      }
+    } catch (err: any) {
+      console.error('Error selecting work directory:', err);
+      showToast('Gagal mengubah folder penyimpanan: ' + err.toString(), 'error');
+    }
+  };
+
+  const handleResetWorkDir = async () => {
+    try {
+      await invoke('set_custom_work_dir', { path: null });
+      setCustomWorkDir(null);
+      showToast('Folder penyimpanan dikembalikan ke bawaan sistem!', 'success');
+    } catch (err: any) {
+      console.error('Error resetting work directory:', err);
+      showToast('Gagal mereset folder penyimpanan: ' + err.toString(), 'error');
+    }
+  };
 
   const handleSelectFolder = async () => {
     try {
@@ -103,6 +140,55 @@ const LocalFoldersTab: React.FC = () => {
 
         {/* Kolom Kanan: Tambah Folder & Panduan */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {/* Section: Folder Penyimpanan Berkas Pekerjaan */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+              📂 Folder Penyimpanan Berkas Pekerjaan
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+              Tentukan folder di mana semua berkas fisik hasil pekerjaan (seperti draf naskah, invoice PDF, cover buku, dll.) disimpan agar tidak bercampur dengan direktori sistem aplikasi.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="text"
+                  className="compact-input"
+                  placeholder="Menggunakan folder default sistem..."
+                  value={customWorkDir || 'Default (Folder Sistem AppData)'}
+                  readOnly
+                  style={{
+                    flex: 1,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-card)',
+                    color: customWorkDir ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    outline: 'none',
+                    fontSize: '12px',
+                    padding: '8px 12px',
+                    borderRadius: '6px'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSelectWorkDir}
+                  className="btn-secondary compact-btn"
+                  style={{ height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', cursor: 'pointer', padding: '0 12px' }}
+                >
+                  📂 Ubah Lokasi
+                </button>
+              </div>
+              {customWorkDir && (
+                <button
+                  type="button"
+                  onClick={handleResetWorkDir}
+                  className="btn-danger compact-btn"
+                  style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: '600', alignSelf: 'flex-start', padding: '0 12px' }}
+                >
+                  🔄 Kembalikan ke Default
+                </button>
+              )}
+            </div>
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               ➕ Tambah Folder Baru
