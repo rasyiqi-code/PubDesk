@@ -47,7 +47,7 @@ import ImportExcel from '../import/ImportExcel';
 
 const MainLayout = () => {
   const { appState, rightPanelVisible } = useAppContext();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
