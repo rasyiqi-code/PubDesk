@@ -153,7 +153,8 @@ body {
 }
 
 .top-bar-gnome-pathbar {
-  flex: 1;
+  flex: 0 1 auto;
+  width: auto;
   max-width: 450px;
   min-width: 0;
   display: flex;
