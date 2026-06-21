@@ -100,14 +100,13 @@ const DashboardProduksi: React.FC = () => {
       </div>
 
       {/* Konten Dashboard yang scrollable */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       {/* Grid Stat Cards terpadu tanpa space/gap dan tidak membulat (siku) */}
       <div style={{ 
         display: 'flex', 
         flexWrap: 'wrap',
         background: 'var(--bg-card)', 
-        borderTop: '1px solid var(--border)', 
-        borderLeft: '1px solid var(--border)', 
+        borderBottom: '1px solid var(--border)', 
         borderRadius: '0px', 
         overflow: 'hidden',
         boxSizing: 'border-box',
@@ -162,22 +161,13 @@ const DashboardProduksi: React.FC = () => {
         })}
       </div>
 
-      {/* Section Utama */}
+      {/* Box Tugas Mendesak */}
       <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 320px', 
-        gap: '24px',
-        alignItems: 'start'
+        background: 'var(--bg-card)', 
+        borderBottom: '1px solid var(--border)', 
+        padding: '24px',
+        boxSizing: 'border-box'
       }}>
-        {/* Kolom Kiri: Tugas Mendesak & Navigasi Cepat */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Box Tugas Mendesak */}
-          <div style={{ 
-            background: 'var(--bg-card)', 
-            border: '1px solid var(--border)', 
-            borderRadius: '0px', 
-            padding: '20px' 
-          }}>
             <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
               🚨 Perhatian Khusus (Mendesak / Terlambat)
             </h2>
@@ -263,9 +253,9 @@ const DashboardProduksi: React.FC = () => {
           {/* Quick Actions / Navigasi */}
           <div style={{ 
             background: 'var(--bg-card)', 
-            border: '1px solid var(--border)', 
-            borderRadius: '0px', 
-            padding: '20px' 
+            borderBottom: '1px solid var(--border)', 
+            padding: '24px',
+            boxSizing: 'border-box'
           }}>
             <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 16px 0' }}>
               ⚡ Navigasi Cepat Produksi
@@ -321,86 +311,79 @@ const DashboardProduksi: React.FC = () => {
               ))}
             </div>
           </div>
+
+      {/* Box Alokasi Tahap Workflow */}
+      <div style={{ 
+        background: 'var(--bg-card)', 
+        borderBottom: '1px solid var(--border)', 
+        padding: '24px',
+        boxSizing: 'border-box'
+      }}>
+        <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 16px 0' }}>
+          📊 Alokasi Tahap Produksi
+        </h2>
+
+        <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
+          Total Naskah Aktif: <strong style={{ color: 'var(--text-primary)' }}>{totalUnfinished} naskah</strong>
         </div>
 
-        {/* Kolom Kanan: Distribusi Tahap Workflow */}
-        <div style={{ 
-          background: 'var(--bg-card)', 
-          border: '1px solid var(--border)', 
-          borderRadius: '0px', 
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px'
-        }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
-            📊 Alokasi Tahap Produksi
-          </h2>
-
-          <div style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: 0 }}>
-            Total Naskah Aktif: <strong style={{ color: 'var(--text-primary)' }}>{totalUnfinished} naskah</strong>
+        {totalUnfinished === 0 ? (
+          <div style={{ padding: '24px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+            Tidak ada data tugas aktif saat ini.
           </div>
-
-          {totalUnfinished === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-              Tidak ada data tugas aktif saat ini.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Visual Ringkas dengan SVG Donut/Pie Minimalis */}
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
-                <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border)" strokeWidth="3" />
-                  {(() => {
-                    let accumulatedPercent = 0;
-                    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#374151'];
-                    return stepStats.slice(0, 5).map((step, idx) => {
-                      const percent = (step.count / totalUnfinished) * 100;
-                      const strokeDasharray = `${percent} ${100 - percent}`;
-                      const strokeDashoffset = 100 - accumulatedPercent;
-                      accumulatedPercent += percent;
-                      return (
-                        <circle
-                          key={step.name}
-                          cx="18"
-                          cy="18"
-                          r="15.915"
-                          fill="none"
-                          stroke={colors[idx % colors.length]}
-                          strokeWidth="3.2"
-                          strokeDasharray={strokeDasharray}
-                          strokeDashoffset={strokeDashoffset}
-                        />
-                      );
-                    });
-                  })()}
-                </svg>
-              </div>
-
-              {/* Legend & Details */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {stepStats.map((step, idx) => {
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '48px', flexWrap: 'wrap' }}>
+            {/* Visual Ringkas dengan SVG Donut/Pie Minimalis */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <svg width="120" height="120" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border)" strokeWidth="3" />
+                {(() => {
+                  let accumulatedPercent = 0;
                   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#374151'];
-                  const color = colors[idx % colors.length];
-                  const percent = totalUnfinished > 0 ? Math.round((step.count / totalUnfinished) * 100) : 0;
-                  return (
-                    <div key={step.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '75%' }}>
-                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                        <span style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {step.name}
-                        </span>
-                      </div>
-                      <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
-                        {step.count} ({percent}%)
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                  return stepStats.slice(0, 5).map((step, idx) => {
+                    const percent = (step.count / totalUnfinished) * 100;
+                    const strokeDasharray = `${percent} ${100 - percent}`;
+                    const strokeDashoffset = 100 - accumulatedPercent;
+                    accumulatedPercent += percent;
+                    return (
+                      <circle
+                        key={step.name}
+                        cx="18"
+                        cy="18"
+                        r="15.915"
+                        fill="none"
+                        stroke={colors[idx % colors.length]}
+                        strokeWidth="3.2"
+                        strokeDasharray={strokeDasharray}
+                        strokeDashoffset={strokeDashoffset}
+                      />
+                    );
+                  });
+                })()}
+              </svg>
             </div>
-          )}
-        </div>
+
+            {/* Legend & Details */}
+            <div style={{ display: 'flex', flexFlow: 'row wrap', gap: '16px 24px', flex: 1, minWidth: '240px' }}>
+              {stepStats.map((step, idx) => {
+                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#374151'];
+                const color = colors[idx % colors.length];
+                const percent = totalUnfinished > 0 ? Math.round((step.count / totalUnfinished) * 100) : 0;
+                return (
+                  <div key={step.name} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', minWidth: '140px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                    <span style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px' }} title={step.name}>
+                      {step.name}
+                    </span>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: '600', marginLeft: 'auto' }}>
+                      {step.count} ({percent}%)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   </div>

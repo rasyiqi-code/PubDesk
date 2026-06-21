@@ -50,19 +50,17 @@ const DashboardMasterData: React.FC = () => {
       </div>
 
       {/* Konten Dashboard yang scrollable */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
 
       {/* Grid Summary Info Cards terpadu tanpa space/gap dan siku */}
       <div style={{ 
         display: 'flex', 
         flexWrap: 'wrap',
         background: 'var(--bg-card)', 
-        borderTop: '1px solid var(--border)', 
-        borderLeft: '1px solid var(--border)', 
+        borderBottom: '1px solid var(--border)', 
         borderRadius: '0px', 
         overflow: 'hidden',
         boxSizing: 'border-box',
-        marginBottom: '24px',
         flexShrink: 0
       }}>
         {CARDS_CONFIG.map(card => {
@@ -138,89 +136,81 @@ const DashboardMasterData: React.FC = () => {
         })}
       </div>
 
-      {/* Visual Analisis & Quick Insight */}
+      {/* Distribusi Data */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 340px',
-        gap: '24px'
+        background: 'var(--bg-card)',
+        borderBottom: '1px solid var(--border)',
+        padding: '24px',
+        boxSizing: 'border-box'
       }}>
-        {/* Distribusi Data */}
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: '0px',
-          padding: '24px'
-        }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 20px 0' }}>
-            📊 Distribusi Kategori Master Data
-          </h3>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 20px 0' }}>
+          📊 Distribusi Kategori Master Data
+        </h3>
 
-          {totalData === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-              Tidak ada data master yang terdaftar.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {CARDS_CONFIG.map(card => {
-                const count = counts[card.key];
-                const percentage = totalData > 0 ? (count / totalData) * 100 : 0;
-                return (
-                  <div key={card.key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                      <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{card.label}</span>
-                      <span style={{ color: 'var(--text-secondary)' }}>
-                        <strong>{count}</strong> ({percentage.toFixed(1)}%)
-                      </span>
-                    </div>
-                    {/* Progress Bar Container */}
-                    <div style={{ 
-                      height: '8px', 
-                      background: 'var(--bg-panel)', 
-                      borderRadius: '4px', 
-                      overflow: 'hidden' 
-                    }}>
-                      {/* Active Progress */}
-                      <div style={{ 
-                        width: `${percentage}%`, 
-                        height: '100%', 
-                        background: card.color, 
-                        borderRadius: '4px',
-                        transition: 'width 0.4s ease-in-out'
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Petunjuk Penggunaan */}
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: '0px',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px'
-        }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
-            💡 Informasi Master Data
-          </h3>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.6' }}>
-            Halaman Master Data menyimpan relasi entitas inti sistem. Pastikan untuk selalu memperbarui data kontak penulis, perjanjian legalitas, serta tim produksi agar proses otomatisasi invoice dan alokasi tugas berjalan lancar.
-          </p>
-          <div style={{ 
-            padding: '12px', 
-            borderRadius: '0px', 
-            background: 'var(--bg-panel)', 
-            borderLeft: '4px solid var(--accent)',
-            fontSize: '12px',
-            color: 'var(--text-secondary)'
-          }}>
-            <strong>Tip Impor:</strong> Anda bisa mengimpor data massal melalui dokumen Excel dari sub-menu masing-masing.
+        {totalData === 0 ? (
+          <div style={{ padding: '40px 0', color: 'var(--text-secondary)' }}>
+            Tidak ada data master yang terdaftar.
           </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {CARDS_CONFIG.map(card => {
+              const count = counts[card.key];
+              const percentage = totalData > 0 ? (count / totalData) * 100 : 0;
+              return (
+                <div key={card.key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{card.label}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      <strong>{count}</strong> ({percentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                  {/* Progress Bar Container */}
+                  <div style={{ 
+                    height: '8px', 
+                    background: 'var(--bg-panel)', 
+                    borderRadius: '4px', 
+                    overflow: 'hidden' 
+                  }}>
+                    {/* Active Progress */}
+                    <div style={{ 
+                      width: `${percentage}%`, 
+                      height: '100%', 
+                      background: card.color, 
+                      borderRadius: '4px',
+                      transition: 'width 0.4s ease-in-out'
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Petunjuk Penggunaan */}
+      <div style={{
+        background: 'var(--bg-card)',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        boxSizing: 'border-box'
+      }}>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
+          💡 Informasi Master Data
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.6' }}>
+          Halaman Master Data menyimpan relasi entitas inti sistem. Pastikan untuk selalu memperbarui data kontak penulis, perjanjian legalitas, serta tim produksi agar proses otomatisasi invoice dan alokasi tugas berjalan lancar.
+        </p>
+        <div style={{ 
+          padding: '12px', 
+          borderRadius: '0px', 
+          background: 'var(--bg-panel)', 
+          borderLeft: '4px solid var(--accent)',
+          fontSize: '12px',
+          color: 'var(--text-secondary)'
+        }}>
+          <strong>Tip Impor:</strong> Anda bisa mengimpor data massal melalui dokumen Excel dari sub-menu masing-masing.
         </div>
       </div>
     </div>
