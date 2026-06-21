@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useCrmContext } from '../../../contexts/CrmContext';
+import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge } from '../../../ui/atoms/Badge';
 
 interface NaskahPreviewPanelProps {
@@ -63,12 +63,12 @@ const SectionCard = ({ title, children }: { title: string; children: React.React
 );
 
 const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => {
-  const { naskahOrders, penulis, penerbit } = useCrmContext();
+  const { naskah, penulis, penerbit } = useDataMasterContext();
 
   const naskahData = useMemo(() => {
     if (!naskahId) return null;
-    return naskahOrders.find((n) => n.id === naskahId) || null;
-  }, [naskahOrders, naskahId]);
+    return naskah.find((n) => n.id === naskahId) || null;
+  }, [naskah, naskahId]);
 
   const penulisData = useMemo(() => {
     if (!naskahData?.penulis_id) return null;
@@ -139,18 +139,6 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
         top: 0,
         zIndex: 1,
       }}>
-        <span style={{
-          fontSize: '10px',
-          fontWeight: '700',
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-          color: 'var(--text-secondary)',
-          display: 'block',
-          marginBottom: '10px'
-        }}>
-          🔍 Inspektur Berkas Cerdas
-        </span>
-
         {/* Profil singkat naskah */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{

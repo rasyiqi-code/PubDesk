@@ -73,8 +73,8 @@ interface AppContextType {
   setSelectedBookId: (id: number | null) => void;
   selectedServiceId: number | null;
   setSelectedServiceId: (id: number | null) => void;
-  activeSettingsTab: 'invoice' | 'services' | 'local-folders' | 'google-drive' | 'google-apps-script';
-  setActiveSettingsTab: (tab: 'invoice' | 'services' | 'local-folders' | 'google-drive' | 'google-apps-script') => void;
+  activeSettingsTab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script';
+  setActiveSettingsTab: (tab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script') => void;
   confirmOptions: ConfirmOptions | null;
   showConfirm: (options: ConfirmOptions) => void;
   hideConfirm: () => void;
@@ -117,8 +117,8 @@ interface AppContextType {
   setSelectedPenerbitId: (id: number | null) => void;
   selectedNaskahId: number | null;
   setSelectedNaskahId: (id: number | null) => void;
-  selectedLayouterId: number | null;
-  setSelectedLayouterId: (id: number | null) => void;
+  selectedTimId: number | null;
+  setSelectedTimId: (id: number | null) => void;
   selectedLegalitasId: number | null;
   setSelectedLegalitasId: (id: number | null) => void;
 }
@@ -142,14 +142,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [confirmOptions, setConfirmOptions] = useState<ConfirmOptions | null>(null);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'invoice' | 'services' | 'local-folders' | 'google-drive' | 'google-apps-script'>('invoice');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script'>('invoice');
   const [selectedInsightMetric, setSelectedInsightMetric] = useState<'total' | 'lunas' | 'belum_lunas' | 'bermasalah' | 'dp' | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Contact | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [selectedPenulisId, setSelectedPenulisId] = useState<number | null>(null);
   const [selectedPenerbitId, setSelectedPenerbitId] = useState<number | null>(null);
   const [selectedNaskahId, setSelectedNaskahId] = useState<number | null>(null);
-  const [selectedLayouterId, setSelectedLayouterId] = useState<number | null>(null);
+  const [selectedTimId, setSelectedTimId] = useState<number | null>(null);
   const [selectedLegalitasId, setSelectedLegalitasId] = useState<number | null>(null);
 
   const rootFolderId = localStorage.getItem('gdrive_parent_folder_id') || 'root';
@@ -858,8 +858,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSelectedPenerbitId,
       selectedNaskahId,
       setSelectedNaskahId,
-      selectedLayouterId,
-      setSelectedLayouterId,
+      selectedTimId,
+      setSelectedTimId,
       selectedLegalitasId,
       setSelectedLegalitasId,
       addInvoice,

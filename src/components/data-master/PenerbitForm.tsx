@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Penerbit } from '../../types/crm.types';
+import { Penerbit } from '../../types/data-master.types';
 import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { Select } from '../../ui/atoms/Select';

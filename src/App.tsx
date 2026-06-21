@@ -1,16 +1,16 @@
 import MainLayout from './components/layout/MainLayout';
 import { AppProvider } from './contexts/AppContext';
 import { InvoiceProvider } from './contexts/InvoiceContext';
-import { CrmProvider } from './contexts/CrmContext';
+import { DataMasterProvider } from './contexts/DataMasterContext';
 
 function App() {
   return (
     <AppProvider>
-      <CrmProvider>
+      <DataMasterProvider>
         <InvoiceProvider>
           <MainLayout />
         </InvoiceProvider>
-      </CrmProvider>
+      </DataMasterProvider>
     </AppProvider>
   );
 }

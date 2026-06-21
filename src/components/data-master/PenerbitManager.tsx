@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { useCrmContext } from '../../contexts/CrmContext';
+import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useAppContext } from '../../contexts/AppContext';
-import { Penerbit } from '../../types/crm.types';
+import { Penerbit } from '../../types/data-master.types';
 import PenerbitForm from './PenerbitForm';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
 import { Button } from '../../ui/atoms/Button';
 import { Badge } from '../../ui/atoms/Badge';
+import { FilterBar, FilterGroup, FilterChip, FilterDivider } from '../../ui/molecules/FilterBar';
 import * as XLSX from 'xlsx';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
@@ -32,13 +33,15 @@ interface PenerbitManagerProps {
 }
 
 const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) => {
-  const { penerbit, addPenerbit, updatePenerbit, deletePenerbit } = useCrmContext();
+  const { penerbit, addPenerbit, updatePenerbit, deletePenerbit } = useDataMasterContext();
   const { 
     showConfirm, 
     showToast, 
     selectedPenerbitId, 
     setSelectedPenerbitId, 
-    setRightPanelVisible 
+    setRightPanelVisible,
+    addFile,
+    files
   } = useAppContext();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -98,20 +101,48 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
     });
   };
 
+  const registerPenerbitFile = async (penerbitId: number, penerbitData: Penerbit) => {
+    try {
+      const filename = `Penerbit-${penerbitId}.json`;
+      const jsonString = JSON.stringify(penerbitData);
+      const bytes = new TextEncoder().encode(jsonString);
+      const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
+      const physicalPath = await tauriInvoke<string>('create_physical_file', {
+        filename,
+        bytes: Array.from(bytes),
+        folder: 'penerbit'
+      });
+      const alreadyExists = files.some(f => f.filename === filename && f.type === 'penerbit');
+      if (!alreadyExists) {
+        await addFile({
+          filename,
+          path: physicalPath,
+          type: 'penerbit',
+          project_id: undefined,
+          version_label: String(penerbitId),
+          status: 'Tersimpan',
+          last_modified: new Date().toISOString(),
+          is_readonly: false
+        });
+      }
+    } catch (err) {
+      console.error('Gagal mendaftarkan file penerbit:', err);
+    }
+  };
+
   const handleFormSubmit = async (data: Omit<Penerbit, 'created_at' | 'id'> & { id?: number }) => {
     try {
       if (data.id) {
         const original = penerbit.find(p => p.id === data.id);
         if (original) {
-          await updatePenerbit({
-            ...original,
-            ...data,
-          } as Penerbit);
+          await updatePenerbit({ ...original, ...data } as Penerbit);
           showToast('Data penerbit berhasil diperbarui!', 'success');
+          await registerPenerbitFile(data.id, { ...original, ...data } as Penerbit);
         }
       } else {
-        await addPenerbit(data as Omit<Penerbit, 'created_at'>);
+        const newId = await addPenerbit(data as Omit<Penerbit, 'created_at'>);
         showToast('Penerbit baru berhasil ditambahkan!', 'success');
+        await registerPenerbitFile(newId, { ...data, id: newId } as Penerbit);
       }
       setIsEditing(false);
       setCurrentPenerbit(null);
@@ -324,86 +355,22 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
   return (
     <div className="customer-list-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
       
-      {/* Baris Atas: Filter & Tambah */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '10px 16px', 
-        borderBottom: '1px solid var(--border)', 
-        background: 'var(--bg-panel)', 
-        flexWrap: 'wrap', 
-        gap: '12px' 
-      }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          
-          {/* Tab Filter Status Kerja Sama */}
-          <div style={{ 
-            display: 'flex', 
-            background: 'rgba(0, 0, 0, 0.2)', 
-            padding: '3px', 
-            borderRadius: '20px', 
-            border: '1px solid var(--border)',
-            gap: '2px',
-            marginRight: '8px'
-          }}>
-            {[
-              { id: 'all', label: 'Semua', count: penerbit.length },
-              { id: 'Aktif', label: 'Aktif', count: penerbit.filter(p => (p.cooperation_status || 'Aktif') === 'Aktif').length },
-              { id: 'Negosiasi', label: 'Negosiasi', count: penerbit.filter(p => p.cooperation_status === 'Negosiasi').length },
-              { id: 'Pasif', label: 'Pasif', count: penerbit.filter(p => p.cooperation_status === 'Pasif').length },
-              { id: 'Berhenti', label: 'Berhenti', count: penerbit.filter(p => p.cooperation_status === 'Berhenti').length }
-            ].map(tab => {
-              const isTabActive = coopFilter === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setCoopFilter(tab.id as any)}
-                  style={{
-                    border: 'none',
-                    padding: '5px 12px',
-                    borderRadius: '16px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    background: isTabActive ? 'var(--accent)' : 'transparent',
-                    color: isTabActive ? '#ffffff' : 'var(--text-secondary)',
-                    transition: 'all 0.15s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <span>{tab.label}</span>
-                  <span style={{
-                    background: isTabActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
-                    padding: '1px 6px',
-                    borderRadius: '10px',
-                    fontSize: '9px',
-                    color: isTabActive ? '#ffffff' : 'var(--text-secondary)'
-                  }}>{tab.count}</span>
-                </button>
-              );
-            })}
-          </div>
+      <FilterBar>
+        <FilterGroup label="🤝 Status Kerja Sama:">
+          <FilterChip label={`Semua (${penerbit.length})`} active={coopFilter === 'all'} onClick={() => setCoopFilter('all')} />
+          <FilterChip label={`Aktif (${penerbit.filter(p => (p.cooperation_status || 'Aktif') === 'Aktif').length})`} active={coopFilter === 'Aktif'} onClick={() => setCoopFilter('Aktif')} />
+          <FilterChip label={`Negosiasi (${penerbit.filter(p => p.cooperation_status === 'Negosiasi').length})`} active={coopFilter === 'Negosiasi'} onClick={() => setCoopFilter('Negosiasi')} />
+          <FilterChip label={`Pasif (${penerbit.filter(p => p.cooperation_status === 'Pasif').length})`} active={coopFilter === 'Pasif'} onClick={() => setCoopFilter('Pasif')} />
+          <FilterChip label={`Berhenti (${penerbit.filter(p => p.cooperation_status === 'Berhenti').length})`} active={coopFilter === 'Berhenti'} onClick={() => setCoopFilter('Berhenti')} />
+        </FilterGroup>
 
-        </div>
+        <FilterDivider />
 
-        {/* Input File Tersembunyi untuk Impor Excel */}
-        <input
-          type="file"
-          id="penerbit-excel-import-input"
-          accept=".xlsx, .xls"
-          style={{ display: 'none' }}
-          onChange={handleImportExcel}
-        />
-
-        {/* Tombol Aksi Toolbar */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button 
-            onClick={handleDownloadTemplate} 
-            variant="secondary" 
-            size="sm" 
+        <FilterGroup label="">
+          <Button
+            onClick={handleDownloadTemplate}
+            variant="secondary"
+            size="sm"
             title="Unduh Template Excel"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -414,10 +381,10 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
               </svg>
             }
           />
-          <Button 
-            onClick={() => document.getElementById('penerbit-excel-import-input')?.click()} 
-            variant="secondary" 
-            size="sm" 
+          <Button
+            onClick={() => document.getElementById('penerbit-excel-import-input')?.click()}
+            variant="secondary"
+            size="sm"
             title="Impor data Penerbit dari Excel"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -427,23 +394,23 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
               </svg>
             }
           />
-          <Button 
-            onClick={handleExportExcel} 
-            variant="secondary" 
-            size="sm" 
+          <Button
+            onClick={handleExportExcel}
+            variant="secondary"
+            size="sm"
             title="Ekspor data Penerbit ke Excel"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
+                <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
             }
           />
-          <Button 
-            onClick={handleAddNew} 
-            variant="primary" 
-            size="sm" 
+          <Button
+            onClick={handleAddNew}
+            variant="primary"
+            size="sm"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -453,23 +420,32 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
           >
             Tambah Penerbit
           </Button>
-        </div>
-      </div>
+        </FilterGroup>
+      </FilterBar>
+
+      {/* Input File Tersembunyi untuk Impor Excel */}
+      <input
+        type="file"
+        id="penerbit-excel-import-input"
+        accept=".xlsx, .xls"
+        style={{ display: 'none' }}
+        onChange={handleImportExcel}
+      />
 
       {/* Tabel Data */}
-      <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-card)' }}>
-        <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Nama Penerbit</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>WhatsApp PIC</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Email Resmi</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Sosial Media</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Provinsi / Kota</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Alamat Lengkap</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Catatan Kemitraan</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Status</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', width: '100px', textAlign: 'center', userSelect: 'none' }}>Aksi</th>
+      <div style={{ flex: 1, overflowX: 'auto', background: 'var(--bg-card)' }}>
+        <table style={{ minWidth: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+            <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Nama Penerbit</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>WhatsApp PIC</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Email Resmi</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Sosial Media</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Provinsi / Kota</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Alamat Lengkap</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Catatan Kemitraan</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Status</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', textAlign: 'left', userSelect: 'none', whiteSpace: 'nowrap', position: 'sticky', right: 0, background: 'var(--bg-panel)', zIndex: 3, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -487,12 +463,17 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
                   onClick={() => {
                     if (p.id !== undefined) {
                       setSelectedPenerbitId(p.id);
+                    }
+                  }}
+                  onDoubleClick={() => {
+                    if (p.id !== undefined) {
+                      setSelectedPenerbitId(p.id);
                       setRightPanelVisible(true);
                     }
                   }}
                   style={{
                     borderBottom: '1px solid var(--border)',
-                    background: selectedPenerbitId === p.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                    background: selectedPenerbitId === p.id ? 'rgba(192, 28, 28, 0.08)' : 'transparent',
                     cursor: 'pointer',
                     transition: 'background 0.1s ease',
                     color: 'var(--text-primary)'
@@ -508,54 +489,72 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
                     }
                   }}
                 >
-                  <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                     <div>{p.name}</div>
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                     {p.wa_number ? (
-                      <a
-                        href={getWhatsAppLink(p.wa_number)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        title="Klik untuk chat WhatsApp"
-                        style={{
-                          color: 'var(--text-primary)',
-                          textDecoration: 'none',
-                          fontWeight: '500',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                      >
-                        💬 {p.wa_number} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
-                      </a>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <a
+                          href={getWhatsAppLink(p.wa_number)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Klik untuk chat WhatsApp"
+                          style={{
+                            color: 'var(--text-primary)',
+                            textDecoration: 'none',
+                            fontWeight: '500',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                        >
+                          💬 {p.wa_number} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
+                        </a>
+                        <span title={p.wa_valid ? 'WA Valid' : 'WA Tidak Valid'} style={{
+                          fontSize: '10px',
+                          color: p.wa_valid ? '#16a34a' : 'var(--text-secondary)',
+                          opacity: 0.7
+                        }}>
+                          {p.wa_valid ? '✓' : '?'}
+                        </span>
+                      </div>
                     ) : '-'}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                     {p.email ? (
-                      <a
-                        href={`mailto:${p.email}`}
-                        onClick={(e) => e.stopPropagation()}
-                        title="Klik untuk mengirim email"
-                        style={{
-                          color: 'var(--text-primary)',
-                          textDecoration: 'none',
-                          fontWeight: '500',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                      >
-                        📧 {p.email} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
-                      </a>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <a
+                          href={`mailto:${p.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          title="Klik untuk mengirim email"
+                          style={{
+                            color: 'var(--text-primary)',
+                            textDecoration: 'none',
+                            fontWeight: '500',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                        >
+                          📧 {p.email} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
+                        </a>
+                        <span title={p.email_valid ? 'Email Valid' : 'Email Tidak Valid'} style={{
+                          fontSize: '10px',
+                          color: p.email_valid ? '#16a34a' : 'var(--text-secondary)',
+                          opacity: 0.7
+                        }}>
+                          {p.email_valid ? '✓' : '?'}
+                        </span>
+                      </div>
                     ) : '-'}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px' }}>
                       {p.instagram && <span>📸 IG: {p.instagram}</span>}
                       {p.facebook && <span>👥 FB: {p.facebook}</span>}
@@ -564,7 +563,7 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
                       {!p.instagram && !p.facebook && !p.linkedin && !p.tiktok && <span>-</span>}
                     </div>
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                     {p.city || p.province ? (
                       `${p.city || ''}${p.city && p.province ? ', ' : ''}${p.province || ''}`
                     ) : '-'}
@@ -575,33 +574,15 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.notes}>
                     {p.notes || '-'}
                   </td>
-                  <td style={{ padding: '10px 12px' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
                     <Badge
                       label={p.cooperation_status || 'Aktif'}
                       variant={coopVariantMap[p.cooperation_status || 'Aktif']}
                     />
                   </td>
-                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => handleEdit(p, e)}
-                        style={{ padding: '6px 10px' }}
-                        title="Edit Profil"
-                      >
-                        ✏️
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={(e) => p.id !== undefined && handleDelete(p.id, p.name, e)}
-                        style={{ padding: '6px 10px' }}
-                        title="Hapus Penerbit"
-                      >
-                        🗑️
-                      </Button>
-                    </div>
+                  <td style={{ padding: '10px 12px', textAlign: 'left', whiteSpace: 'nowrap', position: 'sticky', right: 0, background: 'var(--bg-card)', zIndex: 2, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)' }}>
+                      <button onClick={(e) => handleEdit(p, e)} style={{background:'none',border:'none',cursor:'pointer',padding:'2px',fontSize:'16px',lineHeight:1}} title="Edit">✏️</button>
+                      <button onClick={(e) => p.id !== undefined && handleDelete(p.id, p.name, e)} style={{background:'none',border:'none',cursor:'pointer',padding:'2px',fontSize:'16px',lineHeight:1}} title="Hapus">🗑️</button>
                   </td>
                 </tr>
               ))

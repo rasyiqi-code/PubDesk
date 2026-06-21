@@ -11,6 +11,8 @@ export interface Book {
   weight_grams: number;
   author_id?: number;
   cover_path?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Project {
@@ -19,4 +21,6 @@ export interface Project {
   book_id?: number;
   status: string;
   deadline?: string;
+  created_at?: string;
+  updated_at?: string;
 }

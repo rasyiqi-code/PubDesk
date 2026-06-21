@@ -11,18 +11,19 @@ import { useAppContext } from '../../contexts/AppContext';
 import Settings from '../settings/Settings';
 import { FileManager } from '../files/FileManager';
 import BookManager from '../books/BookManager';
-import ServiceManager from '../services-module/ServiceManager';
+import ServiceManager from '../data-master/ServiceManager';
 // Modul CRM & Manajemen Kontak Pelanggan
-import PenulisManager from '../crm/PenulisManager';
-import PenerbitManager from '../crm/PenerbitManager';
-import NaskahOrdersManager from '../crm/NaskahOrdersManager';
-import LayouterManager from '../crm/LayouterManager';
-import LegalitasManager from '../crm/LegalitasManager';
-import PelangganManager from '../crm/PelangganManager';
+import PenulisManager from '../data-master/PenulisManager';
+import PenerbitManager from '../data-master/PenerbitManager';
+import NaskahOrdersManager from '../data-master/NaskahOrdersManager';
+import TimManager from '../data-master/TimManager';
+import LegalitasManager from '../data-master/LegalitasManager';
+import PelangganManager from '../data-master/PelangganManager';
+import ActivityLog from '../data-master/ActivityLog';
 
 
 const MainLayout = () => {
-  const { appState, rightPanelVisible, activeSettingsTab } = useAppContext();
+  const { appState, rightPanelVisible } = useAppContext();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
@@ -90,21 +91,22 @@ const MainLayout = () => {
       case 'books':
         return <BookManager />;
       case 'services':
-        return <ServiceManager />;
-      case 'crm-penulis':
+        return <ServiceManager searchQuery={fileSearchQuery} />;
+      case 'kontak':
+      case 'penulis':
         return <PenulisManager searchQuery={fileSearchQuery} />;
-      case 'crm-penerbit':
+      case 'penerbit':
         return <PenerbitManager searchQuery={fileSearchQuery} />;
-      case 'crm-naskah':
-      case 'naskah-orders':
+      case 'naskah':
         return <NaskahOrdersManager searchQuery={fileSearchQuery} />;
-      case 'crm-tim':
-      case 'layouters':
-        return <LayouterManager searchQuery={fileSearchQuery} />;
-      case 'crm-legalitas':
+      case 'tim':
+        return <TimManager searchQuery={fileSearchQuery} />;
+      case 'legalitas':
         return <LegalitasManager searchQuery={fileSearchQuery} />;
       case 'pelanggan':
         return <PelangganManager searchQuery={fileSearchQuery} />;
+      case 'activity-log':
+        return <ActivityLog />;
       case 'ledger':
         return <div className="module-content" style={{ padding: '24px', color: '#a89880' }}><h2>Buku Besar Virtual</h2><p>Fitur akan segera tersedia</p></div>;
       case 'settings':
@@ -136,7 +138,7 @@ const MainLayout = () => {
             </div>
 
             {/* Right panel with resizable width */}
-            {(appState.activeModule !== 'settings' || activeSettingsTab === 'services') && rightPanelVisible && (
+            {rightPanelVisible && (
               <div style={{ 
                 width: `${rightPanelWidth}px`, 
                 display: 'flex', 

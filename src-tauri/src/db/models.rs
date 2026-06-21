@@ -8,8 +8,20 @@ pub struct Contact {
     pub wa_number: Option<String>,
     pub email: Option<String>,
     pub address: Option<String>,
+    pub province: Option<String>,
+    pub city: Option<String>,
+    pub job: Option<String>,
+    pub institution: Option<String>,
+    pub data_source: Option<String>,
+    #[serde(default)]
+    pub email_valid: i32,
+    #[serde(default)]
+    pub wa_valid: i32,
+    pub followup_status: Option<String>,
+    pub notes: Option<String>,
     pub r#type: String,
     pub created_at: String,
+    pub updated_at: Option<String>,
 }
 
 impl Default for Contact {
@@ -20,8 +32,18 @@ impl Default for Contact {
             wa_number: None,
             email: None,
             address: None,
-            r#type: "customer".to_string(),
+            province: None,
+            city: None,
+            job: None,
+            institution: None,
+            data_source: None,
+            email_valid: 0,
+            wa_valid: 0,
+            followup_status: None,
+            notes: None,
+            r#type: "penulis".to_string(),
             created_at: Local::now().to_rfc3339(),
+            updated_at: None,
         }
     }
 }
@@ -36,6 +58,10 @@ pub struct Book {
     pub weight_grams: i64,
     pub author_id: Option<i64>,
     pub cover_path: Option<String>,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 impl Default for Book {
@@ -49,6 +75,8 @@ impl Default for Book {
             weight_grams: 0,
             author_id: None,
             cover_path: None,
+            created_at: Some(Local::now().to_rfc3339()),
+            updated_at: None,
         }
     }
 }
@@ -61,6 +89,10 @@ pub struct Project {
     pub book_id: Option<i64>,
     pub status: String,
     pub deadline: Option<String>,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,6 +109,10 @@ pub struct File {
     pub is_readonly: bool,
     pub description: Option<String>,
     pub responsible_parties: Option<String>,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,6 +120,10 @@ pub struct File {
 pub struct Tag {
     pub id: Option<i64>,
     pub name: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -99,6 +139,7 @@ pub struct Invoice {
     pub file_path: Option<String>,
     pub sync_status: Option<String>,
     pub cloud_file_url: Option<String>,
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -125,6 +166,7 @@ impl Default for Invoice {
             file_path: None,
             sync_status: Some("pending".to_string()),
             cloud_file_url: None,
+            updated_at: None,
         }
     }
 }
@@ -136,6 +178,10 @@ pub struct Service {
     pub price: f64,
     pub description: Option<String>,
     pub category: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 impl Default for Service {
@@ -146,6 +192,8 @@ impl Default for Service {
             price: 0.0,
             description: None,
             category: "other".to_string(),
+            created_at: Some(Local::now().to_rfc3339()),
+            updated_at: None,
         }
     }
 }
@@ -155,7 +203,21 @@ impl Default for Service {
 pub struct WatchFolder {
     pub id: Option<i64>,
     pub path: String,
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
+}
+
+impl Default for WatchFolder {
+    fn default() -> Self {
+        Self {
+            id: None,
+            path: String::new(),
+            created_at: Some(Local::now().to_rfc3339()),
+            updated_at: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -175,6 +237,7 @@ pub struct Penulis {
     pub followup_status: Option<String>,
     pub notes: Option<String>,
     pub created_at: String,
+    pub updated_at: Option<String>,
 }
 
 impl Default for Penulis {
@@ -195,6 +258,7 @@ impl Default for Penulis {
             followup_status: None,
             notes: None,
             created_at: Local::now().to_rfc3339(),
+            updated_at: None,
         }
     }
 }
@@ -218,6 +282,7 @@ pub struct Penerbit {
     pub address: Option<String>,
     pub notes: Option<String>,
     pub province: Option<String>,
+    pub updated_at: Option<String>,
 }
 
 impl Default for Penerbit {
@@ -240,12 +305,13 @@ impl Default for Penerbit {
             address: None,
             notes: None,
             province: None,
+            updated_at: None,
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NaskahOrder {
+pub struct Naskah {
     pub id: Option<i64>,
     pub naskah_id_code: Option<String>,
     pub title: String,
@@ -268,9 +334,10 @@ pub struct NaskahOrder {
     pub store_links: Option<String>, // JSON array format: [{ platform, url }]
     pub status: String,
     pub created_at: String,
+    pub updated_at: Option<String>,
 }
 
-impl Default for NaskahOrder {
+impl Default for Naskah {
     fn default() -> Self {
         Self {
             id: None,
@@ -292,12 +359,13 @@ impl Default for NaskahOrder {
             store_links: None,
             status: "Belum Dimulai".to_string(),
             created_at: Local::now().to_rfc3339(),
+            updated_at: None,
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Layouter {
+pub struct Tim {
     pub id: Option<i64>,
     pub name: String,
     pub role: String,
@@ -306,9 +374,10 @@ pub struct Layouter {
     pub weekly_target: i64,
     pub notes: Option<String>,
     pub created_at: String,
+    pub updated_at: Option<String>,
 }
 
-impl Default for Layouter {
+impl Default for Tim {
     fn default() -> Self {
         Self {
             id: None,
@@ -319,6 +388,7 @@ impl Default for Layouter {
             weekly_target: 0,
             notes: None,
             created_at: Local::now().to_rfc3339(),
+            updated_at: None,
         }
     }
 }
@@ -326,26 +396,30 @@ impl Default for Layouter {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowEvent {
     pub id: Option<i64>,
-    pub naskah_order_id: i64,
+    pub naskah_id: i64,
     pub event_name: String,
     pub completed_date: Option<String>,
     pub pic_name: Option<String>,
     pub notes: Option<String>,
     pub proof_path_or_link: Option<String>,
     pub status: String,
+    pub created_at: String,
+    pub updated_at: Option<String>,
 }
 
 impl Default for WorkflowEvent {
     fn default() -> Self {
         Self {
             id: None,
-            naskah_order_id: 0,
+            naskah_id: 0,
             event_name: String::new(),
             completed_date: None,
             pic_name: None,
             notes: None,
             proof_path_or_link: None,
             status: "Belum Dimulai".to_string(),
+            created_at: Local::now().to_rfc3339(),
+            updated_at: None,
         }
     }
 }
@@ -353,6 +427,7 @@ impl Default for WorkflowEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Legalitas {
     pub id: Option<i64>,
+    pub naskah_id: Option<i64>,
     pub judul_buku: String,
     pub nama_penulis: String,
     pub tipe: String, // E-ISBN, ISBN, QRCBN, dll
@@ -360,12 +435,14 @@ pub struct Legalitas {
     pub keterangan: Option<String>,
     pub status: String,
     pub created_at: String,
+    pub updated_at: Option<String>,
 }
 
 impl Default for Legalitas {
     fn default() -> Self {
         Self {
             id: None,
+            naskah_id: None,
             judul_buku: String::new(),
             nama_penulis: String::new(),
             tipe: "E-ISBN".to_string(),
@@ -373,6 +450,17 @@ impl Default for Legalitas {
             keterangan: None,
             status: "Diajukan".to_string(),
             created_at: Local::now().to_rfc3339(),
+            updated_at: None,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActivityLog {
+    pub id: Option<i64>,
+    pub entity_type: String,
+    pub entity_id: Option<i64>,
+    pub action: String, // "CREATE", "UPDATE", "DELETE"
+    pub description: String,
+    pub created_at: String,
 }

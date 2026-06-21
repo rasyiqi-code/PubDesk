@@ -3,14 +3,12 @@ import { useAppContext } from '../../contexts/AppContext';
 import { TabBar } from '../../ui/molecules/TabBar';
 import InvoiceSettings from './InvoiceSettings';
 import GASCloudSettings from './GASCloudSettings';
-import ServiceManager from '../services-module/ServiceManager';
 import GDriveSettingsTab from './tabs/GDriveSettingsTab';
 import LocalFoldersTab from './tabs/LocalFoldersTab';
 
 // Definisi tab — urutan dan label
 const SETTINGS_TABS = [
   { key: 'invoice', label: 'Pengaturan Invoice', icon: '📄' },
-  { key: 'services', label: 'Master Layanan', icon: '🛠️' },
   { key: 'local-folders', label: 'Folder Lokal Dipantau', icon: '📁' },
   { key: 'google-drive', label: 'Google Drive', icon: '☁️' },
   { key: 'google-apps-script', label: 'Google Apps Script', icon: '☁️' },
@@ -28,8 +26,6 @@ const Settings: React.FC = () => {
     switch (activeSettingsTab) {
       case 'invoice':
         return <InvoiceSettings />;
-      case 'services':
-        return <ServiceManager />;
       case 'local-folders':
         return <LocalFoldersTab />;
       case 'google-drive':

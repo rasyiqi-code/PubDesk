@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Penulis } from '../../types/crm.types';
+import { Penulis } from '../../types/data-master.types';
 import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { Select } from '../../ui/atoms/Select';
@@ -71,7 +71,7 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      showToast('Nama penulis tidak boleh kosong!', 'error');
+      showToast('Nama kontak tidak boleh kosong!', 'error');
       return;
     }
 
@@ -105,15 +105,15 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
   return (
     <div className="customer-form" style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
       <h1 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '20px', color: 'var(--text-primary)' }}>
-        {initialData ? '📝 Edit Profil Penulis' : 'Pembuat Profil Penulis Baru'}
+        {initialData ? '📝 Edit Kontak' : 'Kontak Baru'}
       </h1>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <Accordion>
-          <AccordionSection index={1} title="👤 Informasi Profil Penulis" expandedSection={expandedSection} onToggle={setExpandedSection}>
+          <AccordionSection index={1} title="👤 Informasi Kontak" expandedSection={expandedSection} onToggle={setExpandedSection}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <TextField
-                label="Nama Lengkap Penulis"
+                label="Nama Lengkap"
                 placeholder="Contoh: Prof. Dr. Budi Utomo"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -244,7 +244,7 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
                   }}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Masukkan informasi tambahan terkait penulis..."
+                  placeholder="Catatan tambahan..."
                 />
               </div>
             </div>

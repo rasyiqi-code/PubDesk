@@ -8,4 +8,6 @@ export interface Service {
   price: number;
   description?: string;
   category: string;
+  created_at?: string;
+  updated_at?: string;
 }

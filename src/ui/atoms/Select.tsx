@@ -20,25 +20,42 @@ export const Select: React.FC<SelectProps> = ({
         {label}
       </label>
     )}
-    <select
-      style={{
-        width: '100%',
-        padding: '10px 14px',
-        border: '1px solid var(--border)',
-        borderRadius: '8px',
-        fontSize: '14px',
-        background: 'var(--bg-card)',
-        color: 'var(--text-primary)',
-        outline: 'none',
-        boxSizing: 'border-box',
-        cursor: 'pointer',
-        ...style,
-      }}
-      {...rest}
-    >
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <select
+        style={{
+          width: '100%',
+          height: '42px',
+          padding: '10px 36px 10px 14px',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          fontSize: '14px',
+          lineHeight: '1.4',
+          background: 'var(--bg-card)',
+          color: 'var(--text-primary)',
+          outline: 'none',
+          boxSizing: 'border-box',
+          appearance: 'none',
+          cursor: 'pointer',
+          ...style,
+        }}
+        {...rest}
+      >
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+      <span style={{
+        position: 'absolute',
+        right: '12px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        fontSize: '10px',
+        color: 'var(--text-secondary)',
+        pointerEvents: 'none',
+        opacity: 0.5,
+      }}>
+        ▼
+      </span>
+    </div>
   </div>
 );

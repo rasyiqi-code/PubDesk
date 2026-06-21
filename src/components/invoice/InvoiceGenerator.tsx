@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { useFileState } from '../../contexts/FileContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
-import { useCrmContext } from '../../contexts/CrmContext';
+import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 import { MetadataSection } from './generator-sections/MetadataSection';
 import { CustomerSection } from './generator-sections/CustomerSection';
@@ -12,7 +12,7 @@ import { GlobalCostsSection } from './generator-sections/GlobalCostsSection';
 const InvoiceGenerator: React.FC = () => {
   const { addInvoice, updateInvoice, showToast, rightPanelVisible, invoices, contacts, addContact, updateContact } = useAppContext();
   const { addFile, updateFile, files } = useFileState();
-  const { penulis, addPenulis, updatePenulis } = useCrmContext();
+  const { penulis, addPenulis, updatePenulis } = useDataMasterContext();
   const {
     customer,
     items,

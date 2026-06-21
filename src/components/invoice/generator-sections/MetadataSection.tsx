@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useInvoiceContext } from '../../../contexts/InvoiceContext';
 
 interface MetadataSectionProps {
@@ -6,6 +6,7 @@ interface MetadataSectionProps {
 }
 
 export const MetadataSection: React.FC<MetadataSectionProps> = ({ rightPanelVisible }) => {
+  const dateRef = useRef<HTMLInputElement>(null);
   const {
     profiles,
     activeProfileId,
@@ -79,13 +80,15 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({ rightPanelVisi
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Tanggal Invoice</label>
-          <input
-            type="text"
-            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-            value={invoiceDate}
-            onChange={(e) => setInvoiceDate(e.target.value)}
-            placeholder="Contoh: 11 Juni 2026"
-          />
+          <div style={{ position: 'relative' }} onClick={() => dateRef.current?.showPicker()}>
+            <input
+              ref={dateRef}
+              type="date"
+              style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 

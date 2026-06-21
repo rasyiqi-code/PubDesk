@@ -1,12 +1,25 @@
 import { InvoiceItem } from '../types/invoice.types';
 
+const MONTHS_ID = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
 export const getIndonesianDate = () => {
-  const months = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
   const d = new Date();
-  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+export const formatDateId = (dateStr: string): string => {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length !== 3) return dateStr;
+  const [, m, d] = parts;
+  const monthIdx = parseInt(m, 10) - 1;
+  return `${parseInt(d, 10)} ${MONTHS_ID[monthIdx] || m} ${parts[0]}`;
 };
 
 export const evaluateItemFormula = (formulaStr: string, item: InvoiceItem): any => {

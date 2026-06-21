@@ -4,7 +4,7 @@ import { useFileState } from '../../contexts/FileContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { Invoice } from '../../types/invoice.types';
 import { formatPrice } from '../../utils/format';
-import { getInvoiceMetadata } from '../../utils/invoice';
+import { getInvoiceMetadata, formatDateId } from '../../utils/invoice';
 import { StatusBadge } from '../../ui/atoms/Badge';
 import { FilterBar, FilterGroup, FilterChip, FilterDivider } from '../../ui/molecules/FilterBar';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
@@ -375,7 +375,7 @@ const InvoiceManager: React.FC<InvoiceManagerProps> = ({ searchQuery = '' }) => 
                   >
                     {/* Tanggal */}
                     <td style={{ padding: '6px 12px', color: 'var(--text-primary)', fontWeight: '500' }}>
-                      {metadata.invoiceDate || new Date(inv.created_at).toLocaleDateString('id-ID')}
+                      {metadata.invoiceDate ? formatDateId(metadata.invoiceDate) : new Date(inv.created_at).toLocaleDateString('id-ID')}
                     </td>
                     
                     {/* No Invoice */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layouter } from '../../types/crm.types';
+import { Tim } from '../../types/data-master.types';
 import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { Select } from '../../ui/atoms/Select';
@@ -7,8 +7,8 @@ import { Button } from '../../ui/atoms/Button';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 
 interface TimFormProps {
-  initialData?: Layouter | null;
-  onSubmit: (data: Omit<Layouter, 'created_at' | 'id'> & { id?: number }) => Promise<void>;
+  initialData?: Tim | null;
+  onSubmit: (data: Omit<Tim, 'created_at' | 'id'> & { id?: number }) => Promise<void>;
   onCancel: () => void;
 }
 

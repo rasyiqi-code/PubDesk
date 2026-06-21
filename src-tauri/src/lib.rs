@@ -612,59 +612,59 @@ async fn delete_penerbit(state: State<'_, AppState>, id: i64) -> Result<(), Stri
 }
 
 #[tauri::command]
-async fn get_naskah_orders(state: State<'_, AppState>) -> Result<Vec<NaskahOrder>, String> {
+async fn get_naskah(state: State<'_, AppState>) -> Result<Vec<Naskah>, String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.get_naskah_orders().map_err(|e| e.to_string())
+    db.get_naskah().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn add_naskah_order(state: State<'_, AppState>, order: NaskahOrder) -> Result<i64, String> {
+async fn add_naskah(state: State<'_, AppState>, order: Naskah) -> Result<i64, String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.add_naskah_order(&order).map_err(|e| e.to_string())
+    db.add_naskah(&order).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn update_naskah_order(state: State<'_, AppState>, order: NaskahOrder) -> Result<(), String> {
+async fn update_naskah(state: State<'_, AppState>, order: Naskah) -> Result<(), String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.update_naskah_order(&order).map_err(|e| e.to_string())
+    db.update_naskah(&order).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn delete_naskah_order(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+async fn delete_naskah(state: State<'_, AppState>, id: i64) -> Result<(), String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.delete_naskah_order(id).map_err(|e| e.to_string())
+    db.delete_naskah(id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn get_layouters(state: State<'_, AppState>) -> Result<Vec<Layouter>, String> {
+async fn get_tim(state: State<'_, AppState>) -> Result<Vec<Tim>, String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.get_layouters().map_err(|e| e.to_string())
+    db.get_all_tim().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn add_layouter(state: State<'_, AppState>, layouter: Layouter) -> Result<i64, String> {
+async fn add_tim(state: State<'_, AppState>, tim: Tim) -> Result<i64, String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.add_layouter(&layouter).map_err(|e| e.to_string())
+    db.add_tim(&tim).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn update_layouter(state: State<'_, AppState>, layouter: Layouter) -> Result<(), String> {
+async fn update_tim(state: State<'_, AppState>, tim: Tim) -> Result<(), String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.update_layouter(&layouter).map_err(|e| e.to_string())
+    db.update_tim(&tim).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn delete_layouter(state: State<'_, AppState>, id: i64) -> Result<(), String> {
+async fn delete_tim(state: State<'_, AppState>, id: i64) -> Result<(), String> {
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.delete_layouter(id).map_err(|e| e.to_string())
+    db.delete_tim(id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -693,6 +693,13 @@ async fn delete_legalitas(state: State<'_, AppState>, id: i64) -> Result<(), Str
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
     db.delete_legalitas(id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_activity_log(state: State<'_, AppState>, limit: i64) -> Result<Vec<ActivityLog>, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.get_activity_log(limit).map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -756,18 +763,19 @@ pub fn run() {
             add_penerbit,
             update_penerbit,
             delete_penerbit,
-            get_naskah_orders,
-            add_naskah_order,
-            update_naskah_order,
-            delete_naskah_order,
-            get_layouters,
-            add_layouter,
-            update_layouter,
-            delete_layouter,
+            get_naskah,
+            add_naskah,
+            update_naskah,
+            delete_naskah,
+            get_tim,
+            add_tim,
+            update_tim,
+            delete_tim,
             get_legalitas,
             add_legalitas,
             update_legalitas,
-            delete_legalitas
+            delete_legalitas,
+            get_activity_log
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

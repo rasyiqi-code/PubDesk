@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useInvoiceContext } from '../../../contexts/InvoiceContext';
 import { useAppContext } from '../../../contexts/AppContext';
-import { useCrmContext } from '../../../contexts/CrmContext';
+import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 
 export const CustomerSection: React.FC = () => {
   const { customer, setCustomer } = useInvoiceContext();
   const { contacts } = useAppContext();
-  const { penulis } = useCrmContext();
+  const { penulis } = useDataMasterContext();
   const [waInput, setWaInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 

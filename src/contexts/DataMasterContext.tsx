@@ -1,28 +1,28 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Penulis, Penerbit, NaskahOrder, Layouter, Legalitas } from '../types/crm.types';
+import { Penulis, Penerbit, Naskah, Tim, Legalitas } from '../types/data-master.types';
 
-interface CrmContextType {
+interface DataMasterContextType {
   penulis: Penulis[];
   penerbit: Penerbit[];
-  naskahOrders: NaskahOrder[];
-  layouters: Layouter[];
+  naskah: Naskah[];
+  tim: Tim[];
   loadPenulis: () => Promise<void>;
   loadPenerbit: () => Promise<void>;
-  loadNaskahOrders: () => Promise<void>;
-  loadLayouters: () => Promise<void>;
+  loadNaskah: () => Promise<void>;
+  loadTim: () => Promise<void>;
   addPenulis: (p: Omit<Penulis, 'created_at'>) => Promise<number>;
   updatePenulis: (p: Penulis) => Promise<void>;
   deletePenulis: (id: number) => Promise<void>;
   addPenerbit: (p: Omit<Penerbit, 'created_at'>) => Promise<number>;
   updatePenerbit: (p: Penerbit) => Promise<void>;
   deletePenerbit: (id: number) => Promise<void>;
-  addNaskahOrder: (n: Omit<NaskahOrder, 'status' | 'created_at'>) => Promise<number>;
-  updateNaskahOrder: (n: NaskahOrder) => Promise<void>;
-  deleteNaskahOrder: (id: number) => Promise<void>;
-  addLayouter: (l: Omit<Layouter, 'created_at'>) => Promise<number>;
-  updateLayouter: (l: Layouter) => Promise<void>;
-  deleteLayouter: (id: number) => Promise<void>;
+  addNaskah: (n: Omit<Naskah, 'status' | 'created_at'>) => Promise<number>;
+  updateNaskah: (n: Naskah) => Promise<void>;
+  deleteNaskah: (id: number) => Promise<void>;
+  addTim: (l: Omit<Tim, 'created_at'>) => Promise<number>;
+  updateTim: (l: Tim) => Promise<void>;
+  deleteTim: (id: number) => Promise<void>;
   legalitas: Legalitas[];
   loadLegalitas: () => Promise<void>;
   addLegalitas: (l: Omit<Legalitas, 'created_at'>) => Promise<number>;
@@ -30,13 +30,13 @@ interface CrmContextType {
   deleteLegalitas: (id: number) => Promise<void>;
 }
 
-const CrmContext = createContext<CrmContextType | undefined>(undefined);
+const DataMasterContext = createContext<DataMasterContextType | undefined>(undefined);
 
-export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const DataMasterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [penulis, setPenulis] = useState<Penulis[]>([]);
   const [penerbit, setPenerbit] = useState<Penerbit[]>([]);
-  const [naskahOrders, setNaskahOrders] = useState<NaskahOrder[]>([]);
-  const [layouters, setLayouters] = useState<Layouter[]>([]);
+  const [naskah, setNaskah] = useState<Naskah[]>([]);
+  const [tim, setTim] = useState<Tim[]>([]);
   const [legalitas, setLegalitas] = useState<Legalitas[]>([]);
 
   const loadLegalitas = async () => {
@@ -66,21 +66,21 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const loadNaskahOrders = async () => {
+  const loadNaskah = async () => {
     try {
-      const data = await invoke<NaskahOrder[]>('get_naskah_orders');
-      setNaskahOrders(data);
+      const data = await invoke<Naskah[]>('get_naskah');
+      setNaskah(data);
     } catch (err) {
-      console.error('Gagal memuat data naskah order:', err);
+      console.error('Gagal memuat data naskah:', err);
     }
   };
 
-  const loadLayouters = async () => {
+  const loadTim = async () => {
     try {
-      const data = await invoke<Layouter[]>('get_layouters');
-      setLayouters(data);
+      const data = await invoke<Tim[]>('get_tim');
+      setTim(data);
     } catch (err) {
-      console.error('Gagal memuat data layouter:', err);
+      console.error('Gagal memuat data tim:', err);
     }
   };
 
@@ -150,70 +150,70 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const addNaskahOrder = async (n: Omit<NaskahOrder, 'status' | 'created_at'>) => {
+  const addNaskah = async (n: Omit<Naskah, 'status' | 'created_at'>) => {
     try {
       const payload = {
         ...n,
         status: 'Belum Dimulai',
         created_at: new Date().toISOString()
       };
-      const id = await invoke<number>('add_naskah_order', { order: payload });
-      await loadNaskahOrders();
+      const id = await invoke<number>('add_naskah', { order: payload });
+      await loadNaskah();
       return id;
     } catch (err) {
-      console.error('Gagal menambah naskah order:', err);
+      console.error('Gagal menambah naskah:', err);
       return 0;
     }
   };
 
-  const updateNaskahOrder = async (n: NaskahOrder) => {
+  const updateNaskah = async (n: Naskah) => {
     try {
-      await invoke('update_naskah_order', { order: n });
-      await loadNaskahOrders();
+      await invoke('update_naskah', { order: n });
+      await loadNaskah();
     } catch (err) {
-      console.error('Gagal mengupdate naskah order:', err);
+      console.error('Gagal mengupdate naskah:', err);
     }
   };
 
-  const deleteNaskahOrder = async (id: number) => {
+  const deleteNaskah = async (id: number) => {
     try {
-      await invoke('delete_naskah_order', { id });
-      await loadNaskahOrders();
+      await invoke('delete_naskah', { id });
+      await loadNaskah();
     } catch (err) {
-      console.error('Gagal menghapus naskah order:', err);
+      console.error('Gagal menghapus naskah:', err);
     }
   };
 
-  const addLayouter = async (l: Omit<Layouter, 'created_at'>) => {
+  const addTim = async (l: Omit<Tim, 'created_at'>) => {
     try {
       const payload = {
         ...l,
         created_at: new Date().toISOString()
       };
-      const id = await invoke<number>('add_layouter', { layouter: payload });
-      await loadLayouters();
+      const id = await invoke<number>('add_tim', { tim: payload });
+      await loadTim();
       return id;
     } catch (err) {
-      console.error('Gagal menambah layouter:', err);
+      console.error('Gagal menambah tim:', err);
       return 0;
     }
   };
 
-  const updateLayouter = async (l: Layouter) => {
+  const updateTim = async (l: Tim) => {
     try {
-      await invoke('update_layouter', { layouter: l });
-      await loadLayouters();
+      await invoke('update_tim', { tim: l });
+      await loadTim();
     } catch (err) {
-      console.error('Gagal mengupdate layouter:', err);
+      console.error('Gagal mengupdate tim:', err);
     }
   };
 
-  const deleteLayouter = async (id: number) => {
+  const deleteTim = async (id: number) => {
     try {
-      await invoke('delete_layouter', { id });
-      await loadLayouters();
+      await invoke('delete_tim', { id });
+      await loadTim();
     } catch (err) {
-      console.error('Gagal menghapus layouter:', err);
+      console.error('Gagal menghapus tim:', err);
     }
   };
 
@@ -253,23 +253,23 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     loadPenulis();
     loadPenerbit();
-    loadNaskahOrders();
-    loadLayouters();
+    loadNaskah();
+    loadTim();
     loadLegalitas();
   }, []);
 
   return (
-    <CrmContext.Provider
+    <DataMasterContext.Provider
       value={{
         penulis,
         penerbit,
-        naskahOrders,
-        layouters,
+        naskah,
+        tim,
         legalitas,
         loadPenulis,
         loadPenerbit,
-        loadNaskahOrders,
-        loadLayouters,
+        loadNaskah,
+        loadTim,
         loadLegalitas,
         addPenulis,
         updatePenulis,
@@ -277,26 +277,26 @@ export const CrmProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addPenerbit,
         updatePenerbit,
         deletePenerbit,
-        addNaskahOrder,
-        updateNaskahOrder,
-        deleteNaskahOrder,
-        addLayouter,
-        updateLayouter,
-        deleteLayouter,
+        addNaskah,
+        updateNaskah,
+        deleteNaskah,
+        addTim,
+        updateTim,
+        deleteTim,
         addLegalitas,
         updateLegalitas,
         deleteLegalitas,
       }}
     >
       {children}
-    </CrmContext.Provider>
+    </DataMasterContext.Provider>
   );
 };
 
-export const useCrmContext = () => {
-  const context = useContext(CrmContext);
+export const useDataMasterContext = () => {
+  const context = useContext(DataMasterContext);
   if (context === undefined) {
-    throw new Error('useCrmContext must be used within a CrmProvider');
+    throw new Error('useDataMasterContext must be used within a DataMasterProvider');
   }
   return context;
 };

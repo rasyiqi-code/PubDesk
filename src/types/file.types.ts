@@ -15,14 +15,20 @@ export interface File {
   is_readonly: boolean;
   description?: string;
   responsible_parties?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Tag {
   id?: number;
   name: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface WatchFolder {
   id?: number;
   path: string;
+  created_at?: string;
+  updated_at?: string;
 }

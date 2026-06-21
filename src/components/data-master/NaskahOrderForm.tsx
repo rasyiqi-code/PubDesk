@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { NaskahOrder } from '../../types/crm.types';
-import { useCrmContext } from '../../contexts/CrmContext';
+import { Naskah } from '../../types/data-master.types';
+import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
+import { SearchableSelect } from '../../ui/atoms/SearchableSelect';
 import { Select } from '../../ui/atoms/Select';
 import { Button } from '../../ui/atoms/Button';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 
 interface NaskahFormProps {
-  initialData?: NaskahOrder | null;
-  onSubmit: (data: Omit<NaskahOrder, 'created_at' | 'id'> & { id?: number }) => Promise<void>;
+  initialData?: Naskah | null;
+  onSubmit: (data: Omit<Naskah, 'created_at' | 'id'> & { id?: number }) => Promise<void>;
   onCancel: () => void;
 }
 
 const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onCancel }) => {
-  const { penulis, penerbit } = useCrmContext();
+  const { penulis, penerbit, naskah } = useDataMasterContext();
   const { showToast } = useAppContext();
 
   // Field identitas naskah
@@ -63,7 +64,17 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
         setStoreLinks([]);
       }
     } else {
-      setNaskahIdCode('');
+      // Auto-generate Kode ID: NSK-XXX
+      const maxNum = naskah.reduce((max, n) => {
+        const match = n.naskah_id_code?.match(/NSK-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          return num > max ? num : max;
+        }
+        return max;
+      }, 0);
+      const nextCode = `NSK-${String(maxNum + 1).padStart(3, '0')}`;
+      setNaskahIdCode(nextCode);
       setTitle('');
       setPenulisId(undefined);
       setPenerbitId(undefined);
@@ -77,7 +88,7 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
       setLegalType('ISBN');
       setStoreLinks([]);
     }
-  }, [initialData]);
+  }, [initialData, naskah]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,13 +185,31 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
           <AccordionSection index={1} title="📖 Identitas Naskah" expandedSection={expandedSection} onToggle={setExpandedSection}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
-                <TextField
-                  label="Kode ID Naskah"
-                  placeholder="Contoh: NSK-010"
-                  value={naskahIdCode}
-                  onChange={(e) => setNaskahIdCode(e.target.value)}
-                  fullWidth
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                    Kode ID Naskah
+                  </label>
+                  <div style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    background: 'var(--bg-panel)',
+                    color: 'var(--text-primary)',
+                    boxSizing: 'border-box',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: 0.8,
+                    fontFamily: 'monospace',
+                    fontWeight: '600',
+                    letterSpacing: '0.5px',
+                  }}>
+                    <span style={{ fontSize: '12px', opacity: 0.5 }}>🔒</span>
+                    {naskahIdCode}
+                  </div>
+                </div>
                 <TextField
                   label="Judul Naskah / Buku"
                   placeholder="Masukkan judul lengkap..."
@@ -193,18 +222,22 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Select
+                <SearchableSelect
                   label="Penulis (Relasi CRM)"
                   options={penulisOptions}
-                  value={penulisId || ''}
-                  onChange={(e) => setPenulisId(e.target.value ? Number(e.target.value) : undefined)}
+                  value={penulisId ? String(penulisId) : ''}
+                  onChange={(val) => setPenulisId(val ? Number(val) : undefined)}
+                  placeholder="Ketik nama penulis..."
+                  emptyMessage="Tidak ada penulis yang cocok"
                   fullWidth
                 />
-                <Select
+                <SearchableSelect
                   label="Penerbit Mitra (Relasi CRM)"
                   options={penerbitOptions}
-                  value={penerbitId || ''}
-                  onChange={(e) => setPenerbitId(e.target.value ? Number(e.target.value) : undefined)}
+                  value={penerbitId ? String(penerbitId) : ''}
+                  onChange={(val) => setPenerbitId(val ? Number(val) : undefined)}
+                  placeholder="Ketik nama penerbit..."
+                  emptyMessage="Tidak ada penerbit yang cocok"
                   fullWidth
                 />
               </div>
@@ -261,6 +294,13 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
                   onChange={(e) => setOrderType(e.target.value)}
                   fullWidth
                 />
+                <Select
+                  label="Legalitas / Perizinan"
+                  options={legalOptions}
+                  value={legalType}
+                  onChange={(e) => setLegalType(e.target.value)}
+                  fullWidth
+                />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -280,14 +320,6 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
                   fullWidth
                 />
               </div>
-
-              <Select
-                label="Legalitas / Perizinan"
-                options={legalOptions}
-                value={legalType}
-                onChange={(e) => setLegalType(e.target.value)}
-                fullWidth
-              />
             </div>
           </AccordionSection>
 

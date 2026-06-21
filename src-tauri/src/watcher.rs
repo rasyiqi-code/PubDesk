@@ -243,6 +243,8 @@ fn process_created_file(app_handle: &AppHandle, path: &Path) -> Result<bool, Str
         is_readonly: metadata.permissions().readonly(),
         description: None,
         responsible_parties: None,
+        created_at: Some(chrono::Local::now().to_rfc3339()),
+        updated_at: None,
     };
 
     // 2. Tambahkan ke database (scope lock db singkat)

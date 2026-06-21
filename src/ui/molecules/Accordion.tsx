@@ -14,7 +14,7 @@ export const AccordionSection: React.FC<AccordionSectionProps> = ({
 }) => {
   const isOpen = expandedSection === index;
   return (
-    <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-card)', marginBottom: '4px' }}>
+    <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-card)' }}>
       <button
         type="button"
         onClick={() => onToggle(isOpen ? null : index)}
@@ -53,5 +53,5 @@ interface AccordionProps {
 }
 
 export const Accordion: React.FC<AccordionProps> = ({ children }) => {
-  return <>{children}</>;
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{children}</div>;
 };

@@ -73,6 +73,13 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
       case 'files': return 'Files';
       case 'books': return 'Master Buku';
       case 'services': return 'Master Layanan';
+      case 'kontak': return 'Master Data — Kontak';
+      case 'penulis': return 'Master Data — Penulis';
+      case 'penerbit': return 'Master Data — Penerbit';
+      case 'naskah': return 'Master Data — Naskah';
+      case 'tim': return 'Master Data — Tim';
+      case 'legalitas': return 'Master Data — Legalitas';
+      case 'pelanggan': return 'Master Data — Pelanggan';
       case 'ledger': return 'Buku Besar';
       case 'settings': return 'Pengaturan';
       default: return 'Files';
@@ -140,7 +147,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
         </div>
 
         {/* Path bar atau field cari berkas */}
-        {(activeModule === 'files' || activeModule === 'invoice-manager' || activeModule === 'crm-penulis' || activeModule === 'crm-naskah' || activeModule === 'crm-tim') ? (
+        {(activeModule === 'files' || activeModule === 'invoice-manager' || activeModule === 'kontak' || activeModule === 'penulis' || activeModule === 'penerbit' || activeModule === 'naskah' || activeModule === 'tim' || activeModule === 'legalitas' || activeModule === 'pelanggan') ? (
           (!isSearchFocused && !searchQuery) ? (
             <div 
               className="top-bar-gnome-pathbar" 
@@ -150,7 +157,6 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
                 alignItems: 'center', 
                 cursor: 'text',
                 userSelect: 'none',
-                height: '100%',
                 width: '100%',
                 padding: '0 8px'
               }}
@@ -242,7 +248,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
                 )
               ) : (
                 <span className="top-bar-path-text" style={{ color: 'var(--text-secondary)' }}>
-                  {activeModule === 'crm-penulis' ? '🔍 Cari nama, email, WA...' : activeModule === 'crm-naskah' ? '🔍 Cari judul, penulis, genre...' : activeModule === 'crm-tim' ? '🔍 Cari nama, peran, divisi...' : '🔍 Cari nomor invoice atau pelanggan...'}
+                  {activeModule === 'kontak' || activeModule === 'penulis' ? '🔍 Cari nama, email, WA...' : activeModule === 'penerbit' ? '🔍 Cari nama penerbit...' : activeModule === 'naskah' ? '🔍 Cari judul, penulis, genre...' : activeModule === 'tim' ? '🔍 Cari nama, peran, divisi...' : activeModule === 'legalitas' ? '🔍 Cari judul, tipe...' : activeModule === 'pelanggan' ? '🔍 Cari nama, WA...' : '🔍 Cari nomor invoice atau pelanggan...'}
                 </span>
               )}
             </div>
@@ -251,7 +257,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
               <span style={{ position: 'absolute', left: '10px', color: 'var(--text-secondary)', fontSize: '14px', pointerEvents: 'none' }}>🔍</span>
               <input
                 type="text"
-                placeholder={activeModule === 'files' ? "Cari berkas..." : activeModule === 'crm-penulis' ? "Cari nama, email, WA..." : activeModule === 'crm-naskah' ? "Cari judul, penulis, genre..." : activeModule === 'crm-tim' ? "Cari nama, peran, divisi..." : "Cari nomor invoice atau pelanggan..."}
+                placeholder={activeModule === 'files' ? "Cari berkas..." : activeModule === 'kontak' || activeModule === 'penulis' ? "Cari nama, email, WA..." : activeModule === 'penerbit' ? "Cari nama penerbit..." : activeModule === 'naskah' ? "Cari judul, penulis, genre..." : activeModule === 'tim' ? "Cari nama, peran, divisi..." : activeModule === 'legalitas' ? "Cari judul, tipe..." : activeModule === 'pelanggan' ? "Cari nama, WA..." : "Cari nomor invoice atau pelanggan..."}
                 value={searchQuery}
                 autoFocus
                 onBlur={() => {

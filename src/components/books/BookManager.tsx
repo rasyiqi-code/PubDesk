@@ -3,6 +3,8 @@ import { useAppContext } from '../../contexts/AppContext';
 import { formatPrice } from '../../utils/format';
 import { Book } from '../../types/book.types';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
+import { Button } from '../../ui/atoms/Button';
+import { TextField } from '../../ui/atoms/TextField';
 
 const BookManager: React.FC = () => {
   const { books, addBook, updateBook, deleteBook, showToast, selectedBookId, setSelectedBookId, addFile, files, showConfirm } = useAppContext();
@@ -162,9 +164,7 @@ const BookManager: React.FC = () => {
           📚 Master Manajemen Buku
         </h1>
         {(isEditing || title || isbn || regularPrice || poPrice || weightGrams || coverPath) && (
-          <button className="btn-secondary" onClick={resetForm} style={{ padding: '6px 12px', fontSize: '13px' }}>
-            Batal / Reset
-          </button>
+          <Button variant="secondary" size="sm" onClick={resetForm}>Batal / Reset</Button>
         )}
       </div>
 
@@ -212,82 +212,24 @@ const BookManager: React.FC = () => {
               onChange={handleCoverUpload}
             />
             {coverPath && (
-              <button
-                type="button"
-                className="btn-danger"
-                onClick={() => setCoverPath('')}
-                style={{ padding: '2px 8px', fontSize: '10px', borderRadius: '4px' }}
-              >
-                Hapus Sampul
-              </button>
+              <Button variant="danger" size="sm" onClick={() => setCoverPath('')}>Hapus Sampul</Button>
             )}
           </div>
 
           {/* Sisi Kanan: Form Field */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '280px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Judul Buku</label>
-                <input
-                  type="text"
-                  style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Contoh: Belajar Pemrograman Rust"
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>ISBN (Opsional)</label>
-                <input
-                  type="text"
-                  style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={isbn}
-                  onChange={(e) => setIsbn(e.target.value)}
-                  placeholder="978-602-..."
-                />
-              </div>
+              <TextField label="Judul Buku" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contoh: Belajar Pemrograman Rust" required fullWidth />
+              <TextField label="ISBN (Opsional)" value={isbn} onChange={(e) => setIsbn(e.target.value)} placeholder="978-602-..." fullWidth />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Harga Reguler (Rp)</label>
-                <input
-                  type="number"
-                  style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={regularPrice || ''}
-                  onChange={(e) => setRegularPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Harga PO (Rp)</label>
-                <input
-                  type="number"
-                  style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={poPrice || ''}
-                  onChange={(e) => setPoPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>Berat (Gram)</label>
-                <input
-                  type="number"
-                  style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  value={weightGrams || ''}
-                  onChange={(e) => setWeightGrams(parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  min="0"
-                />
-              </div>
+              <TextField label="Harga Reguler (Rp)" type="number" value={regularPrice || ''} onChange={(e) => setRegularPrice(parseFloat(e.target.value) || 0)} placeholder="0" min="0" fullWidth />
+              <TextField label="Harga PO (Rp)" type="number" value={poPrice || ''} onChange={(e) => setPoPrice(parseFloat(e.target.value) || 0)} placeholder="0" min="0" fullWidth />
+              <TextField label="Berat (Gram)" type="number" value={weightGrams || ''} onChange={(e) => setWeightGrams(parseInt(e.target.value) || 0)} placeholder="0" min="0" fullWidth />
             </div>
 
-            <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-start', padding: '10px 24px', fontSize: '14px', fontWeight: '600', marginTop: '4px' }}>
-              {isEditing ? '💾 Simpan Perubahan' : '➕ Tambah Master Buku'}
-            </button>
+            <Button type="submit" variant="primary">{isEditing ? '💾 Simpan Perubahan' : '➕ Tambah Master Buku'}</Button>
           </div>
         </div>
       </form>
@@ -300,15 +242,15 @@ const BookManager: React.FC = () => {
 
         <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-card)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-            <thead>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
               <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)', fontWeight: '600' }}>
-                <th style={{ padding: '12px 16px', width: '70px', textAlign: 'center' }}>Sampul</th>
-                <th style={{ padding: '12px 16px' }}>Judul Buku</th>
-                <th style={{ padding: '12px 16px' }}>ISBN</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Harga Reguler</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Harga PO</th>
-                <th style={{ padding: '12px 16px', textAlign: 'center' }}>Berat (gr)</th>
-                <th style={{ padding: '12px 16px', textAlign: 'center', width: '150px' }}>Aksi</th>
+                <th style={{ padding: '8px 12px', width: '70px', textAlign: 'center' }}>Sampul</th>
+                <th style={{ padding: '8px 12px' }}>Judul Buku</th>
+                <th style={{ padding: '8px 12px' }}>ISBN</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right' }}>Harga Reguler</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right' }}>Harga PO</th>
+                <th style={{ padding: '8px 12px', textAlign: 'center' }}>Berat (gr)</th>
+                <th style={{ padding: '8px 12px', textAlign: 'center', width: '150px' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -330,7 +272,7 @@ const BookManager: React.FC = () => {
                         borderBottom: '1px solid var(--border)',
                         transition: 'background 0.15s ease',
                         cursor: 'pointer',
-                        background: isSelected ? 'var(--bg-panel)' : 'transparent'
+                        background: isSelected ? 'rgba(192, 28, 28, 0.08)' : 'transparent'
                       }}
                       className="table-row-hover"
                     >
@@ -356,32 +298,18 @@ const BookManager: React.FC = () => {
                         </div>
                       </td>
 
-                      <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                      <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-primary)' }}>
                         {book.title}
                         {isSelected && <span style={{ marginLeft: '8px', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'var(--accent)', color: '#ffffff' }}>Terpilih</span>}
                       </td>
-                      <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{book.isbn || '-'}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '500', color: 'var(--text-primary)' }}>{formatPrice(book.regular_price)}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', color: 'var(--accent)' }}>{formatPrice(book.po_price)}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>{book.weight_grams} gr</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{book.isbn || '-'}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '500', color: 'var(--text-primary)' }}>{formatPrice(book.regular_price)}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '600', color: 'var(--accent)' }}>{formatPrice(book.po_price)}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--text-secondary)' }}>{book.weight_grams} gr</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          <button
-                            className="btn-secondary"
-                            onClick={(e) => handleStartEdit(book, e)}
-                            style={{ padding: '4px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            title="Edit Buku"
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            className="btn-danger"
-                            onClick={(e) => book.id && handleDeleteBook(book.id, e)}
-                            style={{ padding: '4px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            title="Hapus Buku"
-                          >
-                            🗑️ Hapus
-                          </button>
+                          <Button variant="secondary" size="sm" onClick={(e) => handleStartEdit(book, e)}>✏️ Edit</Button>
+                          <Button variant="danger" size="sm" onClick={(e) => book.id && handleDeleteBook(book.id, e)}>🗑️ Hapus</Button>
                         </div>
                       </td>
                     </tr>

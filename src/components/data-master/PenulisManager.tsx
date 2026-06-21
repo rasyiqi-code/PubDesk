@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { useCrmContext } from '../../contexts/CrmContext';
+import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useAppContext } from '../../contexts/AppContext';
-import { Penulis } from '../../types/crm.types';
+import { Penulis } from '../../types/data-master.types';
 import PenulisForm from './PenulisForm';
 import { TableEmptyState } from '../../ui/molecules/EmptyState';
 import { Button } from '../../ui/atoms/Button';
 import { Badge } from '../../ui/atoms/Badge';
+import { FilterBar, FilterGroup, FilterChip, FilterDivider } from '../../ui/molecules/FilterBar';
 import * as XLSX from 'xlsx';
 import { invoke } from '@tauri-apps/api/core';
 import { save } from '@tauri-apps/plugin-dialog';
@@ -34,8 +35,8 @@ interface PenulisManagerProps {
 }
 
 const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => {
-  const { penulis, addPenulis, updatePenulis, deletePenulis } = useCrmContext();
-  const { showConfirm, showToast, contacts, addContact, updateContact, deleteContact, selectedPenulisId, setSelectedPenulisId, setRightPanelVisible } = useAppContext();
+  const { penulis, addPenulis, updatePenulis, deletePenulis } = useDataMasterContext();
+  const { showConfirm, showToast, contacts, addContact, updateContact, deleteContact, selectedPenulisId, setSelectedPenulisId, setRightPanelVisible, addFile, files } = useAppContext();
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentPenulis, setCurrentPenulis] = useState<Penulis | null>(null);
@@ -139,7 +140,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
         let errorCount = 0;
 
         for (const row of data) {
-          const name = row.Nama || row.nama || row.Name || row.name || row["Nama Penulis"];
+          const name = row.Nama || row.nama || row.Name || row.name || row["Nama Kontak"] || row["Nama Penulis"];
           if (!name) {
             errorCount++;
             continue;
@@ -188,13 +189,13 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
   const handleExportExcel = async () => {
     try {
       if (penulis.length === 0) {
-        showToast('Tidak ada data penulis untuk diekspor!', 'info');
+        showToast('Tidak ada kontak untuk diekspor!', 'info');
         return;
       }
 
       const exportData = penulis.map((p, idx) => ({
         "No": idx + 1,
-        "Nama Penulis": p.name,
+        "Nama Kontak": p.name,
         "WhatsApp": p.wa_number || '',
         "Email": p.email || '',
         "Alamat": p.address || (p.city ? `${p.city}, ${p.province}` : p.province || ''),
@@ -217,14 +218,14 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
       });
       ws['!cols'] = maxLens.map(len => ({ wch: Math.min(len + 3, 50) }));
 
-      XLSX.utils.book_append_sheet(wb, ws, "Lead Penulis");
+      XLSX.utils.book_append_sheet(wb, ws, "Kontak");
 
       const filePath = await save({
         filters: [{
           name: 'Excel Workbook',
           extensions: ['xlsx']
         }],
-        defaultPath: 'Lead_Penulis_Export.xlsx'
+        defaultPath: 'Kontak_Export.xlsx'
       });
 
       if (!filePath) return;
@@ -233,7 +234,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
       const bytes = new Uint8Array(wbout);
       await invoke('write_binary_file', { path: filePath, bytes: Array.from(bytes) });
 
-      showToast('Data Lead Penulis berhasil diekspor ke Excel!', 'success');
+      showToast('Data kontak berhasil diekspor ke Excel!', 'success');
     } catch (err) {
       console.error(err);
       showToast('Gagal mengekspor data ke Excel!', 'error');
@@ -244,7 +245,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
     try {
       const templateData = [
         {
-          "Nama Penulis": "Budi Santoso",
+          "Nama Kontak": "Budi Santoso",
           "No WA": "081234567890",
           "Email": "budi.santoso@email.com",
           "Alamat": "Jl. Kaliurang Km 5, Sleman, Yogyakarta",
@@ -267,14 +268,14 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
       });
       ws['!cols'] = maxLens.map(len => ({ wch: Math.min(len + 3, 50) }));
 
-      XLSX.utils.book_append_sheet(wb, ws, "Template Lead Penulis");
+      XLSX.utils.book_append_sheet(wb, ws, "Template Kontak");
 
       const filePath = await save({
         filters: [{
           name: 'Excel Workbook',
           extensions: ['xlsx']
         }],
-        defaultPath: 'Template_Lead_Penulis.xlsx'
+        defaultPath: 'Template_Kontak.xlsx'
       });
 
       if (!filePath) return;
@@ -283,7 +284,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
       const bytes = new Uint8Array(wbout);
       await invoke('write_binary_file', { path: filePath, bytes: Array.from(bytes) });
 
-      showToast('Template Excel Lead Penulis berhasil diunduh!', 'success');
+      showToast('Template Excel Kontak berhasil diunduh!', 'success');
     } catch (err) {
       console.error(err);
       showToast('Gagal mengunduh template Excel!', 'error');
@@ -306,10 +307,10 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
     const isCustomerOnly = id < 0;
     
     showConfirm({
-      title: isCustomerOnly ? 'Hapus Pelanggan' : 'Hapus Penulis',
+      title: isCustomerOnly ? 'Hapus Pelanggan' : 'Hapus Kontak',
       message: isCustomerOnly 
         ? `Apakah Anda yakin ingin menghapus pelanggan "${name}"?`
-        : `Apakah Anda yakin ingin menghapus penulis "${name}"?`,
+        : `Apakah Anda yakin ingin menghapus kontak "${name}"?`,
       confirmText: 'Hapus',
       type: 'danger',
       onConfirm: async () => {
@@ -319,14 +320,43 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
             showToast('Data pelanggan berhasil dihapus!', 'success');
           } else {
             await deletePenulis(id);
-            showToast('Data penulis berhasil dihapus!', 'success');
+            showToast('Data kontak berhasil dihapus!', 'success');
           }
         } catch (err) {
           console.error(err);
-          showToast(isCustomerOnly ? 'Gagal menghapus pelanggan!' : 'Gagal menghapus penulis!', 'error');
+          showToast(isCustomerOnly ? 'Gagal menghapus pelanggan!' : 'Gagal menghapus kontak!', 'error');
         }
       }
     });
+  };
+
+  const registerPenulisFile = async (penulisId: number, penulisData: Penulis) => {
+    try {
+      const filename = `Penulis-${penulisId}.json`;
+      const jsonString = JSON.stringify(penulisData);
+      const bytes = new TextEncoder().encode(jsonString);
+      const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
+      const physicalPath = await tauriInvoke<string>('create_physical_file', {
+        filename,
+        bytes: Array.from(bytes),
+        folder: 'penulis'
+      });
+      const alreadyExists = files.some(f => f.filename === filename && f.type === 'penulis');
+      if (!alreadyExists) {
+        await addFile({
+          filename,
+          path: physicalPath,
+          type: 'penulis',
+          project_id: undefined,
+          version_label: String(penulisId),
+          status: 'Tersimpan',
+          last_modified: new Date().toISOString(),
+          is_readonly: false
+        });
+      }
+    } catch (err) {
+      console.error('Gagal mendaftarkan file penulis:', err);
+    }
   };
 
   const handleFormSubmit = async (data: Omit<Penulis, 'created_at' | 'id'> & { id?: number }) => {
@@ -335,7 +365,6 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
         const contactId = -data.id;
         const originalContact = contacts.find(c => c.id === contactId);
         if (originalContact) {
-          // 1. Sinkronkan rincian kontak utama ke tabel contacts
           await updateContact({
             ...originalContact,
             name: data.name,
@@ -344,13 +373,12 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
             address: data.address
           });
 
-          // 2. Karena pelanggan murni diedit (dan mungkin memiliki job, institution, notes, followup_status),
-          // kita simpan dia ke database Penulis/Lead agar data spesifik CRM ini tersimpan!
           const existingPenulis = penulis.find(p => 
             p.name.toLowerCase() === originalContact.name.toLowerCase() ||
             (originalContact.wa_number && p.wa_number === originalContact.wa_number)
           );
 
+          let penulisId: number | undefined;
           if (existingPenulis) {
             await updatePenulis({
               ...existingPenulis,
@@ -365,8 +393,9 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
               email_valid: data.email_valid,
               wa_valid: data.wa_valid,
             });
+            penulisId = existingPenulis.id;
           } else {
-            await addPenulis({
+            const newId = await addPenulis({
               name: data.name,
               email: data.email,
               wa_number: data.wa_number,
@@ -379,22 +408,22 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
               wa_valid: data.wa_valid,
               data_source: data.data_source || 'Database Pelanggan',
             });
+            penulisId = newId;
           }
 
           showToast('Data pelanggan berhasil diperbarui!', 'success');
+
+          if (penulisId) {
+            await registerPenulisFile(penulisId, { ...data, id: penulisId } as Penulis);
+          }
         } else {
           showToast('Kontak pelanggan tidak ditemukan!', 'error');
         }
       } else if (data.id) {
         const original = penulis.find(p => p.id === data.id);
         if (original) {
-          // 1. Perbarui database penulis
-          await updatePenulis({
-            ...original,
-            ...data,
-          } as Penulis);
+          await updatePenulis({ ...original, ...data } as Penulis);
 
-          // 2. Jika penulis ini terhubung sebagai pelanggan, sinkronkan juga ke database kontak
           const originalContact = contacts.find(c => 
             c.type === 'customer' &&
             (c.name.toLowerCase() === original.name.toLowerCase() ||
@@ -411,10 +440,12 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
           }
 
           showToast('Data penulis berhasil diperbarui!', 'success');
+          await registerPenulisFile(data.id, { ...original, ...data } as Penulis);
         }
       } else {
-        await addPenulis(data as Omit<Penulis, 'created_at'>);
+        const newId = await addPenulis(data as Omit<Penulis, 'created_at'>);
         showToast('Penulis baru berhasil ditambahkan!', 'success');
+        await registerPenulisFile(newId, { ...data, id: newId } as Penulis);
       }
       setIsEditing(false);
       setCurrentPenulis(null);
@@ -476,109 +507,32 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
   return (
     <div className="customer-list-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
       
-      {/* Baris Atas: Filter & Tambah */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '10px 16px', 
-        borderBottom: '1px solid var(--border)', 
-        background: 'var(--bg-panel)', 
-        flexWrap: 'wrap', 
-        gap: '12px' 
-      }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Tab Filter Tipe Kontak */}
-          <div style={{ 
-            display: 'flex', 
-            background: 'rgba(0, 0, 0, 0.2)', 
-            padding: '3px', 
-            borderRadius: '20px', 
-            border: '1px solid var(--border)',
-            gap: '2px',
-            marginRight: '8px'
-          }}>
-            {[
-              { id: 'all', label: 'Semua', count: combinedPenulis.length },
-              { id: 'penulis', label: 'Lead Penulis', count: combinedPenulis.filter(p => !p.is_customer_only).length },
-              { id: 'customer', label: 'Pelanggan', count: combinedPenulis.filter(p => p.is_customer).length }
-            ].map(tab => {
-              const isTabActive = contactTypeFilter === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setContactTypeFilter(tab.id as any)}
-                  style={{
-                    border: 'none',
-                    padding: '5px 12px',
-                    borderRadius: '16px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    background: isTabActive ? 'var(--accent)' : 'transparent',
-                    color: isTabActive ? '#ffffff' : 'var(--text-secondary)',
-                    transition: 'all 0.15s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <span>{tab.label}</span>
-                  <span style={{
-                    background: isTabActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
-                    padding: '1px 6px',
-                    borderRadius: '10px',
-                    fontSize: '9px',
-                    color: isTabActive ? '#ffffff' : 'var(--text-secondary)'
-                  }}>{tab.count}</span>
-                </button>
-              );
-            })}
-          </div>
+      <FilterBar>
+        <FilterGroup label="👤 Tipe Kontak:">
+          <FilterChip label="Semua" active={contactTypeFilter === 'all'} onClick={() => setContactTypeFilter('all')} />
+          <FilterChip label={`Penulis (${combinedPenulis.filter(p => !p.is_customer_only).length})`} active={contactTypeFilter === 'penulis'} onClick={() => setContactTypeFilter('penulis')} />
+          <FilterChip label={`Pelanggan (${combinedPenulis.filter(p => p.is_customer).length})`} active={contactTypeFilter === 'customer'} onClick={() => setContactTypeFilter('customer')} />
+        </FilterGroup>
 
+        <FilterDivider />
 
+        <FilterGroup label="📋 Status:">
+          <FilterChip label="Semua" active={statusFilter === ''} onClick={() => setStatusFilter('')} />
+          <FilterChip label="Baru (New)" active={statusFilter === 'New'} onClick={() => setStatusFilter('New')} />
+          <FilterChip label="Sudah Dihubungi" active={statusFilter === 'Contacted'} onClick={() => setStatusFilter('Contacted')} />
+          <FilterChip label="Tertarik" active={statusFilter === 'Interested'} onClick={() => setStatusFilter('Interested')} />
+          <FilterChip label="Deal (Naskah)" active={statusFilter === 'Deal'} onClick={() => setStatusFilter('Deal')} />
+          <FilterChip label="Menolak" active={statusFilter === 'Rejected'} onClick={() => setStatusFilter('Rejected')} />
+          <FilterChip label="🤝 Pelanggan" active={statusFilter === 'Pelanggan'} onClick={() => setStatusFilter('Pelanggan')} />
+        </FilterGroup>
 
-          {/* Filter Status */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{
-              padding: '6px 12px',
-              border: '1px solid var(--border)',
-              borderRadius: '20px',
-              fontSize: '12px',
-              background: 'var(--bg-card)',
-              color: 'var(--text-primary)',
-              outline: 'none'
-            }}
-          >
-            <option value="">Filter Status</option>
-            <option value="New">Baru (New)</option>
-            <option value="Contacted">Sudah Dihubungi</option>
-            <option value="Interested">Tertarik</option>
-            <option value="Deal">Deal (Naskah)</option>
-            <option value="Rejected">Menolak</option>
-            <option value="Pelanggan">🤝 Pelanggan</option>
-          </select>
+        <FilterDivider />
 
-
-        </div>
-
-        {/* Input File Tersembunyi untuk Impor Excel */}
-        <input
-          type="file"
-          id="excel-import-input"
-          accept=".xlsx, .xls"
-          style={{ display: 'none' }}
-          onChange={handleImportExcel}
-        />
-
-        {/* Tombol Aksi Toolbar */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button 
-            onClick={handleDownloadTemplate} 
-            variant="secondary" 
-            size="sm" 
+        <FilterGroup label="">
+          <Button
+            onClick={handleDownloadTemplate}
+            variant="secondary"
+            size="sm"
             title="Unduh Template Excel"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -589,10 +543,10 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
               </svg>
             }
           />
-          <Button 
-            onClick={() => document.getElementById('excel-import-input')?.click()} 
-            variant="secondary" 
-            size="sm" 
+          <Button
+            onClick={() => document.getElementById('excel-import-input')?.click()}
+            variant="secondary"
+            size="sm"
             title="Impor data dari Excel"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -602,10 +556,10 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
               </svg>
             }
           />
-          <Button 
-            onClick={handleExportExcel} 
-            variant="secondary" 
-            size="sm" 
+          <Button
+            onClick={handleExportExcel}
+            variant="secondary"
+            size="sm"
             title="Ekspor data ke Excel"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -615,10 +569,10 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
               </svg>
             }
           />
-          <Button 
-            onClick={handleAddNew} 
-            variant="primary" 
-            size="sm" 
+          <Button
+            onClick={handleAddNew}
+            variant="primary"
+            size="sm"
             icon={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -626,26 +580,35 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
               </svg>
             }
           >
-            Tambah Penulis
+            Tambah Kontak
           </Button>
-        </div>
-      </div>
+        </FilterGroup>
+      </FilterBar>
+
+      {/* Input File Tersembunyi untuk Impor Excel */}
+      <input
+        type="file"
+        id="excel-import-input"
+        accept=".xlsx, .xls"
+        style={{ display: 'none' }}
+        onChange={handleImportExcel}
+      />
 
       {/* Tabel Data */}
-      <div style={{ flex: 1, overflow: 'auto', background: 'var(--bg-card)' }}>
-        <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Nama Penulis</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Pekerjaan</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Institusi / Afiliasi</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>WhatsApp</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Email</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Lokasi / Alamat</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Sumber Data</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Catatan Tambahan</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', userSelect: 'none' }}>Status</th>
-              <th style={{ position: 'sticky', top: 0, background: 'var(--bg-panel)', zIndex: 1, padding: '8px 12px', fontWeight: '600', width: '100px', textAlign: 'center', userSelect: 'none' }}>Aksi</th>
+      <div style={{ flex: 1, overflowX: 'auto', background: 'var(--bg-card)' }}>
+        <table style={{ minWidth: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+            <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Nama Kontak</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Pekerjaan</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Institusi / Afiliasi</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>WhatsApp</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Email</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Lokasi / Alamat</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Sumber Data</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Catatan Tambahan</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Status</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', textAlign: 'left', userSelect: 'none', whiteSpace: 'nowrap', position: 'sticky', right: 0, background: 'var(--bg-panel)', zIndex: 3, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -653,8 +616,8 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
               <TableEmptyState
                 colSpan={10}
                 icon="👤"
-                message="Tidak ada data penulis"
-                description={searchQuery ? `Tidak ada hasil untuk pencarian "${searchQuery}"` : "Belum ada penulis terdaftar. Klik tombol Tambah Penulis untuk membuat profil baru."}
+                message="Tidak ada kontak"
+                description={searchQuery ? `Tidak ada hasil untuk pencarian "${searchQuery}"` : "Belum ada kontak terdaftar. Klik tombol Tambah Kontak untuk membuat profil baru."}
               />
             ) : (
               filteredPenulis.map((p) => (
@@ -663,12 +626,17 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                   onClick={() => {
                     if (p.id !== undefined) {
                       setSelectedPenulisId(p.id);
+                    }
+                  }}
+                  onDoubleClick={() => {
+                    if (p.id !== undefined) {
+                      setSelectedPenulisId(p.id);
                       setRightPanelVisible(true);
                     }
                   }}
                   style={{
                     borderBottom: '1px solid var(--border)',
-                    background: selectedPenulisId === p.id ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                    background: selectedPenulisId === p.id ? 'rgba(192, 28, 28, 0.08)' : 'transparent',
                     cursor: 'pointer',
                     transition: 'background 0.1s ease',
                     color: 'var(--text-primary)'
@@ -684,70 +652,92 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                     }
                   }}
                 >
-                  <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', fontWeight: '600', color: 'var(--text-primary)' }}>
                     <div>{p.name}</div>
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                     {p.job || '-'}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                     {p.institution || '-'}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                     {p.wa_number ? (
-                      <a
-                        href={getWhatsAppLink(p.wa_number)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Klik untuk chat WhatsApp"
-                        style={{
-                          color: 'var(--text-primary)',
-                          textDecoration: 'none',
-                          fontWeight: '500',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                      >
-                        💬 {p.wa_number} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
-                      </a>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <a
+                          href={getWhatsAppLink(p.wa_number)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Klik untuk chat WhatsApp"
+                          style={{
+                            color: 'var(--text-primary)',
+                            textDecoration: 'none',
+                            fontWeight: '500',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                        >
+                          💬 {p.wa_number} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
+                        </a>
+                        <span title={p.wa_valid ? 'WA Valid' : 'WA Tidak Valid'} style={{
+                          fontSize: '10px',
+                          color: p.wa_valid ? '#16a34a' : 'var(--text-secondary)',
+                          opacity: 0.7
+                        }}>
+                          {p.wa_valid ? '✓' : '?'}
+                        </span>
+                      </div>
                     ) : '-'}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                     {p.email ? (
-                      <a
-                        href={`mailto:${p.email}`}
-                        title="Klik untuk mengirim email"
-                        style={{
-                          color: 'var(--text-primary)',
-                          textDecoration: 'none',
-                          fontWeight: '500',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                      >
-                        📧 {p.email} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
-                      </a>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <a
+                          href={`mailto:${p.email}`}
+                          title="Klik untuk mengirim email"
+                          style={{
+                            color: 'var(--text-primary)',
+                            textDecoration: 'none',
+                            fontWeight: '500',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                        >
+                          📧 {p.email} <span style={{ fontSize: '10px', opacity: 0.7 }}>↗</span>
+                        </a>
+                        <span title={p.email_valid ? 'Email Valid' : 'Email Tidak Valid'} style={{
+                          fontSize: '10px',
+                          color: p.email_valid ? '#16a34a' : 'var(--text-secondary)',
+                          opacity: 0.7
+                        }}>
+                          {p.email_valid ? '✓' : '?'}
+                        </span>
+                      </div>
                     ) : '-'}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                     {(() => {
-                      const resolvedAddress = p.address || (p.city ? `${p.city}, ${p.province || ''}` : p.province || '');
-                      return resolvedAddress ? <span style={{ whiteSpace: 'pre-line' }}>{resolvedAddress}</span> : '-';
+                      const parts: string[] = [];
+                      if (p.address) parts.push(p.address);
+                      if (p.city) parts.push(`Kota: ${p.city}`);
+                      if (p.province) parts.push(`Prov: ${p.province}`);
+                      const resolvedAddress = parts.join(' | ');
+                      return resolvedAddress ? <span style={{ whiteSpace: 'pre-line', fontSize: '12px' }}>{resolvedAddress}</span> : '-';
                     })()}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                     {p.data_source || '-'}
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.notes}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.notes}>
                     {p.notes || '-'}
                   </td>
-                  <td style={{ padding: '10px 12px' }}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {p.is_customer ? (
                         <span style={{ fontSize: '16px', display: 'inline-flex', padding: '2px 4px' }} title="Pelanggan Terverifikasi">
@@ -782,27 +772,9 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => handleEdit(p, e)}
-                        style={{ padding: '6px 10px' }}
-                        title="Edit Profil"
-                      >
-                        ✏️
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={(e) => p.id !== undefined && handleDelete(p.id, p.name, e)}
-                        style={{ padding: '6px 10px' }}
-                        title={p.is_customer_only ? "Hapus Pelanggan" : "Hapus Lead"}
-                      >
-                        🗑️
-                      </Button>
-                    </div>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', textAlign: 'left', position: 'sticky', right: 0, background: 'var(--bg-card)', zIndex: 2, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)' }}>
+                      <button onClick={(e) => handleEdit(p, e)} style={{background:'none',border:'none',cursor:'pointer',padding:'2px',fontSize:'16px',lineHeight:1}} title="Edit">✏️</button>
+                      <button onClick={(e) => p.id !== undefined && handleDelete(p.id, p.name, e)} style={{background:'none',border:'none',cursor:'pointer',padding:'2px',fontSize:'16px',lineHeight:1}} title="Hapus">🗑️</button>
                   </td>
                 </tr>
               ))

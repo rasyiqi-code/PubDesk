@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { useCrmContext } from '../../../contexts/CrmContext';
+import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge } from '../../../ui/atoms/Badge';
 
 interface TimPreviewPanelProps {
-  layouterId: number | null;
+  timId: number | null;
 }
 
 // Baris info — label + value
@@ -69,13 +69,13 @@ const ROLE_GRADIENT: Record<string, string> = {
   'Illustrator': 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
 };
 
-const TimPreviewPanel: React.FC<TimPreviewPanelProps> = ({ layouterId }) => {
-  const { layouters } = useCrmContext();
+const TimPreviewPanel: React.FC<TimPreviewPanelProps> = ({ timId }) => {
+  const { tim } = useDataMasterContext();
 
   const memberData = useMemo(() => {
-    if (!layouterId) return null;
-    return layouters.find((l) => l.id === layouterId) || null;
-  }, [layouters, layouterId]);
+    if (!timId) return null;
+    return tim.find((l) => l.id === timId) || null;
+  }, [tim, timId]);
 
   // Hitung kelengkapan profil
   const completeness = useMemo(() => {
@@ -90,7 +90,7 @@ const TimPreviewPanel: React.FC<TimPreviewPanelProps> = ({ layouterId }) => {
     return Math.round((filled / fields.length) * 100);
   }, [memberData]);
 
-  if (!layouterId || !memberData) {
+  if (!timId || !memberData) {
     return (
       <div style={{
         display: 'flex',
@@ -131,18 +131,6 @@ const TimPreviewPanel: React.FC<TimPreviewPanelProps> = ({ layouterId }) => {
         top: 0,
         zIndex: 1,
       }}>
-        <span style={{
-          fontSize: '10px',
-          fontWeight: '700',
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-          color: 'var(--text-secondary)',
-          display: 'block',
-          marginBottom: '10px'
-        }}>
-          🔍 Inspektur Berkas Cerdas
-        </span>
-
         {/* Avatar + nama + role */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
           <div style={{

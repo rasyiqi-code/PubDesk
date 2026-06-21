@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
-import { useCrmContext } from '../../../contexts/CrmContext';
+import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge } from '../../../ui/atoms/Badge';
 import { Button } from '../../../ui/atoms/Button';
 
@@ -29,7 +29,7 @@ const getWhatsAppLink = (phone: string) => {
 
 const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) => {
   const { contacts, addContact, showToast, showConfirm } = useAppContext();
-  const { penulis, naskahOrders } = useCrmContext();
+  const { penulis, naskah } = useDataMasterContext();
 
   // Cari data penulis terpilih (penulisId bisa negatif jika dari database pelanggan murni)
   const penulisData = useMemo(() => {
@@ -83,8 +83,8 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
   // Naskah milik penulis ini
   const relatedNaskah = useMemo(() => {
     if (!penulisId || penulisId < 0) return [];
-    return naskahOrders.filter((n) => n.penulis_id === penulisId);
-  }, [naskahOrders, penulisId]);
+    return naskah.filter((n) => n.penulis_id === penulisId);
+  }, [naskah, penulisId]);
 
   const handleCopyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -118,7 +118,7 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
             type: 'customer',
             created_at: new Date().toISOString()
           });
-          showToast(`Penulis "${penulisData.name}" berhasil dipromosikan menjadi Pelanggan!`, 'success');
+          showToast(`"${penulisData.name}" berhasil dipromosikan menjadi Pelanggan!`, 'success');
         } catch (err) {
           console.error(err);
           showToast('Gagal mempromosikan penulis menjadi pelanggan!', 'error');
@@ -143,9 +143,6 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', padding: '24px', overflowY: 'auto' }}>
       {/* Header Inspektur */}
       <div style={{ marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-        <h3 style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-          🔍 Inspektur Berkas Cerdas
-        </h3>
 
         {/* Profil Singkat dengan Avatar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px' }}>
@@ -170,7 +167,7 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
             </h4>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', textTransform: 'uppercase' }}>
-                Lead Penulis
+                Kontak
               </span>
               <Badge 
                 label={penulisData.followup_status || 'New'}

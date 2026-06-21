@@ -1,12 +1,12 @@
 import React from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
-import { useCrmContext } from '../../../contexts/CrmContext';
+import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge } from '../../../ui/atoms/Badge';
 import { Button } from '../../../ui/atoms/Button';
 
 const LegalitasPreviewPanel: React.FC = () => {
   const { selectedLegalitasId, setRightPanelVisible } = useAppContext();
-  const { legalitas } = useCrmContext();
+  const { legalitas } = useDataMasterContext();
 
   const data = legalitas.find(l => l.id === selectedLegalitasId);
 

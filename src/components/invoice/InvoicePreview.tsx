@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { InvoiceProfile, InvoiceItem } from '../../types/invoice.types';
 import { formatPrice } from '../../utils/format';
-import { evaluateItemFormula } from '../../utils/invoice';
+import { evaluateItemFormula, formatDateId } from '../../utils/invoice';
 
 interface InvoicePreviewProps {
   previewProfile?: InvoiceProfile;
@@ -96,7 +96,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
 
   const getSignatureLocationDateLabel = () => {
     if (profile?.signatureLocation) {
-      return `${profile.signatureLocation}, ${invoiceDate}`;
+      return `${profile.signatureLocation}, ${formatDateId(invoiceDate)}`;
     }
     return invoiceDate;
   };
@@ -444,7 +444,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
               <div style={{ display: 'flex', alignItems: 'baseline' }}>
                 <span style={{ fontWeight: '700', color: '#1f2937', width: '70px', flexShrink: 0 }}>Tanggal</span>
                 <span style={{ marginRight: '6px', color: '#4b5563', fontWeight: '700' }}>:</span>
-                <span style={{ fontWeight: '500' }}>{invoiceDate}</span>
+                <span style={{ fontWeight: '500' }}>{formatDateId(invoiceDate)}</span>
               </div>
             </div>
           </div>

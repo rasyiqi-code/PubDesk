@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Legalitas } from '../../types/crm.types';
+import { Legalitas } from '../../types/data-master.types';
+import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
+import { SearchableSelect } from '../../ui/atoms/SearchableSelect';
 import { Select } from '../../ui/atoms/Select';
 import { Button } from '../../ui/atoms/Button';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
@@ -28,8 +30,10 @@ const STATUS_OPTIONS = [
 ];
 
 const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, onCancel }) => {
+  const { naskah, penulis } = useDataMasterContext();
   const { showToast } = useAppContext();
 
+  const [naskahId, setNaskahId] = useState<number | undefined>(undefined);
   const [judulBuku, setJudulBuku] = useState('');
   const [namaPenulis, setNamaPenulis] = useState('');
   const [tipe, setTipe] = useState('E-ISBN');
@@ -39,8 +43,17 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
 
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
+  const naskahOptions = [
+    { value: '', label: '-- Pilih Naskah --' },
+    ...naskah.map((n) => {
+      const penulisName = n.penulis_id ? (penulis.find(p => p.id === n.penulis_id)?.name || `#${n.penulis_id}`) : '-';
+      return { value: String(n.id), label: `${n.title} — ${penulisName}` };
+    }),
+  ];
+
   useEffect(() => {
     if (initialData) {
+      setNaskahId(initialData.naskah_id || undefined);
       setJudulBuku(initialData.judul_buku);
       setNamaPenulis(initialData.nama_penulis);
       setTipe(initialData.tipe);
@@ -48,6 +61,7 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
       setKeterangan(initialData.keterangan || '');
       setStatus(initialData.status);
     } else {
+      setNaskahId(undefined);
       setJudulBuku('');
       setNamaPenulis('');
       setTipe('E-ISBN');
@@ -56,6 +70,19 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
       setStatus('Diajukan');
     }
   }, [initialData]);
+
+  const handleNaskahSelect = (val: string) => {
+    const id = val ? Number(val) : undefined;
+    setNaskahId(id);
+    if (id) {
+      const found = naskah.find((n) => n.id === id);
+      if (found) {
+        setJudulBuku(found.title);
+        const penulisName = found.penulis_id ? (penulis.find(p => p.id === found.penulis_id)?.name || '') : '';
+        if (penulisName) setNamaPenulis(penulisName);
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +93,7 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
 
     onSubmit({
       id: initialData?.id,
+      naskah_id: naskahId,
       judul_buku: judulBuku.trim(),
       nama_penulis: namaPenulis.trim(),
       tipe,
@@ -85,6 +113,16 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
         <Accordion>
           <AccordionSection index={1} title="📄 Informasi Legalitas" expandedSection={expandedSection} onToggle={setExpandedSection}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <SearchableSelect
+                label="Pilih dari Naskah yang Ada"
+                options={naskahOptions}
+                value={naskahId ? String(naskahId) : ''}
+                onChange={handleNaskahSelect}
+                placeholder="Ketik judul naskah..."
+                emptyMessage="Tidak ada naskah yang cocok"
+                fullWidth
+              />
+
               <TextField
                 label="Judul Buku / Naskah"
                 placeholder="Masukkan judul buku..."
@@ -93,6 +131,24 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
                 required
                 fullWidth
                 autoFocus
+              />
+
+              <SearchableSelect
+                label="Cari Penulis dari Database"
+                options={[
+                  { value: '', label: '-- Pilih Penulis --' },
+                  ...penulis.map((p) => ({ value: String(p.id), label: p.name })),
+                ]}
+                value=""
+                onChange={(val) => {
+                  if (val) {
+                    const p = penulis.find((x) => x.id === Number(val));
+                    if (p) setNamaPenulis(p.name);
+                  }
+                }}
+                placeholder="Ketik nama penulis..."
+                emptyMessage="Tidak ada penulis yang cocok"
+                fullWidth
               />
 
               <TextField

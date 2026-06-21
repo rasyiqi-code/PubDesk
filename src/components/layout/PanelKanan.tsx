@@ -26,14 +26,13 @@ const PanelKanan: React.FC = () => {
     appState,
     services,
     selectedServiceId,
-    activeSettingsTab,
     selectedInsightMetric,
     invoices,
     setActiveModule,
     selectedPenulisId,
     selectedPenerbitId,
     selectedNaskahId,
-    selectedLayouterId,
+    selectedTimId,
   } = useAppContext();
 
   const { files, selectedFileId, setSelectedFileId, setRightPanelVisible } = useFileState();
@@ -72,40 +71,26 @@ const PanelKanan: React.FC = () => {
 
 
 
-    // Modul Lead Penulis (CRM) — preview penulis terpilih
-    case 'crm-penulis':
+    // Modul Kontak terpadu (Penulis + Pelanggan)
+    case 'kontak':
+    case 'penulis':
       return <PenulisPreviewPanel penulisId={selectedPenulisId} />;
 
-    case 'crm-penerbit':
+    case 'penerbit':
       return <PenerbitPreviewPanel penerbitId={selectedPenerbitId} />;
 
-    case 'crm-naskah':
+    case 'naskah':
       return <NaskahPreviewPanel naskahId={selectedNaskahId} />;
 
-    case 'crm-tim':
-    case 'layouters':
-      return <TimPreviewPanel layouterId={selectedLayouterId} />;
+    case 'tim':
+      return <TimPreviewPanel timId={selectedTimId} />;
 
-    case 'crm-legalitas':
+    case 'legalitas':
       return <LegalitasPreviewPanel />;
 
     case 'pelanggan':
       return <PelangganPreviewPanel />;
 
-    // Settings — tampilkan preview layanan jika tab services aktif
-    case 'settings':
-      if (activeSettingsTab === 'services') {
-        return <ServicePreviewPanel serviceId={selectedServiceId} services={services} />;
-      }
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>
-            Preview Settings akan segera tersedia
-          </p>
-        </div>
-      );
-
-    // Modul lain (extractor, ledger, books)
     default:
       return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>

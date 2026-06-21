@@ -77,7 +77,7 @@ const InvoiceSettings: React.FC = () => {
   const renderAccordionSection = (index: number, title: string, component: React.ReactNode) => {
     const isOpen = expandedSection === index;
     return (
-      <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-card)', marginBottom: '4px' }}>
+      <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-card)', marginBottom: '8px' }}>
         <button
           type="button"
           onClick={() => setExpandedSection(isOpen ? null : index)}

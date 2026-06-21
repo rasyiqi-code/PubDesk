@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
-import { useCrmContext } from '../../../contexts/CrmContext';
+import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge } from '../../../ui/atoms/Badge';
 
 interface PenerbitPreviewPanelProps {
@@ -26,7 +26,7 @@ const getWhatsAppLink = (phone: string) => {
 
 const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId }) => {
   const { showToast } = useAppContext();
-  const { penerbit, naskahOrders } = useCrmContext();
+  const { penerbit, naskah } = useDataMasterContext();
 
   // Cari data penerbit terpilih
   const penerbitData = useMemo(() => {
@@ -37,8 +37,8 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
   // Naskah terkait dengan penerbit ini
   const relatedNaskah = useMemo(() => {
     if (!penerbitId) return [];
-    return naskahOrders.filter((n) => n.penerbit_id === penerbitId);
-  }, [naskahOrders, penerbitId]);
+    return naskah.filter((n) => n.penerbit_id === penerbitId);
+  }, [naskah, penerbitId]);
 
   const handleCopyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -61,9 +61,6 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', padding: '24px', overflowY: 'auto' }}>
       {/* Header Inspektur */}
       <div style={{ marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-        <h3 style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-          🔍 Inspektur Berkas Cerdas
-        </h3>
 
         {/* Profil Singkat dengan Avatar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px' }}>

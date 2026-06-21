@@ -19,6 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   ];
 
   const bottomItems = [
+    { id: 'activity-log' as const, label: 'Activity Log', icon: '📋' },
     { id: 'settings' as const, label: 'Pengaturan', icon: '⚙️' },
   ];
 
@@ -32,14 +33,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
             ? (appState.activeModule === 'invoice' || appState.activeModule === 'invoice-manager' || appState.activeModule === 'invoice-insight')
             : item.id === 'master-data-parent'
             ? (
-                appState.activeModule === 'crm-penulis' ||
-                appState.activeModule === 'crm-penerbit' ||
-                appState.activeModule === 'crm-naskah' ||
-                appState.activeModule === 'crm-tim' ||
-                appState.activeModule === 'crm-legalitas' ||
-                appState.activeModule === 'pelanggan' ||
-                appState.activeModule === 'naskah-orders' ||
-                appState.activeModule === 'layouters'
+                appState.activeModule === 'kontak' ||
+                appState.activeModule === 'penerbit' ||
+                appState.activeModule === 'naskah' ||
+                appState.activeModule === 'tim' ||
+                appState.activeModule === 'legalitas' ||
+                appState.activeModule === 'services'
               )
             : appState.activeModule === item.id;
           const showSubmenu = item.id === 'files' && !collapsed;
@@ -73,18 +72,16 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                     }
                   } else if (item.id === 'master-data-parent') {
                     const isAnySubActive = [
-                      'crm-penulis',
-                      'crm-penerbit',
-                      'crm-naskah',
-                      'crm-tim',
-                      'crm-legalitas',
-                      'pelanggan',
-                      'naskah-orders',
-                      'layouters'
+                      'kontak',
+                      'penerbit',
+                      'naskah',
+                      'tim',
+                      'legalitas',
+                      'services'
                     ].includes(appState.activeModule);
                     
                     if (!isAnySubActive) {
-                      setActiveModule('crm-penulis');
+                      setActiveModule('kontak');
                     }
                   } else {
                     setActiveModule(item.id);
@@ -114,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                 <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px', marginTop: '2px' }}>
                   {[
                     { module: 'invoice' as const, label: 'Invoice Generator', icon: '✍️' },
-                    { module: 'invoice-manager' as const, label: 'Managemen Invoice', icon: '🗃️' },
+                    { module: 'invoice-manager' as const, label: 'Manajemen Invoice', icon: '🗃️' },
                     { module: 'invoice-insight' as const, label: 'Invoice Insight', icon: '📊' },
                   ].map((sub) => {
                     const isSubActive = appState.activeModule === sub.module;
@@ -164,12 +161,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
               {showMasterDataSubmenu && (
                 <div style={{ paddingLeft: '28px', display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px', marginTop: '2px' }}>
                   {[
-                    { module: 'crm-penulis' as const, label: 'Penulis', icon: '👤' },
-                    { module: 'crm-penerbit' as const, label: 'Penerbit', icon: '🏢' },
-                    { module: 'crm-naskah' as const, label: 'Naskah', icon: '📚' },
-                    { module: 'crm-legalitas' as const, label: 'Legalitas', icon: '⚖️' },
-                    { module: 'pelanggan' as const, label: 'Pelanggan', icon: '👥' },
-                    { module: 'crm-tim' as const, label: 'Tim', icon: '👨‍💼' },
+                    { module: 'kontak' as const, label: 'Kontak', icon: '👤' },
+                    { module: 'penerbit' as const, label: 'Penerbit', icon: '🏢' },
+                    { module: 'naskah' as const, label: 'Naskah', icon: '📚' },
+                    { module: 'legalitas' as const, label: 'Legalitas', icon: '⚖️' },
+                    { module: 'tim' as const, label: 'Tim', icon: '👨‍💼' },
+                    { module: 'services' as const, label: 'Layanan', icon: '🛠️' },
                   ].map((sub) => {
                     const isSubActive = appState.activeModule === sub.module;
                     return (

@@ -12,14 +12,14 @@ export type AppModule =
   | 'settings'
   | 'books'
   | 'services'
-  | 'crm-penulis'
-  | 'crm-penerbit'
-  | 'crm-naskah'
-  | 'crm-tim'
-  | 'crm-legalitas'
-  | 'naskah-orders'
-  | 'layouters'
-  | 'pelanggan';
+  | 'kontak'
+  | 'penulis'
+  | 'penerbit'
+  | 'naskah'
+  | 'tim'
+  | 'legalitas'
+  | 'pelanggan'
+  | 'activity-log';
 
 export interface AppState {
   activeModule: AppModule;

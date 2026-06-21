@@ -14,6 +14,7 @@ export interface Penulis {
   followup_status?: string;
   notes?: string;
   created_at: string;
+  updated_at?: string;
   is_customer?: boolean;
   is_customer_only?: boolean;
 }
@@ -36,9 +37,10 @@ export interface Penerbit {
   email_valid: number;
   cooperation_status?: string;
   created_at: string;
+  updated_at?: string;
 }
 
-export interface NaskahOrder {
+export interface Naskah {
   id?: number;
   naskah_id_code?: string;
   title: string;
@@ -60,9 +62,10 @@ export interface NaskahOrder {
   store_links?: string; // JSON string format: [{ platform, url }]
   status: string;
   created_at: string;
+  updated_at?: string;
 }
 
-export interface Layouter {
+export interface Tim {
   id?: number;
   name: string;
   role: string;
@@ -70,26 +73,40 @@ export interface Layouter {
   is_active: number;
   notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface WorkflowEvent {
   id?: number;
-  naskah_order_id: number;
+  naskah_id: number;
   event_name: string;
   completed_date?: string;
   pic_name?: string;
   notes?: string;
   proof_path_or_link?: string;
   status: string; // "Belum Dimulai", "Sedang Dikerjakan", "Selesai", "Terkendala"
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface Legalitas {
   id?: number;
+  naskah_id?: number;
   judul_buku: string;
   nama_penulis: string;
   tipe: string; // E-ISBN, ISBN, QRCBN, QRSBN, HAKI, dll.
   tanggal_pengajuan?: string;
   keterangan?: string;
   status: string; // "Diajukan", "Selesai", dll.
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ActivityLogEntry {
+  id?: number;
+  entity_type: string;
+  entity_id?: number;
+  action: string;
+  description: string;
   created_at: string;
 }
