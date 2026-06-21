@@ -447,9 +447,7 @@ const NaskahOrdersManager: React.FC<NaskahOrdersManagerProps> = ({ searchQuery =
 
       <FilterBar
         actions={
-          <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕">
-            Tambah Naskah
-          </Button>
+          <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕" />
         }
       >
         <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', whiteSpace: 'nowrap' }}>

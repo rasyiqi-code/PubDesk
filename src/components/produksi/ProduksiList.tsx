@@ -235,9 +235,7 @@ const ProduksiList: React.FC<{ searchQuery?: string }> = ({ searchQuery = '' }) 
       filterBar={
         <FilterBar
           actions={
-            <Button onClick={() => { setActiveModule('tambah-tugas'); }} variant="primary" size="sm" icon="➕">
-              Task
-            </Button>
+            <Button onClick={() => { setActiveModule('tambah-tugas'); }} variant="primary" size="sm" icon="➕" />
           }
         >
           <input

@@ -352,9 +352,7 @@ const ServiceManager: React.FC<ServiceManagerProps> = ({ searchQuery = '' }) => 
 
       <FilterBar
         actions={
-          <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕">
-            Tambah Layanan
-          </Button>
+          <Button onClick={handleAddNew} variant="primary" size="sm" icon="➕" />
         }
       >
         <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', whiteSpace: 'nowrap' }}>

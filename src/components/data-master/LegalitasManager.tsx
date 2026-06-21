@@ -385,9 +385,7 @@ const LegalitasManager: React.FC<LegalitasManagerProps> = ({ searchQuery = '' })
 
       <FilterBar
         actions={
-          <Button variant="primary" size="sm" onClick={handleAddNew} icon="➕">
-            Tambah Pengajuan
-          </Button>
+          <Button variant="primary" size="sm" onClick={handleAddNew} icon="➕" />
         }
       >
         <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', whiteSpace: 'nowrap' }}>
