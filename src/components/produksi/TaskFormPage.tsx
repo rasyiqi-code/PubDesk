@@ -15,7 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const TaskFormPage: React.FC = () => {
   const { currentUser } = useAuth();
   const { showToast, setActiveModule, selectedTaskId, appState, setDirectAddNewModule } = useAppContext();
-  const { naskah, penulis, addNaskah } = useDataMasterContext();
+  const { naskah, penulis, addNaskah, tim } = useDataMasterContext();
   const { addTask, updateTask, tasks } = useWorkflowContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
@@ -24,6 +24,8 @@ const TaskFormPage: React.FC = () => {
 
   // Form states
   const [naskahId, setNaskahId] = useState('');
+  const [stepName, setStepName] = useState('');
+  const [assignedTeamId, setAssignedTeamId] = useState('');
   const [picName, setPicName] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('Normal');
@@ -34,6 +36,13 @@ const TaskFormPage: React.FC = () => {
   const [inputMode, setInputMode] = useState<'naskah' | 'pesanan'>('naskah');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [judulPesananInput, setJudulPesananInput] = useState('');
+
+  const timOptions = useMemo(() => {
+    return [
+      { value: '', label: '-- Pilih Penanggung Jawab (PJ) --' },
+      ...tim.map(t => ({ value: String(t.id), label: `👤 ${t.name} (${t.role})` }))
+    ];
+  }, [tim]);
 
   const statusOptions = [
     { value: 'Belum Mulai', label: 'Belum Mulai' },
@@ -87,6 +96,8 @@ const TaskFormPage: React.FC = () => {
       const taskToEdit = tasks.find(t => t.id === selectedTaskId);
       if (taskToEdit) {
         setNaskahId(taskToEdit.naskah_id.toString());
+        setStepName(taskToEdit.step_name || '');
+        setAssignedTeamId(taskToEdit.assigned_team_id ? taskToEdit.assigned_team_id.toString() : '');
         setPicName(taskToEdit.pic_name || '');
         setDueDate(taskToEdit.due_date ? taskToEdit.due_date.split('T')[0] : '');
         setPriority(taskToEdit.priority);
@@ -95,6 +106,8 @@ const TaskFormPage: React.FC = () => {
       }
     } else {
       setNaskahId('');
+      setStepName('');
+      setAssignedTeamId('');
       setPicName(currentUser ? currentUser.tim_name : '');
       setDueDate('');
       setPriority('Normal');
@@ -189,12 +202,18 @@ const TaskFormPage: React.FC = () => {
       }
     } else {
       if (selectedTaskId) {
+        if (!stepName.trim()) {
+          showToast('Nama langkah (tahap tugas) tidak boleh kosong!', 'error');
+          return;
+        }
         setIsSubmitting(true);
         try {
           const taskToEdit = tasks.find(t => t.id === selectedTaskId);
           if (taskToEdit) {
             const updatedTask: Task = {
               ...taskToEdit,
+              step_name: stepName.trim(),
+              assigned_team_id: assignedTeamId ? Number(assignedTeamId) : undefined,
               pic_name: picName,
               due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
               priority,
@@ -202,7 +221,7 @@ const TaskFormPage: React.FC = () => {
               notes
             };
             await updateTask(updatedTask);
-            showToast('Tugas berhasil diupdate', 'success');
+            showToast('Tugas berhasil diperbarui!', 'success');
             setActiveModule('produksi-list');
           }
         } catch (err) {
@@ -441,21 +460,69 @@ const TaskFormPage: React.FC = () => {
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                  Penanggung Jawab (PJ)
-                </label>
-                <div style={{ 
-                  padding: '10px 14px', 
-                  background: 'var(--bg-panel)', 
-                  border: '1px solid var(--border)', 
-                  borderRadius: '8px', 
-                  fontSize: '14px', 
-                  color: 'var(--text-secondary)' 
-                }}>
-                  👤 {isEdit ? (picName || '-') : (currentUser?.tim_name || '-')} {!isEdit && '(Sesuai Sesi Aktif)'}
+              {isEdit && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.2fr', gap: '24px', alignItems: 'end' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                      Judul Naskah
+                    </label>
+                    <div style={{ 
+                      padding: '10px 14px', 
+                      background: 'var(--bg-panel)', 
+                      border: '1px solid var(--border)', 
+                      borderRadius: '8px', 
+                      fontSize: '14px', 
+                      color: 'var(--text-primary)',
+                      fontWeight: '600'
+                    }}>
+                      📚 {tasks.find(t => t.id === selectedTaskId)?.naskah_title || 'Naskah Tidak Ditemukan'}
+                    </div>
+                  </div>
+
+                  <TextField
+                    label="Nama Langkah (Tahap Tugas)"
+                    placeholder="Contoh: Penulisan, Desain Cover..."
+                    value={stepName}
+                    onChange={e => setStepName(e.target.value)}
+                    required
+                    fullWidth
+                  />
                 </div>
-              </div>
+              )}
+
+              {isEdit ? (
+                <Select
+                  label="Penanggung Jawab (PJ)"
+                  options={timOptions}
+                  value={assignedTeamId}
+                  onChange={(e) => {
+                    setAssignedTeamId(e.target.value);
+                    const selected = tim.find(t => t.id === Number(e.target.value));
+                    if (selected) {
+                      setPicName(selected.name);
+                    } else {
+                      setPicName('');
+                    }
+                  }}
+                  fullWidth
+                />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                    Penanggung Jawab (PJ)
+                  </label>
+                  <div style={{ 
+                    padding: '10px 14px', 
+                    background: 'var(--bg-panel)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '8px', 
+                    fontSize: '14px', 
+                    color: 'var(--text-secondary)' 
+                  }}>
+                    👤 {currentUser?.tim_name || '-'} (Sesuai Sesi Aktif)
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <DatePicker 
