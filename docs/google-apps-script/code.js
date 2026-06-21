@@ -139,10 +139,9 @@ function doGet(e) {
       return createJsonResponse({ status: "error", message: "Token tidak valid" }, 401);
     }
 
-    if (action === "get_records") {
-      if (!sheetName) throw new Error("Parameter 'sheet_name' wajib diisi");
-      
-      const sheet = initSheet(sheetName);
+    if (action === "get_records" || action === "get_invoices") {
+      const targetSheet = sheetName || "Invoices";
+      const sheet = initSheet(targetSheet);
       const values = sheet.getDataRange().getValues();
       if (values.length <= 1) return createJsonResponse([]);
 
@@ -287,6 +286,78 @@ function doPost(e) {
         }
       }
       return createJsonResponse({ status: "error", message: "Record tidak ditemukan." }, 404);
+    }
+
+    // 4. Operasi Create Invoice (Kompatibilitas Versi Lama)
+    if (action === "create_invoice") {
+      let fileUrl = "";
+      let fileId = "";
+      
+      // Unggah berkas ke Google Drive (jika ada file_base_64)
+      if (payload.file_base_64) {
+        const subfolder = "Invoices";
+        const folder = getOrCreateFolder(subfolder);
+        const decodedBytes = Utilities.base64Decode(payload.file_base_64);
+        const blob = Utilities.newBlob(decodedBytes, payload.file_mime_type || "application/pdf", payload.file_name || "Invoice.pdf");
+        const file = folder.createFile(blob);
+        fileUrl = file.getUrl();
+        fileId = file.getId();
+      }
+
+      // Simpan data ke sheet Invoices
+      const sheet = initSheet("Invoices");
+      const headers = SHEETS_CONFIG["Invoices"];
+      const dataRange = sheet.getDataRange();
+      const values = dataRange.getValues();
+      const idColIndex = headers.indexOf("id");
+
+      // Cari apakah invoice dengan no_invoice / id yang sama sudah ada
+      const targetId = payload.invoice_no || payload.id || "";
+      let existingRow = -1;
+
+      if (targetId && idColIndex !== -1) {
+        for (let i = 1; i < values.length; i++) {
+          if (values[i][idColIndex] == targetId) {
+            existingRow = i + 1;
+            break;
+          }
+        }
+      }
+
+      // Petakan payload ke kolom sheet Invoices
+      const rec = {
+        id: targetId,
+        created_at: payload.tanggal || new Date().toISOString(),
+        customer_id: payload.pelanggan || "",
+        items_json: payload.items ? JSON.stringify(payload.items) : "[]",
+        shipping_cost: payload.shipping_cost || 0,
+        admin_fee: payload.admin_fee || 0,
+        total: payload.total || 0,
+        export_format: "PDF",
+        file_path: payload.file_name || "",
+        cloud_file_url: fileUrl,
+        updated_at: new Date().toISOString()
+      };
+
+      const rowData = headers.map(h => {
+        let val = rec[h];
+        if (val === undefined || val === null) return "";
+        return val;
+      });
+
+      if (existingRow !== -1) {
+        sheet.getRange(existingRow, 1, 1, headers.length).setValues([rowData]);
+      } else {
+        sheet.appendRow(rowData);
+      }
+
+      return createJsonResponse({
+        status: "success",
+        message: "Invoice berhasil disimpan ke Cloud",
+        invoice_no: targetId,
+        file_url: fileUrl,
+        file_id: fileId
+      });
     }
 
     return createJsonResponse({ status: "error", message: "Aksi POST tidak dikenali" }, 400);
