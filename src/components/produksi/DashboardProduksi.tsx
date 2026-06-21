@@ -110,7 +110,8 @@ const DashboardProduksi: React.FC = () => {
         borderLeft: '1px solid var(--border)', 
         borderRadius: '0px', 
         overflow: 'hidden',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        flexShrink: 0
       }}>
         {STAT_CARDS.map((card) => {
           const value = stats[card.key];

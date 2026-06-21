@@ -62,7 +62,8 @@ const DashboardMasterData: React.FC = () => {
         borderRadius: '0px', 
         overflow: 'hidden',
         boxSizing: 'border-box',
-        marginBottom: '24px'
+        marginBottom: '24px',
+        flexShrink: 0
       }}>
         {CARDS_CONFIG.map(card => {
           const count = counts[card.key];
