@@ -331,23 +331,23 @@ const DataResetTab: React.FC = () => {
         </p>
 
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          {/* Preview Bulat */}
+          {/* Preview Tampil Apa Adanya */}
           <div style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '24px',
-            background: 'linear-gradient(135deg, var(--accent, #3b82f6) 0%, #1d4ed8 100%)',
+            width: '120px',
+            height: '120px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: logoType === 'emoji' ? '42px' : 'unset',
-            boxShadow: '0 8px 20px rgba(59, 130, 246, 0.15)',
-            overflow: 'hidden'
+            fontSize: logoType === 'emoji' ? '64px' : 'unset',
+            overflow: 'hidden',
+            border: '1px dashed var(--border)',
+            borderRadius: '8px',
+            background: 'var(--bg-panel)'
           }}>
             {logoType === 'emoji' ? (
               splashLogo
             ) : (
-              <img src={splashLogo} alt="Custom Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={splashLogo} alt="Custom Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
             )}
           </div>
 

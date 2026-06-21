@@ -62,24 +62,20 @@ const SplashScreen: React.FC = () => {
         gap: '16px',
         animation: 'fadeIn 0.8s ease-out'
       }}>
-        {/* Visualisasi Logo (Pulsing 3D effect) */}
+        {/* Visualisasi Logo (Tampil apa adanya) */}
         <div style={{
-          width: '80px',
-          height: '80px',
-          borderRadius: '24px',
-          background: 'linear-gradient(135deg, var(--accent, #3b82f6) 0%, #1d4ed8 100%)',
+          width: '120px',
+          height: '120px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: logoType === 'emoji' ? '42px' : 'unset',
-          boxShadow: '0 8px 30px rgba(59, 130, 246, 0.15)',
-          animation: 'pulseLogo 2s infinite ease-in-out',
+          fontSize: logoType === 'emoji' ? '64px' : 'unset',
           overflow: 'hidden'
         }}>
           {logoType === 'emoji' ? (
             splashLogo
           ) : (
-            <img src={splashLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={splashLogo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
           )}
         </div>
 
