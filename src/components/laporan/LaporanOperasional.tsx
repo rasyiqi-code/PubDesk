@@ -249,39 +249,43 @@ const LaporanOperasional: React.FC = () => {
         </Button>
       </FilterBar>
 
-      <div style={{ overflowY: 'auto', flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0 0 0', background: 'var(--bg-dark)' }}>
         {isLoading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat laporan...</div>
         ) : (
           <>
-            {/* Metric Cards Terstandar */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-              <StatCard label="Naskah Aktif" value={activeTasks.length} color="#3b82f6" />
-              <StatCard label="Tugas Selesai" value={finishedTasks.length} color="#22c55e" />
-              <StatCard label="Tugas Overdue" value={overdueTasks.length} color="#ef4444" />
-              <StatCard label="Legalitas Diproses" value={prosesLegalitas.length} color="#a855f7" />
+            {/* Metric Cards Terstandar dengan padding kiri-kanan */}
+            <div style={{ padding: '0 24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                <StatCard label="Naskah Aktif" value={activeTasks.length} color="#3b82f6" />
+                <StatCard label="Tugas Selesai" value={finishedTasks.length} color="#22c55e" />
+                <StatCard label="Tugas Overdue" value={overdueTasks.length} color="#ef4444" />
+                <StatCard label="Legalitas Diproses" value={prosesLegalitas.length} color="#a855f7" />
+              </div>
             </div>
 
-            {/* Beban Kerja Tim Terstandar */}
-            <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', padding: '20px' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Beban Kerja Tim (Tugas Aktif)</h3>
-              {bebanKerjaArr.length === 0 ? (
-                <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Tidak ada beban kerja saat ini.</div>
-              ) : (
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {bebanKerjaArr.map(([pic, count]) => (
-                    <div key={pic} style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-panel)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', gap: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{pic}</span>
-                      <Badge label={`${count} tugas`} variant={count > 3 ? "warning" : "info"} />
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* Beban Kerja Tim Terstandar dengan padding kiri-kanan */}
+            <div style={{ padding: '0 24px' }}>
+              <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', padding: '20px' }}>
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Beban Kerja Tim (Tugas Aktif)</h3>
+                {bebanKerjaArr.length === 0 ? (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Tidak ada beban kerja saat ini.</div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {bebanKerjaArr.map(([pic, count]) => (
+                      <div key={pic} style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-panel)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', gap: '8px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{pic}</span>
+                        <Badge label={`${count} tugas`} variant={count > 3 ? "warning" : "info"} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Task Terlambat Terstandar */}
-            <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', marginBottom: '10px' }}>
-              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-panel)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* Task Terlambat Terstandar - FULL WIDTH */}
+            <div style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', paddingBottom: '16px' }}>
+              <div style={{ padding: '14px 24px', borderBottom: '1px solid var(--border)', background: 'var(--bg-panel)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Task Terlambat (Overdue)</h3>
                 {overdueTasks.length > 0 && <Badge label={`${overdueTasks.length} Terlambat`} variant="danger" />}
               </div>
@@ -289,10 +293,10 @@ const LaporanOperasional: React.FC = () => {
                 <table style={tableStyles.table}>
                   <thead style={tableStyles.thead}>
                     <tr style={tableStyles.headerRow}>
-                      <th style={tableStyles.th}>Judul Naskah</th>
+                      <th style={{ ...tableStyles.th, paddingLeft: '24px' }}>Judul Naskah</th>
                       <th style={tableStyles.th}>Tahap</th>
                       <th style={tableStyles.th}>PIC</th>
-                      <th style={tableStyles.th}>Deadline</th>
+                      <th style={{ ...tableStyles.th, paddingRight: '24px' }}>Deadline</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -307,13 +311,13 @@ const LaporanOperasional: React.FC = () => {
                         <tr
                           key={task.id}
                           style={tableStyles.row}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         >
-                          <td style={tableStyles.tdTitle}>{task.naskah_title || `Naskah #${task.naskah_id}`}</td>
+                          <td style={{ ...tableStyles.tdTitle, paddingLeft: '24px' }}>{task.naskah_title || `Naskah #${task.naskah_id}`}</td>
                           <td style={tableStyles.td}>{task.step_name}</td>
-                          <td style={tableStyles.td}>{task.pic_name || '-'}</td>
-                          <td style={tableStyles.td}>
+                          <td style={task.pic_name ? tableStyles.td : tableStyles.tdMuted}>{task.pic_name || '-'}</td>
+                          <td style={{ ...tableStyles.td, paddingRight: '24px' }}>
                             <Badge
                               label={task.due_date ? new Date(task.due_date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-'}
                               variant="danger"
