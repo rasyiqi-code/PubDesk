@@ -284,20 +284,16 @@ const DataResetTab: React.FC = () => {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '40px', alignItems: 'start' }}>
         
         {/* Kolom Kiri: Kustomisasi Logo & Nama Penerbit */}
         <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: '12px',
-          padding: '20px',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px'
         }}>
           <div>
-            <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: 'var(--text-primary)' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               🎨 Logo & Nama Penerbit
             </h3>
             <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
@@ -454,14 +450,12 @@ const DataResetTab: React.FC = () => {
         </div>
 
         {/* Kolom Kanan: Aksi Data (Export, Seed, Reset) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           
           {/* Export Semua Data ke Excel */}
           <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '20px'
+            paddingBottom: '16px',
+            borderBottom: '1px solid var(--border)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ flex: 1, minWidth: '240px' }}>
@@ -470,7 +464,7 @@ const DataResetTab: React.FC = () => {
                 </h3>
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                   Ekspor seluruh data dari database (Naskah, Tugas, Tim, Kontak, Penerbit, Buku, Invoice, Layanan, dan Legalitas) 
-                  ke dalam satu file Excel (.xlsx) dengan masing-masing tabel berada di sheet terpisah.
+                  ke dalam satu file Excel (.xlsx).
                 </p>
               </div>
               <button
@@ -497,10 +491,8 @@ const DataResetTab: React.FC = () => {
 
           {/* Muat Data Sample */}
           <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '20px'
+            paddingBottom: '16px',
+            borderBottom: '1px solid var(--border)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ flex: 1, minWidth: '240px' }}>
@@ -508,8 +500,7 @@ const DataResetTab: React.FC = () => {
                   📦 Muat Data Sample
                 </h3>
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                  Menyisipkan data contoh: 3 naskah, 3 tim, 12 tugas dengan berbagai status,
-                  riwayat perubahan, kendala, dan approval. Cocok untuk demo dan pengujian.
+                  Menyisipkan data contoh untuk pengujian alur kerja produksi dan master data.
                 </p>
               </div>
               <button
@@ -536,10 +527,7 @@ const DataResetTab: React.FC = () => {
 
           {/* Reset Data Workflow */}
           <div style={{
-            background: 'var(--bg-card)',
-            border: `1px solid ${confirmReset ? '#ef4444' : 'var(--border)'}`,
-            borderRadius: '12px',
-            padding: '20px'
+            paddingBottom: '16px'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ flex: 1, minWidth: '240px' }}>

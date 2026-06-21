@@ -282,10 +282,10 @@ const GDriveSettingsTab: React.FC = () => {
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '40px', alignItems: 'stretch' }}>
 
         {/* Akun terhubung */}
-        <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
           <div>
             <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               👤 Akun Google Drive Terhubung
@@ -297,7 +297,7 @@ const GDriveSettingsTab: React.FC = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                 {gdriveAccounts.map(account => (
-                  <div key={account.email} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div key={account.email} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{account.name}</span>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{account.email}</span>
@@ -316,7 +316,7 @@ const GDriveSettingsTab: React.FC = () => {
         </div>
 
         {/* Konfigurasi OAuth */}
-        <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
           <div>
             <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               ☁️ Integrasi Google Drive
@@ -409,7 +409,7 @@ const GDriveSettingsTab: React.FC = () => {
       </div>
 
       {/* Panduan kredensial */}
-      <div className="compact-panel" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 20px' }}>
+      <div style={{ paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
         <details>
           <summary style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer', outline: 'none', userSelect: 'none' }}>
             ℹ️ Panduan Mendapatkan Kredensial Google Drive Jangka Panjang (Produksi)

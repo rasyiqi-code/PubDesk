@@ -58,10 +58,10 @@ const LocalFoldersTab: React.FC = () => {
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '40px', alignItems: 'start' }}>
         
         {/* Kolom Kiri: Daftar Folder Dipantau */}
-        <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               📁 Folder Lokal yang Dipantau
@@ -77,7 +77,7 @@ const LocalFoldersTab: React.FC = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
                 {watchFolders.map(folder => (
-                  <div key={folder.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div key={folder.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
                       <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={folder.path}>
                         {folder.path.split('/').pop() || folder.path}
@@ -102,13 +102,13 @@ const LocalFoldersTab: React.FC = () => {
         </div>
 
         {/* Kolom Kanan: Tambah Folder & Panduan */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               ➕ Tambah Folder Baru
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>
-              Klik tombol di bawah untuk memilih folder dari sistem penyimpanan lokal Anda.
+              Pilih folder dari sistem penyimpanan lokal komputer Anda.
             </p>
             <form onSubmit={handleAddLocalFolder} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div className="compact-form-group">
@@ -134,8 +134,8 @@ const LocalFoldersTab: React.FC = () => {
             </form>
           </div>
 
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', background: 'var(--bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <strong style={{ color: 'var(--text-primary)' }}>💡 Tentang Folder Dipantau:</strong>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>💡 Tentang Folder Dipantau:</strong>
             <ul style={{ margin: '8px 0 0 18px', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <li>Berkas yang terdeteksi di folder ini akan masuk ke menu <strong>Smart Folders</strong>.</li>
               <li>Aplikasi secara otomatis mendeteksi perubahan berkas (tambah/ubah/hapus).</li>

@@ -101,10 +101,10 @@ const GASCloudSettings: React.FC<GASCloudSettingsProps> = ({ showToast }) => {
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '40px', alignItems: 'start' }}>
         
         {/* Kolom Kiri: Form Integrasi */}
-        <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               ☁️ Integrasi Google Apps Script (Cloud Sheets & Drive)
@@ -140,7 +140,7 @@ const GASCloudSettings: React.FC<GASCloudSettingsProps> = ({ showToast }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+          <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
             <button
               type="button"
               className="btn-primary compact-btn"
@@ -164,13 +164,13 @@ const GASCloudSettings: React.FC<GASCloudSettingsProps> = ({ showToast }) => {
         </div>
 
         {/* Kolom Kanan: Sinkronisasi & Panduan */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="compact-panel" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               🔄 Sinkronisasi Data Manual
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>
-              Anda dapat memicu sinkronisasi manual untuk mengunggah seluruh data master dan operasional lokal (SQLite) ke Google Sheets cloud. Tindakan ini berguna ketika menghubungkan aplikasi untuk pertama kalinya atau setelah bekerja offline.
+              Anda dapat memicu sinkronisasi manual untuk mengunggah seluruh data master dan operasional lokal (SQLite) ke Google Sheets cloud.
             </p>
             <button
               type="button"
@@ -196,8 +196,8 @@ const GASCloudSettings: React.FC<GASCloudSettingsProps> = ({ showToast }) => {
             </button>
           </div>
 
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', background: 'var(--bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <strong style={{ color: 'var(--text-primary)' }}>Cara Memasang:</strong>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+            <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>Cara Memasang:</strong>
             <ol style={{ margin: '8px 0 0 18px', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <li>Buka dokumen API & kode draf GAS di folder proyek <code>docs/google-apps-script/</code>.</li>
               <li>Salin kodenya, tempel di menu <strong>Ekstensi {"→"} Apps Script</strong> di Google Sheets Anda.</li>
