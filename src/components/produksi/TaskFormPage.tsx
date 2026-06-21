@@ -315,7 +315,7 @@ const TaskFormPage: React.FC = () => {
                       </div>
                       <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: '1.4', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'start', opacity: 0.85 }}>
                         <span>ℹ️</span>
-                        <span>Disarankan menggunakan mode <strong>Cari Naskah</strong> agar data spesifikasi buku tetap terdokumentasi dengan lengkap.</span>
+                        <span>Agar data terdokumentasi dengan baik, maka disarankan menggunakan mode <strong>Cari Naskah</strong> agar spesifikasi buku tetap tercatat lengkap.</span>
                       </div>
                     </div>
 

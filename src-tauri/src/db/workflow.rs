@@ -151,52 +151,6 @@ impl Database {
         Ok(res)
     }
 
-    pub fn delete_workflow_template(&self, id: i64) -> Result<(), DbError> {
-        self.conn.execute("DELETE FROM workflow_templates WHERE id = ?1", params![id])?;
-        Ok(())
-    }
-
-    pub fn add_workflow_template_step(&self, step: &WorkflowTemplateStep) -> Result<i64, DbError> {
-        self.conn.execute(
-            "INSERT INTO workflow_template_steps (template_id, step_order, step_name, default_role, default_duration_days, is_required) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![
-                step.template_id,
-                step.step_order,
-                step.step_name,
-                step.default_role,
-                step.default_duration_days,
-                step.is_required
-            ]
-        )?;
-        Ok(self.conn.last_insert_rowid())
-    }
-
-    pub fn get_workflow_template_steps(&self, template_id: i64) -> Result<Vec<WorkflowTemplateStep>, DbError> {
-        let mut stmt = self.conn.prepare(
-            "SELECT id, template_id, step_order, step_name, default_role, default_duration_days, is_required \
-             FROM workflow_template_steps \
-             WHERE template_id = ?1 \
-             ORDER BY step_order ASC"
-        )?;
-        let rows = stmt.query_map(params![template_id], |row| {
-            Ok(WorkflowTemplateStep {
-                id: row.get(0)?,
-                template_id: row.get(1)?,
-                step_order: row.get(2)?,
-                step_name: row.get(3)?,
-                default_role: row.get(4)?,
-                default_duration_days: row.get(5)?,
-                is_required: row.get(6)?,
-            })
-        })?;
-        let mut res = Vec::new();
-        for r in rows {
-            res.push(r?);
-        }
-        Ok(res)
-    }
-
-
     // Task History
     pub fn add_task_history(&self, history: &TaskHistory) -> Result<i64, DbError> {
         self.conn.execute(

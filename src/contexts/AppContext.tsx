@@ -66,8 +66,8 @@ interface AppContextType {
   setSelectedBookId: (id: number | null) => void;
   selectedServiceId: number | null;
   setSelectedServiceId: (id: number | null) => void;
-  activeSettingsTab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'workflow-templates' | 'data-reset';
-  setActiveSettingsTab: (tab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'workflow-templates' | 'data-reset') => void;
+  activeSettingsTab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'data-reset';
+  setActiveSettingsTab: (tab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'data-reset') => void;
   confirmOptions: ConfirmOptions | null;
   showConfirm: (options: ConfirmOptions) => void;
   hideConfirm: () => void;

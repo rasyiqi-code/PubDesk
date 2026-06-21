@@ -27,7 +27,7 @@ export function useUIState() {
   const [confirmOptions, setConfirmOptions] = useState<ConfirmOptions | null>(null);
   const [rightPanelVisible, setRightPanelVisible] = useState(false);
   const [fileLayoutMode, setFileLayoutMode] = useState<'list' | 'grid'>('list');
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'workflow-templates' | 'data-reset'>('invoice');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'data-reset'>('invoice');
   const [selectedInsightMetric, setSelectedInsightMetric] = useState<'total' | 'lunas' | 'belum_lunas' | 'bermasalah' | 'dp' | null>(null);
 
   // Selection states

@@ -1,6 +1,6 @@
 use tauri::State;
 use crate::AppState;
-use crate::db::{Naskah, Legalitas, Task, WorkflowTemplate, WorkflowTemplateStep, TaskHistory, TaskBlocker, TaskApproval, ImportTaskPayload};
+use crate::db::{Naskah, Legalitas, Task, WorkflowTemplate, TaskHistory, TaskBlocker, TaskApproval, ImportTaskPayload};
 
 
 #[tauri::command]
@@ -99,27 +99,6 @@ pub async fn add_workflow_template(state: State<'_, AppState>, template: Workflo
     let db = state.db.lock().unwrap();
     let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
     db.add_workflow_template(&template).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn delete_workflow_template(state: State<'_, AppState>, id: i64) -> Result<(), String> {
-    let db = state.db.lock().unwrap();
-    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.delete_workflow_template(id).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn add_workflow_template_step(state: State<'_, AppState>, step: WorkflowTemplateStep) -> Result<i64, String> {
-    let db = state.db.lock().unwrap();
-    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.add_workflow_template_step(&step).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn get_workflow_template_steps(state: State<'_, AppState>, template_id: i64) -> Result<Vec<WorkflowTemplateStep>, String> {
-    let db = state.db.lock().unwrap();
-    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
-    db.get_workflow_template_steps(template_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
