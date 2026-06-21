@@ -48,10 +48,39 @@ function bytesToBase64(bytes: number[] | Uint8Array): string {
 function parseGasResponse(responseText: string): any {
   const trimmed = responseText.trim();
   if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-    const preview = trimmed.substring(0, 150);
     console.error('[GAS] Response bukan JSON:', trimmed.substring(0, 500));
+
+    // Ekstrak pesan kesalahan dari HTML GAS
+    let cleanMessage = '';
+    if (trimmed.includes('<body') || trimmed.includes('<html')) {
+      let bodyText = trimmed
+        .replace(/<head>[\s\S]*?<\/head>/gi, '')
+        .replace(/<style>[\s\S]*?<\/style>/gi, '')
+        .replace(/<script>[\s\S]*?<\/script>/gi, '');
+      
+      bodyText = bodyText.replace(/<[^>]*>/g, ' ');
+      bodyText = bodyText.replace(/\s+/g, ' ').trim();
+
+      if (bodyText.includes('Pengecualian')) {
+        const idx = bodyText.indexOf('Pengecualian');
+        cleanMessage = bodyText.substring(idx, idx + 250);
+      } else if (bodyText.includes('Exception')) {
+        const idx = bodyText.indexOf('Exception');
+        cleanMessage = bodyText.substring(idx, idx + 250);
+      } else if (bodyText.includes('Error')) {
+        const idx = bodyText.indexOf('Error');
+        cleanMessage = bodyText.substring(idx, idx + 250);
+      } else {
+        cleanMessage = bodyText.substring(0, 200);
+      }
+    }
+
+    const errorDetails = cleanMessage 
+      ? `Detail: "${cleanMessage}"`
+      : `Respons: "${trimmed.substring(0, 150)}..."`;
+
     throw new Error(
-      `Gagal terhubung ke Google Apps Script (Bukan JSON). Respons: "${preview}"`
+      `Gagal terhubung ke Google Apps Script (Bukan JSON). ${errorDetails}`
     );
   }
   return JSON.parse(trimmed);
