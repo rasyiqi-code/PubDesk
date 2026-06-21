@@ -32,7 +32,7 @@ const DashboardInvoice: React.FC = () => {
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
         
         {/* Render InvoiceInsight di sini dengan menghilangkan header-nya agar menyatu */}
-        <InvoiceInsight hideHeader padding="24px 24px 0 24px" height="auto" overflowY="visible" />
+        <InvoiceInsight hideHeader padding="0" height="auto" overflowY="visible" variant="dashboard" />
 
         {/* Quick Actions / Navigasi */}
         <div style={{ 
