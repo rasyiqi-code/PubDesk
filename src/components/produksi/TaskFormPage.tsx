@@ -24,6 +24,8 @@ const TaskFormPage: React.FC = () => {
   // Form states
   const [naskahId, setNaskahId] = useState('');
   const [stepName, setStepName] = useState('');
+  const [stepNameSelect, setStepNameSelect] = useState('');
+  const [customStepName, setCustomStepName] = useState('');
   const [picName, setPicName] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('Normal');
@@ -59,6 +61,15 @@ const TaskFormPage: React.FC = () => {
     }))
   ];
 
+  // Sinkronisasi stepName dari pilihan select/kustom
+  useEffect(() => {
+    if (stepNameSelect === 'custom') {
+      setStepName(customStepName);
+    } else {
+      setStepName(stepNameSelect);
+    }
+  }, [stepNameSelect, customStepName]);
+
   // Load task data if in edit mode
   useEffect(() => {
     if (isEdit && selectedTaskId) {
@@ -66,6 +77,16 @@ const TaskFormPage: React.FC = () => {
       if (taskToEdit) {
         setNaskahId(taskToEdit.naskah_id.toString());
         setStepName(taskToEdit.step_name);
+        
+        // Tentukan apakah tahap bawaan atau kustom
+        const standardSteps = ['Penulisan', 'Editing', 'Layouting', 'Desain Cover', 'Proofreading', 'Legalitas', 'Cetak', 'Distribusi'];
+        if (standardSteps.includes(taskToEdit.step_name)) {
+          setStepNameSelect(taskToEdit.step_name);
+        } else {
+          setStepNameSelect('custom');
+          setCustomStepName(taskToEdit.step_name);
+        }
+
         setPicName(taskToEdit.pic_name || '');
         setDueDate(taskToEdit.due_date ? taskToEdit.due_date.split('T')[0] : '');
         setPriority(taskToEdit.priority);
@@ -74,6 +95,8 @@ const TaskFormPage: React.FC = () => {
       }
     } else {
       setNaskahId('');
+      setStepNameSelect('');
+      setCustomStepName('');
       setStepName('');
       setPicName('');
       setDueDate('');
@@ -137,7 +160,7 @@ const TaskFormPage: React.FC = () => {
           <AccordionSection index={1} title="📋 Informasi Tugas" expandedSection={expandedSection} onToggle={setExpandedSection}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {!isEdit && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'start' }}>
                   <SearchableSelect
                     label="Pilih Naskah"
                     options={naskahOptions}
@@ -147,15 +170,37 @@ const TaskFormPage: React.FC = () => {
                     emptyMessage="Tidak ada naskah yang cocok"
                     fullWidth
                   />
-                  <TextField 
-                    required 
-                    type="text" 
-                    label="Nama Tahap Workflow" 
-                    placeholder="Contoh: Penulisan, Editing, Review"
-                    value={stepName} 
-                    onChange={e => setStepName(e.target.value)} 
-                    fullWidth
-                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <Select
+                      label="Tahap Workflow"
+                      value={stepNameSelect}
+                      onChange={e => setStepNameSelect(e.target.value)}
+                      options={[
+                        { value: '', label: 'Pilih Tahap Workflow...' },
+                        { value: 'Penulisan', label: 'Penulisan' },
+                        { value: 'Editing', label: 'Editing (Penyuntingan)' },
+                        { value: 'Layouting', label: 'Layouting (Tata Letak)' },
+                        { value: 'Desain Cover', label: 'Desain Cover (Sampul)' },
+                        { value: 'Proofreading', label: 'Proofreading (Koreksi)' },
+                        { value: 'Legalitas', label: 'Legalitas (ISBN/QRCBN)' },
+                        { value: 'Cetak', label: 'Cetak (Produksi Fisik)' },
+                        { value: 'Distribusi', label: 'Distribusi / Pemasaran' },
+                        { value: 'custom', label: 'Lainnya... (Tulis Kustom)' }
+                      ]}
+                      fullWidth
+                    />
+                    {stepNameSelect === 'custom' && (
+                      <TextField
+                        required
+                        type="text"
+                        label="Nama Tahap Kustom"
+                        placeholder="Masukkan nama tahap..."
+                        value={customStepName}
+                        onChange={e => setCustomStepName(e.target.value)}
+                        fullWidth
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
