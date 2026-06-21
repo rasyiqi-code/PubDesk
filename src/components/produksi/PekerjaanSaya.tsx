@@ -99,39 +99,32 @@ const PekerjaanSaya: React.FC = () => {
   };
 
   return (
-    <div className="module-content" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '28px', fontWeight: '700' }}>Pekerjaan Saya</h2>
-        <p style={{ margin: '6px 0 0 0', color: 'var(--text-secondary)', fontSize: '15px' }}>
-          Kelola dan update status tugas yang ditugaskan kepada Anda.
-        </p>
-      </div>
-
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', padding: '12px', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}>
         <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderLeft: '4px solid #3b82f6' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>{stats.aktif}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Aktif</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Aktif</div>
         </div>
         <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderLeft: '4px solid #f59e0b' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>{stats.deadlineDekat}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Deadline Dekat</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Deadline Dekat</div>
         </div>
         <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderLeft: '4px solid #ef4444' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>{stats.terlambat}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Terlambat</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Terlambat</div>
         </div>
         <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderLeft: '4px solid #f97316' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>{stats.revisi}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Menunggu Revisi</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Menunggu Revisi</div>
         </div>
         <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderLeft: '4px solid #8b5cf6' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>{stats.approval}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Menunggu Approval</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Menunggu Approval</div>
         </div>
         <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderLeft: '4px solid #22c55e' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>{stats.selesaiMingguIni}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Selesai Minggu Ini</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Selesai Minggu Ini</div>
         </div>
       </div>
 
@@ -149,9 +142,9 @@ const PekerjaanSaya: React.FC = () => {
         </FilterGroup>
       </FilterBar>
 
-      {/* Task List Table */}
-      <div style={{ flex: 1, overflowX: 'auto', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', marginTop: '16px' }}>
-        <table style={{ minWidth: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+      {/* Task Table Container */}
+      <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-card)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
             <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Judul Naskah</th>

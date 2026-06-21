@@ -49,11 +49,7 @@ const ProduksiApproval: React.FC = () => {
   const uniqueJenis = useMemo(() => Array.from(new Set(tasks.map(t => t.step_name).filter(Boolean))), [tasks]);
 
   return (
-    <div className="module-content" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '28px', fontWeight: '700' }}>Produksi Naskah &gt; Approval</h2>
-      </div>
-
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
       <FilterBar>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '200px' }}>
           <span style={{ position: 'relative', left: '12px', fontSize: '14px' }}>🔍</span>
@@ -64,12 +60,14 @@ const ProduksiApproval: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               width: '100%',
-              padding: '8px 12px 8px 36px',
+              padding: '4px 10px 4px 36px',
               borderRadius: '6px',
               border: '1px solid var(--border)',
               background: 'var(--bg-card)',
               color: 'var(--text-primary)',
-              fontSize: '13px'
+              fontSize: '12px',
+              height: '24px',
+              flexShrink: 0
             }}
           />
         </div>
@@ -94,8 +92,8 @@ const ProduksiApproval: React.FC = () => {
       </FilterBar>
 
       {/* Table Container */}
-      <div style={{ flex: 1, overflowX: 'auto', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', marginTop: '16px' }}>
-        <table style={{ minWidth: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+      <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-card)' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
             <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Judul</th>
