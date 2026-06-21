@@ -428,13 +428,14 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Divisi</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Tanggal Masuk</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Status</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>PIN Login</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', textAlign: 'left', userSelect: 'none', whiteSpace: 'nowrap', position: 'sticky', right: 0, background: 'var(--bg-panel)', zIndex: 3, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filteredMembers.length === 0 ? (
               <TableEmptyState
-                colSpan={6}
+                colSpan={7}
                 icon="👥"
                 message="Tidak ada data anggota tim"
                 description={hasActiveFilter ? 'Tidak ada hasil untuk filter yang dipilih.' : 'Belum ada anggota tim terdaftar. Klik Tambah Anggota Tim untuk menambahkan.'}
@@ -492,6 +493,38 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
                       label={l.is_active === 1 ? 'Aktif' : 'Nonaktif'}
                       variant={l.is_active === 1 ? 'success' : 'neutral'}
                     />
+                  </td>
+                  {/* Kolom status PIN — indikator apakah PIN login sudah di-setup */}
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                    {l.pin && l.pin.trim().length === 6 ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        background: 'rgba(34, 197, 94, 0.12)',
+                        color: '#16a34a'
+                      }}>
+                        🔐 Sudah Setup
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        background: 'rgba(239, 68, 68, 0.10)',
+                        color: '#dc2626'
+                      }}>
+                        ⚠️ Belum Setup
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'left', whiteSpace: 'nowrap', position: 'sticky', right: 0, background: 'var(--bg-card)', zIndex: 2, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)' }}>
                       <button onClick={(e) => handleEdit(l, e)} style={{background:'none',border:'none',cursor:'pointer',padding:'2px',fontSize:'16px',lineHeight:1}} title="Edit">✏️</button>
