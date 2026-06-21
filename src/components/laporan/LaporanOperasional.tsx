@@ -6,7 +6,7 @@ import { StatCard } from '../../ui/molecules/StatCard';
 import { Button } from '../../ui/atoms/Button';
 import { Badge } from '../../ui/atoms/Badge';
 import { FilterBar, FilterGroup, FilterChip } from '../../ui/molecules/FilterBar';
-import { tableStyles } from '../../ui/molecules/DataTable';
+import { DataTablePage, tableStyles } from '../../ui/molecules/DataTable';
 
 interface Legalitas {
   id: number;
@@ -87,56 +87,34 @@ const LaporanOperasional: React.FC = () => {
   };
 
   return (
-    <div className="customer-list-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)' }}>
-      <FilterBar>
-        <FilterGroup label="🔍 Filter:">
-          {/* Dropdown Kategori / Judul Filter */}
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <FilterChip
-              label={`${
-                activeFilterType === 'periode' ? '📅 Periode' :
-                activeFilterType === 'pic' ? '👤 PIC' :
-                activeFilterType === 'penerbit' ? '🏢 Penerbit' :
-                '📋 Status'
-              } ▾`}
-              active={true}
-              onClick={() => {}}
-            />
-            <select
-              value={activeFilterType}
-              onChange={(e) => setActiveFilterType(e.target.value as any)}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                cursor: 'pointer',
-                appearance: 'none',
-              }}
-            >
-              <option value="periode">📅 Periode</option>
-              <option value="pic">👤 PIC</option>
-              <option value="penerbit">🏢 Penerbit</option>
-              <option value="status">📋 Status</option>
-            </select>
+    <DataTablePage
+      filterBar={
+        <>
+          {/* StatCards Header - Berlatar Belakang var(--bg-card) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', padding: '12px', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+            <StatCard label="Naskah Aktif" value={activeTasks.length} color="#3b82f6" />
+            <StatCard label="Tugas Selesai" value={finishedTasks.length} color="#22c55e" />
+            <StatCard label="Tugas Overdue" value={overdueTasks.length} color="#ef4444" />
+            <StatCard label="Legalitas Diproses" value={prosesLegalitas.length} color="#a855f7" />
           </div>
 
-          <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 'bold' }}>:</span>
-
-          {/* Dropdown Nilai Filter (Badge yang berubah sesuai opsi yang dipilih) */}
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            {activeFilterType === 'periode' && (
-              <>
+          <FilterBar>
+            <FilterGroup label="🔍 Filter:">
+              {/* Dropdown Kategori / Judul Filter */}
+              <div style={{ position: 'relative', display: 'inline-block' }}>
                 <FilterChip
-                  label={`${periode === 'Semua' ? 'Semua Waktu' : periode} ▾`}
-                  active={periode !== 'Semua'}
+                  label={`${
+                    activeFilterType === 'periode' ? '📅 Periode' :
+                    activeFilterType === 'pic' ? '👤 PIC' :
+                    activeFilterType === 'penerbit' ? '🏢 Penerbit' :
+                    '📋 Status'
+                  } ▾`}
+                  active={true}
                   onClick={() => {}}
                 />
                 <select
-                  value={periode}
-                  onChange={(e) => setPeriode(e.target.value)}
+                  value={activeFilterType}
+                  onChange={(e) => setActiveFilterType(e.target.value as any)}
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -148,122 +126,146 @@ const LaporanOperasional: React.FC = () => {
                     appearance: 'none',
                   }}
                 >
-                  <option value="Semua">Semua Waktu</option>
-                  <option value="Bulan Ini">Bulan Ini</option>
-                  <option value="Tahun Ini">Tahun Ini</option>
+                  <option value="periode">📅 Periode</option>
+                  <option value="pic">👤 PIC</option>
+                  <option value="penerbit">🏢 Penerbit</option>
+                  <option value="status">📋 Status</option>
                 </select>
-              </>
-            )}
+              </div>
 
-            {activeFilterType === 'pic' && (
-              <>
-                <FilterChip
-                  label={`${filterPic === '' ? 'Semua PIC' : filterPic} ▾`}
-                  active={filterPic !== ''}
-                  onClick={() => {}}
-                />
-                <select
-                  value={filterPic}
-                  onChange={(e) => setFilterPic(e.target.value)}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0,
-                    cursor: 'pointer',
-                    appearance: 'none',
-                  }}
-                >
-                  <option value="">Semua PIC</option>
-                  {uniquePics.map(pic => (
-                    <option key={pic as string} value={pic as string}>{pic as string}</option>
-                  ))}
-                </select>
-              </>
-            )}
+              <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 'bold' }}>:</span>
 
-            {activeFilterType === 'penerbit' && (
-              <>
-                <FilterChip
-                  label={`${filterPenerbit === '' ? 'Semua Penerbit' : filterPenerbit === 'penerbit_a' ? 'Penerbit A' : filterPenerbit} ▾`}
-                  active={filterPenerbit !== ''}
-                  onClick={() => {}}
-                />
-                <select
-                  value={filterPenerbit}
-                  onChange={(e) => setFilterPenerbit(e.target.value)}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0,
-                    cursor: 'pointer',
-                    appearance: 'none',
-                  }}
-                >
-                  <option value="">Semua Penerbit</option>
-                  <option value="penerbit_a">Penerbit A</option>
-                </select>
-              </>
-            )}
+              {/* Dropdown Nilai Filter (Badge yang berubah sesuai opsi yang dipilih) */}
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                {activeFilterType === 'periode' && (
+                  <>
+                    <FilterChip
+                      label={`${periode === 'Semua' ? 'Semua Waktu' : periode} ▾`}
+                      active={periode !== 'Semua'}
+                      onClick={() => {}}
+                    />
+                    <select
+                      value={periode}
+                      onChange={(e) => setPeriode(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        appearance: 'none',
+                      }}
+                    >
+                      <option value="Semua">Semua Waktu</option>
+                      <option value="Bulan Ini">Bulan Ini</option>
+                      <option value="Tahun Ini">Tahun Ini</option>
+                    </select>
+                  </>
+                )}
 
-            {activeFilterType === 'status' && (
-              <>
-                <FilterChip
-                  label={`${filterStatus === '' ? 'Semua Status' : filterStatus} ▾`}
-                  active={filterStatus !== ''}
-                  onClick={() => {}}
-                />
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: 0,
-                    cursor: 'pointer',
-                    appearance: 'none',
-                  }}
-                >
-                  <option value="">Semua Status</option>
-                  {uniqueStatuses.map(s => (
-                    <option key={s as string} value={s as string}>{s as string}</option>
-                  ))}
-                </select>
-              </>
-            )}
-          </div>
-        </FilterGroup>
+                {activeFilterType === 'pic' && (
+                  <>
+                    <FilterChip
+                      label={`${filterPic === '' ? 'Semua PIC' : filterPic} ▾`}
+                      active={filterPic !== ''}
+                      onClick={() => {}}
+                    />
+                    <select
+                      value={filterPic}
+                      onChange={(e) => setFilterPic(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        appearance: 'none',
+                      }}
+                    >
+                      <option value="">Semua PIC</option>
+                      {uniquePics.map(pic => (
+                        <option key={pic as string} value={pic as string}>{pic as string}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
 
-        <div style={{ flex: 1 }}></div>
+                {activeFilterType === 'penerbit' && (
+                  <>
+                    <FilterChip
+                      label={`${filterPenerbit === '' ? 'Semua Penerbit' : filterPenerbit === 'penerbit_a' ? 'Penerbit A' : filterPenerbit} ▾`}
+                      active={filterPenerbit !== ''}
+                      onClick={() => {}}
+                    />
+                    <select
+                      value={filterPenerbit}
+                      onChange={(e) => setFilterPenerbit(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        appearance: 'none',
+                      }}
+                    >
+                      <option value="">Semua Penerbit</option>
+                      <option value="penerbit_a">Penerbit A</option>
+                    </select>
+                  </>
+                )}
 
-        <Button onClick={handleExport} variant="primary" size="sm" icon={<span>📥</span>}>
-          Export Excel
-        </Button>
-      </FilterBar>
+                {activeFilterType === 'status' && (
+                  <>
+                    <FilterChip
+                      label={`${filterStatus === '' ? 'Semua Status' : filterStatus} ▾`}
+                      active={filterStatus !== ''}
+                      onClick={() => {}}
+                    />
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        appearance: 'none',
+                      }}
+                    >
+                      <option value="">Semua Status</option>
+                      {uniqueStatuses.map(s => (
+                        <option key={s as string} value={s as string}>{s as string}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
+              </div>
+            </FilterGroup>
 
-      <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0 0 0', background: 'var(--bg-dark)' }}>
+            <div style={{ flex: 1 }}></div>
+
+            <Button onClick={handleExport} variant="primary" size="sm" icon={<span>📥</span>}>
+              Export Excel
+            </Button>
+          </FilterBar>
+        </>
+      }
+    >
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px 0 0 0', background: 'var(--bg-dark)' }}>
         {isLoading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat laporan...</div>
         ) : (
           <>
-            {/* Metric Cards Terstandar dengan padding kiri-kanan */}
-            <div style={{ padding: '0 24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                <StatCard label="Naskah Aktif" value={activeTasks.length} color="#3b82f6" />
-                <StatCard label="Tugas Selesai" value={finishedTasks.length} color="#22c55e" />
-                <StatCard label="Tugas Overdue" value={overdueTasks.length} color="#ef4444" />
-                <StatCard label="Legalitas Diproses" value={prosesLegalitas.length} color="#a855f7" />
-              </div>
-            </div>
-
             {/* Beban Kerja Tim Terstandar dengan padding kiri-kanan */}
             <div style={{ padding: '0 24px' }}>
               <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', padding: '20px' }}>
@@ -333,7 +335,7 @@ const LaporanOperasional: React.FC = () => {
           </>
         )}
       </div>
-    </div>
+    </DataTablePage>
   );
 };
 
