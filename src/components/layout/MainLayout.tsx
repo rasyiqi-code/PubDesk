@@ -50,6 +50,7 @@ const MainLayout = () => {
   const [rightPanelWidth, setRightPanelWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
+  const [isSessionRunning, setIsSessionRunning] = useState<boolean | null>(null);
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
@@ -173,12 +174,56 @@ const MainLayout = () => {
         activeModule={appState.activeModule}
         searchQuery={fileSearchQuery}
         onSearchChange={setFileSearchQuery}
+        onSessionChange={setIsSessionRunning}
       />
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: 'calc(100vh - 48px)' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: 'calc(100vh - 48px)', position: 'relative' }}>
         {/* Sidebar with collapse */}
         <div style={{ width: sidebarCollapsed ? '60px' : '260px', flexShrink: 0, position: 'relative', height: '100%', transition: 'width 0.3s ease' }}>
           <Sidebar collapsed={sidebarCollapsed} />
         </div>
+
+        {/* Blocker Overlay */}
+        {isSessionRunning === false && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            color: '#fff',
+            padding: '24px',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              background: 'var(--bg-panel, #1e293b)',
+              border: '1px solid var(--border, rgba(255, 255, 255, 0.1))',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '420px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              <span style={{ fontSize: '48px' }}>🔒</span>
+              <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, color: 'var(--text-primary, #f8fafc)' }}>
+                Sesi Kerja Belum Dimulai
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', margin: 0, lineHeight: '1.6' }}>
+                Silakan klik tombol <strong style={{ color: 'var(--accent, #3b82f6)' }}>"Mulai Kerja"</strong> di bagian kanan atas layar terlebih dahulu untuk menggunakan fitur aplikasi.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="main-content">
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden', height: '100%' }}>

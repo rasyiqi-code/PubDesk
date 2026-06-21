@@ -94,9 +94,12 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
           const now = Date.now();
           const elapsed = Math.max(0, Math.floor((now - startTime) / 1000));
           setTimerSeconds(elapsed);
+        } else {
+          onSessionChange?.(false);
         }
       } catch (err) {
         console.error('Gagal memuat sesi kerja aktif:', err);
+        onSessionChange?.(false);
       }
     };
     fetchActiveSession();
