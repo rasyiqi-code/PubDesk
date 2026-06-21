@@ -1,7 +1,5 @@
 import React from 'react';
-import { TaskHistory } from '../../types/workflow.types';
 import { useWorkflowContext } from '../../contexts/WorkflowContext';
-import { useAppContext } from '../../contexts/AppContext';
 
 const ProduksiTimeline: React.FC = () => {
   const { taskHistories, isLoading } = useWorkflowContext();

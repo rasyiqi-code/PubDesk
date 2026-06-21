@@ -96,16 +96,16 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                       setActiveModule('kontak');
                     }
                   } else if (item.id === 'produksi-parent') {
-            const isAnySubActive = [
-              'produksi-board',
-              'produksi-list',
-              'produksi-kendala',
-              'produksi-approval'
-            ].includes(appState.activeModule);
-            
-            if (!isAnySubActive) {
-              setActiveModule('produksi-board');
-            }
+                    const isAnySubActive = [
+                      'produksi-board',
+                      'produksi-list',
+                      'produksi-kendala',
+                      'produksi-approval'
+                    ].includes(appState.activeModule);
+                    
+                    if (!isAnySubActive) {
+                      setActiveModule('produksi-board');
+                    }
                   } else {
                     setActiveModule(item.id);
                     if (item.id === 'files') {

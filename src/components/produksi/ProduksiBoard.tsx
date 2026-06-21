@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Task } from '../../types/workflow.types';
 import { useWorkflowContext } from '../../contexts/WorkflowContext';
 import { useAppContext } from '../../contexts/AppContext';
 

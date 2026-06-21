@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task, TaskHistory } from '../../types/workflow.types';
+import { Task } from '../../types/workflow.types';
 import { useAppContext } from '../../contexts/AppContext';
 import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useWorkflowContext } from '../../contexts/WorkflowContext';
@@ -13,7 +13,7 @@ interface TaskModalProps {
 const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSuccess }) => {
   const { showToast } = useAppContext();
   const { tim } = useDataMasterContext();
-  const { addTask, updateTask, loadTaskHistories } = useWorkflowContext();
+  const { addTask, updateTask } = useWorkflowContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = !!task;
   const [useManualPic, setUseManualPic] = useState(false);
@@ -126,7 +126,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onSuccess }) => {
               >
                 <option value="">Pilih PIC dari Tim...</option>
                 {tim.map(member => (
-                  <option key={member.id} value={member.nama}>{member.nama}</option>
+                  <option key={member.id} value={member.name}>{member.name}</option>
                 ))}
               </select>
             )}

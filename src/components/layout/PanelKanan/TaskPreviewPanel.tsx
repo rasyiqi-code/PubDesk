@@ -4,8 +4,7 @@ import UpdateStatusModal from '../../produksi/UpdateStatusModal';
 import TaskModal from '../../produksi/TaskModal';
 
 const TaskPreviewPanel: React.FC = () => {
-  const { tasks, selectedTaskId, setSelectedTaskId, updateTaskStatus } = useWorkflowContext();
-  const { showToast = () => {}; // Placeholder
+  const { tasks, selectedTaskId } = useWorkflowContext();
   const [showUpdateModal, setShowUpdateModal] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
 

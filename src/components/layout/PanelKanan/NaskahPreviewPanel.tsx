@@ -66,8 +66,8 @@ const SectionCard = ({ title, children }: { title: string; children: React.React
 
 const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => {
   const { naskah, penulis, penerbit } = useDataMasterContext();
-  const { tasks, setSelectedTaskId, setRightPanelVisible } = useWorkflowContext();
-  const { setActiveModule } = useAppContext();
+  const { tasks, setSelectedTaskId } = useWorkflowContext();
+  const { setActiveModule, setRightPanelVisible } = useAppContext();
 
   const naskahData = useMemo(() => {
     if (!naskahId) return null;
@@ -430,7 +430,7 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
         {/* Tasks Produksi */}
         <SectionCard title="🏭 Tasks Produksi">
           {(() => {
-            const relatedTasks = tasks.filter(t => t.naskah_id === naskahData.id);
+            const relatedTasks = tasks.filter((t) => t.naskah_id === naskahData.id);
             if (relatedTasks.length === 0) {
               return (
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', padding: '10px 0' }}>
@@ -441,18 +441,24 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
 
             const getTaskStatusColor = (status: string) => {
               switch (status) {
-                case 'Selesai': return { bg: '#dcfce7', text: '#166534' };
-                case 'Proses': return { bg: '#dbeafe', text: '#1e40af' };
-                case 'Menunggu Revisi': return { bg: '#fef3c7', text: '#92400e' };
-                case 'Menunggu Approval': return { bg: '#ede9fe', text: '#5b21b6' };
-                case 'Terlambat': return { bg: '#fee2e2', text: '#991b1b' };
-                default: return { bg: '#f1f5f9', text: '#475569' };
+                case 'Selesai':
+                  return { bg: '#dcfce7', text: '#166534' };
+                case 'Proses':
+                  return { bg: '#dbeafe', text: '#1e40af' };
+                case 'Menunggu Revisi':
+                  return { bg: '#fef3c7', text: '#92400e' };
+                case 'Menunggu Approval':
+                  return { bg: '#ede9fe', text: '#5b21b6' };
+                case 'Terlambat':
+                  return { bg: '#fee2e2', text: '#991b1b' };
+                default:
+                  return { bg: '#f1f5f9', text: '#475569' };
               }
             };
 
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }>
-                {relatedTasks.map(task => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {relatedTasks.map((task) => {
                   const statusStyle = getTaskStatusColor(task.status);
                   return (
                     <div
@@ -463,10 +469,14 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
                         border: '1px solid var(--border)',
                         borderRadius: '8px',
                         cursor: 'pointer',
-                        transition: 'background 0.2s ease'
+                        transition: 'background 0.2s ease',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-card)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = 'var(--bg-card)')
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = 'var(--bg-surface)')
+                      }
                       onClick={() => {
                         if (task.id) {
                           setSelectedTaskId(task.id);
@@ -475,18 +485,34 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
                         }
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <div>
-                          <div style={{ fontWeight: '600', fontSize: '13px' }}>{task.step_name}</div>
+                          <div style={{ fontWeight: '600', fontSize: '13px' }}>
+                            {task.step_name}
+                          </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                             {task.pic_name || '—'}
                             {task.pic_name && task.due_date && ' · '}
-                            {task.due_date ? new Date(task.due_date).toLocaleDateString('id-ID') : '—'}
+                            {task.due_date
+                              ? new Date(task.due_date).toLocaleDateString('id-ID')
+                              : '—'}
                           </div>
                         </div>
-                        <span style={{
-                          padding: '4px 10px', borderRadius: '12px', background: statusStyle.bg, color: statusStyle.text, fontSize: '11px', fontWeight: '600'
-                        }
+                        <span
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            background: statusStyle.bg,
+                            color: statusStyle.text,
+                            fontSize: '11px',
+                            fontWeight: '600',
+                          }}
                         >
                           {task.status}
                         </span>
