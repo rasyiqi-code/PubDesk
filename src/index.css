@@ -52,6 +52,7 @@ body {
 
 .main-layout {
   display: flex;
+  width: 100vw;
   height: 100vh;
   background: var(--bg-dark);
   overflow: hidden;
@@ -81,6 +82,7 @@ body {
 /* Top Bar Container */
 .top-bar-container {
   height: 48px;
+  width: 100%;
   display: flex;
   user-select: none;
   border-bottom: 1px solid var(--border);
@@ -820,4 +822,32 @@ body {
 
 .marquee-container:hover .marquee-content {
   animation-play-state: paused;
+}
+
+.top-bar-action-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Responsive Top Bar */
+@media (max-width: 950px) {
+  .top-bar-gnome-pathbar {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1050px) {
+  .top-bar-btn-text {
+    display: none !important;
+  }
+  .top-bar-main-area {
+    padding: 0 8px;
+    gap: 8px;
+  }
+  .top-bar-action-container {
+    gap: 8px;
+  }
 }
