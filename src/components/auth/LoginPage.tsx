@@ -30,6 +30,20 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loggingIn, setLoggingIn] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [splashLogo, setSplashLogo] = useState('📚');
+  const [logoType, setLogoType] = useState<'emoji' | 'image'>('emoji');
+
+  useEffect(() => {
+    const savedLogo = localStorage.getItem('splash_logo');
+    if (savedLogo) {
+      setSplashLogo(savedLogo);
+      if (savedLogo.startsWith('data:image')) {
+        setLogoType('image');
+      } else {
+        setLogoType('emoji');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -72,7 +86,22 @@ const LoginPage: React.FC = () => {
     }}>
       {/* Header */}
       <div style={{ marginBottom: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏭</div>
+        <div style={{
+          width: '120px',
+          height: '120px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: logoType === 'emoji' ? '64px' : 'unset',
+          marginBottom: '12px',
+          overflow: 'hidden'
+        }}>
+          {logoType === 'emoji' ? (
+            splashLogo
+          ) : (
+            <img src={splashLogo} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          )}
+        </div>
         <h1 style={{
           fontSize: '24px',
           fontWeight: '700',
