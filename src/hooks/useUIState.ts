@@ -91,7 +91,9 @@ export function useUIState() {
     setSelectedNaskahId(null);
     setSelectedTimId(null);
     setSelectedLegalitasId(null);
-    setSelectedTaskId(null);
+    if (module !== 'edit-tugas') {
+      setSelectedTaskId(null);
+    }
     setRightPanelVisible(false);
 
     if (!isHistoryNav) {
