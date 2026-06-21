@@ -214,6 +214,7 @@ const ProduksiList: React.FC<{ searchQuery?: string }> = ({ searchQuery = '' }) 
     }
   };
 
+  const [filterType, setFilterType] = useState<'pic' | 'status'>('pic');
   const [filterPic, setFilterPic] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
@@ -240,21 +241,42 @@ const ProduksiList: React.FC<{ searchQuery?: string }> = ({ searchQuery = '' }) 
             style={{ display: 'none' }}
             onChange={handleImportExcel}
           />
-          <FilterGroup label="PJ:">
-            <FilterChip label="Semua" active={filterPic === ''} onClick={() => setFilterPic('')} />
-            {uniquePics.map(pic => (
-              <FilterChip key={pic as string} label={pic as string} active={filterPic === pic} onClick={() => setFilterPic(pic as string)} />
-            ))}
+          <FilterGroup label="🔍 FILTER:">
+            <FilterChip 
+              label="Penanggung Jawab (PJ)" 
+              active={filterType === 'pic'} 
+              onClick={() => { setFilterType('pic'); setFilterPic(''); setFilterStatus(''); }} 
+            />
+            <FilterChip 
+              label="Status" 
+              active={filterType === 'status'} 
+              onClick={() => { setFilterType('status'); setFilterPic(''); setFilterStatus(''); }} 
+            />
           </FilterGroup>
 
-          <FilterDivider />
+          {filterType === 'pic' && uniquePics.length > 0 && (
+            <>
+              <FilterDivider />
+              <FilterGroup label="👤 PJ:">
+                <FilterChip label="Semua" active={filterPic === ''} onClick={() => setFilterPic('')} />
+                {uniquePics.map(pic => (
+                  <FilterChip key={pic as string} label={pic as string} active={filterPic === pic} onClick={() => setFilterPic(pic as string)} />
+                ))}
+              </FilterGroup>
+            </>
+          )}
 
-          <FilterGroup label="Status:">
-            <FilterChip label="Semua" active={filterStatus === ''} onClick={() => setFilterStatus('')} />
-            {uniqueStatuses.map(status => (
-              <FilterChip key={status as string} label={status as string} active={filterStatus === status} onClick={() => setFilterStatus(status as string)} />
-            ))}
-          </FilterGroup>
+          {filterType === 'status' && uniqueStatuses.length > 0 && (
+            <>
+              <FilterDivider />
+              <FilterGroup label="📋 STATUS:">
+                <FilterChip label="Semua" active={filterStatus === ''} onClick={() => setFilterStatus('')} />
+                {uniqueStatuses.map(status => (
+                  <FilterChip key={status as string} label={status as string} active={filterStatus === status} onClick={() => setFilterStatus(status as string)} />
+                ))}
+              </FilterGroup>
+            </>
+          )}
 
           <FilterDivider />
 
