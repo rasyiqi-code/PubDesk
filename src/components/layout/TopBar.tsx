@@ -7,6 +7,7 @@ import { parseModifiedBy } from '../../utils/gdrive';
 import { WindowControls } from './WindowControls';
 import { invoke } from '@tauri-apps/api/core';
 import { Modal } from '../../ui/molecules/Modal';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   MODULE_LABELS,
   SEARCHABLE_MODULES,
@@ -22,9 +23,10 @@ interface TopBarProps {
   activeModule?: string;
   searchQuery?: string;
   onSearchChange?: (q: string) => void;
+  onSessionChange?: (isRunning: boolean) => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, activeModule, searchQuery = '', onSearchChange }) => {
+const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, activeModule, searchQuery = '', onSearchChange, onSessionChange }) => {
   const {
     rightPanelVisible,
     setRightPanelVisible,
@@ -65,6 +67,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
   } = useDataMasterContext();
   
   const { tasks, loadTasks } = useWorkflowContext();
+  const { currentUser, logout } = useAuth();
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -86,6 +89,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
         if (session) {
           setActiveSession(session);
           setIsTimerRunning(true);
+          onSessionChange?.(true);
           const startTime = new Date(session.start_time).getTime();
           const now = Date.now();
           const elapsed = Math.max(0, Math.floor((now - startTime) / 1000));
@@ -96,6 +100,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
       }
     };
     fetchActiveSession();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update timer seconds every second if running
@@ -139,6 +144,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
       };
       setActiveSession(newSession);
       setIsTimerRunning(true);
+      onSessionChange?.(true);
       showToast('Sesi jam kerja dimulai!', 'success');
     } catch (err: any) {
       console.error(err);
@@ -168,6 +174,7 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
       setIsTimerRunning(false);
       setActiveSession(null);
       setShowNoteModal(false);
+      onSessionChange?.(false);
       showToast('Sesi jam kerja telah disimpan!', 'success');
     } catch (err: any) {
       console.error(err);
@@ -746,6 +753,53 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
             </div>
           </div>
           <div className="top-bar-gnome-separator" style={{ margin: '0 4px' }} />
+
+          {/* Info user + tombol logout */}
+          {currentUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '4px' }}>
+              <div style={{
+                width: '22px', height: '22px', borderRadius: '50%',
+                background: '#3b82f6',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '9px', fontWeight: '700', color: '#fff', flexShrink: 0,
+              }}>
+                {currentUser.tim_name.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? '').join('')}
+              </div>
+              <button
+                onClick={logout}
+                title="Logout / Ganti User"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  borderRadius: '0px',
+                  padding: '2px 8px',
+                  fontSize: '10px',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#ef4444';
+                  e.currentTarget.style.borderColor = '#ef4444';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Logout
+              </button>
+            </div>
+          )}
+
           <WindowControls />
         </div>
       </div>
