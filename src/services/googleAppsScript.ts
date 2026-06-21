@@ -61,10 +61,18 @@ export const googleAppsScriptService = {
    * Mendapatkan konfigurasi URL dan Token dari localStorage
    */
   getSettings() {
-    // Selalu paksa pakai DEFAULT_URL (deployment terbaru), simpan ke localStorage
-    localStorage.setItem(STORAGE_KEYS.URL, DEFAULT_URL);
+    const savedUrl = localStorage.getItem(STORAGE_KEYS.URL);
+    // Jika URL kosong atau merupakan URL default lama, reset ke default terbaru
+    const url = (!savedUrl || (savedUrl !== DEFAULT_URL && savedUrl.includes('AKfycbxiHG')))
+      ? DEFAULT_URL
+      : savedUrl.trim();
+
+    // Simpan URL terbaru jika terjadi auto-reset
+    if (url === DEFAULT_URL && savedUrl !== DEFAULT_URL) {
+      localStorage.setItem(STORAGE_KEYS.URL, DEFAULT_URL);
+    }
     const token = localStorage.getItem(STORAGE_KEYS.TOKEN) || DEFAULT_TOKEN;
-    return { url: DEFAULT_URL, token };
+    return { url, token };
   },
 
   /**
