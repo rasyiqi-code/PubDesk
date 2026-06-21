@@ -535,67 +535,66 @@ const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, sidebarCollapsed, acti
             )}
           </div>
 
-          <button 
-            className="top-bar-btn-close-path" 
-            onClick={handleRefresh}
-            disabled={refreshing}
-            title={refreshing ? "Sedang menyegarkan data..." : "Segarkan data aplikasi"}
-            aria-label="Refresh data"
-            style={{
-              color: refreshing ? 'var(--accent)' : 'var(--text-secondary)',
-              cursor: refreshing ? 'not-allowed' : 'pointer',
-              marginRight: '2px'
-            }}
-          >
-            <svg 
-              width="14" 
-              height="14" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              style={{
-                animation: refreshing ? 'spin 1s linear infinite' : 'none'
-              }}
-            >
-              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.72 2.78L21 8" />
-              <polyline points="21 3 21 8 16 8" />
-            </svg>
-          </button>
-
-          <button 
-            className="top-bar-btn-close-path" 
-            onClick={handleSyncAllData}
-            disabled={syncing}
-            title={syncing ? "Sedang mensinkronkan data ke GAS..." : "Sinkronkan semua data ke Google Sheets"}
-            aria-label="Sync data to Google Sheets"
-            style={{
-              color: syncing ? 'var(--accent)' : 'var(--text-secondary)',
-              cursor: syncing ? 'not-allowed' : 'pointer'
-            }}
-          >
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              style={{
-                animation: syncing ? 'spin 1.5s linear infinite' : 'none'
-              }}
-            >
-              <path d="M12 13V20" />
-              <path d="m9 16 3-3 3 3" />
-              <path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42-1.89-1.78-3.5-4-3.5a5.5 5.5 0 0 0-5.38 4.63A4 4 0 0 0 7.5 20h10" />
-            </svg>
-          </button>
-
           <div className="top-bar-gnome-actions">
+            <button 
+              className="top-bar-btn" 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title={refreshing ? "Sedang menyegarkan data..." : "Segarkan data aplikasi"}
+              aria-label="Refresh data"
+              style={{
+                color: refreshing ? 'var(--accent)' : 'var(--text-secondary)',
+                cursor: refreshing ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <svg 
+                width="14" 
+                height="14" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                style={{
+                  animation: refreshing ? 'spin 1s linear infinite' : 'none'
+                }}
+              >
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.72 2.78L21 8" />
+                <polyline points="21 3 21 8 16 8" />
+              </svg>
+            </button>
+
+            <button 
+              className="top-bar-btn" 
+              onClick={handleSyncAllData}
+              disabled={syncing}
+              title={syncing ? "Sedang mensinkronkan data ke GAS..." : "Sinkronkan semua data ke Google Sheets"}
+              aria-label="Sync data to Google Sheets"
+              style={{
+                color: syncing ? 'var(--accent)' : 'var(--text-secondary)',
+                cursor: syncing ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <svg 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                style={{
+                  animation: syncing ? 'spin 1.5s linear infinite' : 'none'
+                }}
+              >
+                <path d="M12 13V20" />
+                <path d="m9 16 3-3 3 3" />
+                <path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42-1.89-1.78-3.5-4-3.5a5.5 5.5 0 0 0-5.38 4.63A4 4 0 0 0 7.5 20h10" />
+              </svg>
+            </button>
+
             <button
               className={`top-bar-btn ${rightPanelVisible ? 'active' : ''}`}
               onClick={() => setRightPanelVisible(!rightPanelVisible)}
