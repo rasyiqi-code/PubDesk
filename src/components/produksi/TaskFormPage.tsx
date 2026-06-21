@@ -23,14 +23,13 @@ const TaskFormPage: React.FC = () => {
 
   // Form states
   const [naskahId, setNaskahId] = useState('');
-  const [stepName, setStepName] = useState('');
-  const [stepNameSelect, setStepNameSelect] = useState('');
-  const [customStepName, setCustomStepName] = useState('');
   const [picName, setPicName] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('Normal');
   const [status, setStatus] = useState('Belum Mulai');
   const [notes, setNotes] = useState('');
+  const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
+  const [customStepsInput, setCustomStepsInput] = useState('');
 
   const statusOptions = [
     { value: 'Belum Mulai', label: 'Belum Mulai' },
@@ -61,32 +60,12 @@ const TaskFormPage: React.FC = () => {
     }))
   ];
 
-  // Sinkronisasi stepName dari pilihan select/kustom
-  useEffect(() => {
-    if (stepNameSelect === 'custom') {
-      setStepName(customStepName);
-    } else {
-      setStepName(stepNameSelect);
-    }
-  }, [stepNameSelect, customStepName]);
-
   // Load task data if in edit mode
   useEffect(() => {
     if (isEdit && selectedTaskId) {
       const taskToEdit = tasks.find(t => t.id === selectedTaskId);
       if (taskToEdit) {
         setNaskahId(taskToEdit.naskah_id.toString());
-        setStepName(taskToEdit.step_name);
-        
-        // Tentukan apakah tahap bawaan atau kustom
-        const standardSteps = ['Penulisan', 'Editing', 'Layouting', 'Desain Cover', 'Proofreading', 'Legalitas', 'Cetak', 'Distribusi'];
-        if (standardSteps.includes(taskToEdit.step_name)) {
-          setStepNameSelect(taskToEdit.step_name);
-        } else {
-          setStepNameSelect('custom');
-          setCustomStepName(taskToEdit.step_name);
-        }
-
         setPicName(taskToEdit.pic_name || '');
         setDueDate(taskToEdit.due_date ? taskToEdit.due_date.split('T')[0] : '');
         setPriority(taskToEdit.priority);
@@ -95,57 +74,83 @@ const TaskFormPage: React.FC = () => {
       }
     } else {
       setNaskahId('');
-      setStepNameSelect('');
-      setCustomStepName('');
-      setStepName('');
       setPicName('');
       setDueDate('');
       setPriority('Normal');
       setStatus('Belum Mulai');
       setNotes('');
+      setSelectedSteps([]);
+      setCustomStepsInput('');
     }
   }, [isEdit, selectedTaskId, tasks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEdit && (!naskahId.trim() || !stepName.trim())) {
-      showToast('Naskah dan Nama Tahap tidak boleh kosong!', 'error');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      if (isEdit && selectedTaskId) {
-        const taskToEdit = tasks.find(t => t.id === selectedTaskId);
-        if (taskToEdit) {
-          const updatedTask: Task = {
-            ...taskToEdit,
-            pic_name: picName,
-            due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
-            priority,
-            status,
-            notes
-          };
-          await updateTask(updatedTask);
-          showToast('Tugas berhasil diupdate', 'success');
-        }
-      } else {
-        const newTask = {
-          naskah_id: Number(naskahId),
-          step_name: stepName,
-          status: 'Belum Mulai',
-          priority: priority,
-          due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
-          notes: notes
-        };
-        await addTask(newTask);
-        showToast('Tugas berhasil ditambahkan', 'success');
+    if (!isEdit) {
+      if (!naskahId.trim()) {
+        showToast('Naskah tidak boleh kosong!', 'error');
+        return;
       }
-      setActiveModule('produksi-list');
-    } catch (err) {
-      console.error(err);
-      showToast('Terjadi kesalahan', 'error');
-    } finally {
-      setIsSubmitting(false);
+      const customSteps = customStepsInput
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      const allSteps = [...selectedSteps, ...customSteps];
+
+      if (allSteps.length === 0) {
+        showToast('Pilih minimal satu Tahap Workflow!', 'error');
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        let successCount = 0;
+        // Loop secara serial berurutan agar database SQLite tidak race condition / locked
+        for (const step of allSteps) {
+          const newTask = {
+            naskah_id: Number(naskahId),
+            step_name: step,
+            status: 'Belum Mulai',
+            priority: priority,
+            due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
+            notes: notes
+          };
+          await addTask(newTask);
+          successCount++;
+        }
+        showToast(`${successCount} tugas berhasil ditambahkan`, 'success');
+        setActiveModule('produksi-list');
+      } catch (err) {
+        console.error(err);
+        showToast('Terjadi kesalahan saat menambahkan tugas', 'error');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      if (selectedTaskId) {
+        setIsSubmitting(true);
+        try {
+          const taskToEdit = tasks.find(t => t.id === selectedTaskId);
+          if (taskToEdit) {
+            const updatedTask: Task = {
+              ...taskToEdit,
+              pic_name: picName,
+              due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
+              priority,
+              status,
+              notes
+            };
+            await updateTask(updatedTask);
+            showToast('Tugas berhasil diupdate', 'success');
+            setActiveModule('produksi-list');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('Terjadi kesalahan saat mengupdate tugas', 'error');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
     }
   };
 
@@ -190,7 +195,7 @@ const TaskFormPage: React.FC = () => {
           <AccordionSection index={1} title="📋 Informasi Tugas" expandedSection={expandedSection} onToggle={setExpandedSection}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {!isEdit && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', alignItems: 'start' }}>
                   <SearchableSelect
                     label="Pilih Naskah"
                     options={naskahOptions}
@@ -200,13 +205,20 @@ const TaskFormPage: React.FC = () => {
                     emptyMessage="Tidak ada naskah yang cocok"
                     fullWidth
                   />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <Select
-                      label="Tahap Workflow"
-                      value={stepNameSelect}
-                      onChange={e => setStepNameSelect(e.target.value)}
-                      options={[
-                        { value: '', label: 'Pilih Tahap Workflow...' },
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                      Tahap Workflow (Pilih beberapa)
+                    </label>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(2, 1fr)', 
+                      gap: '8px', 
+                      background: 'var(--bg-panel)', 
+                      border: '1px solid var(--border)', 
+                      borderRadius: '8px', 
+                      padding: '12px' 
+                    }}>
+                      {[
                         { value: 'Penulisan', label: 'Penulisan' },
                         { value: 'Editing', label: 'Editing (Penyuntingan)' },
                         { value: 'Layouting', label: 'Layouting (Tata Letak)' },
@@ -214,22 +226,51 @@ const TaskFormPage: React.FC = () => {
                         { value: 'Proofreading', label: 'Proofreading (Koreksi)' },
                         { value: 'Legalitas', label: 'Legalitas (ISBN/QRCBN)' },
                         { value: 'Cetak', label: 'Cetak (Produksi Fisik)' },
-                        { value: 'Distribusi', label: 'Distribusi / Pemasaran' },
-                        { value: 'custom', label: 'Lainnya... (Tulis Kustom)' }
-                      ]}
+                        { value: 'Distribusi', label: 'Distribusi / Pemasaran' }
+                      ].map(step => {
+                        const isChecked = selectedSteps.includes(step.value);
+                        return (
+                          <label 
+                            key={step.value} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '8px', 
+                              fontSize: '13px', 
+                              color: 'var(--text-primary)', 
+                              cursor: 'pointer',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              background: isChecked ? 'var(--bg-card)' : 'transparent',
+                              border: isChecked ? '1px solid var(--accent)' : '1px solid transparent',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSteps([...selectedSteps, step.value]);
+                                } else {
+                                  setSelectedSteps(selectedSteps.filter(s => s !== step.value));
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            {step.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <TextField
+                      type="text"
+                      label="Tahap Kustom Tambahan (Opsional, pisahkan koma jika banyak)"
+                      placeholder="Misal: Review Akhir, Layouting Tambahan"
+                      value={customStepsInput}
+                      onChange={e => setCustomStepsInput(e.target.value)}
                       fullWidth
                     />
-                    {stepNameSelect === 'custom' && (
-                      <TextField
-                        required
-                        type="text"
-                        label="Nama Tahap Kustom"
-                        placeholder="Masukkan nama tahap..."
-                        value={customStepName}
-                        onChange={e => setCustomStepName(e.target.value)}
-                        fullWidth
-                      />
-                    )}
                   </div>
                 </div>
               )}
