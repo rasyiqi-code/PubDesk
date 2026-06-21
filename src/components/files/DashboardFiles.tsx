@@ -17,6 +17,7 @@ const STAT_CARDS: StatCardConfig[] = [
   { label: 'Dokumen PDF', color: '#ef4444', icon: '📕', cat: 'pdf' },
   { label: 'Spreadsheet', color: '#f59e0b', icon: '📊', cat: 'spreadsheet' },
   { label: 'Dokumen Teks & Word', color: '#8b5cf6', icon: '📝', cat: 'text' },
+  { label: 'Google Drive', color: '#06b6d4', icon: '☁️', cat: 'gdrive' },
 ];
 
 const DashboardFiles: React.FC = () => {
@@ -38,8 +39,9 @@ const DashboardFiles: React.FC = () => {
       f.filename.toLowerCase().endsWith('.doc') ||
       f.filename.toLowerCase().endsWith('.txt')
     ).length;
+    const gdrive = files.filter(f => f.type === 'gdrive').length;
 
-    return { all, invoice, pdf, spreadsheet, text };
+    return { all, invoice, pdf, spreadsheet, text, gdrive };
   }, [files]);
 
   const countMap: Record<string, number> = {
@@ -48,6 +50,7 @@ const DashboardFiles: React.FC = () => {
     pdf: stats.pdf,
     spreadsheet: stats.spreadsheet,
     text: stats.text,
+    gdrive: stats.gdrive,
   };
 
   const handleNavigate = (category: FileCategory) => {
@@ -99,8 +102,8 @@ const DashboardFiles: React.FC = () => {
                 key={card.cat}
                 onClick={() => handleNavigate(card.cat)}
                 style={{
-                  flex: '1 1 200px',
-                  minWidth: '180px',
+                  flex: '1 1 33.33%',
+                  minWidth: '220px',
                   padding: '20px',
                   cursor: 'pointer',
                   position: 'relative',
@@ -172,14 +175,13 @@ const DashboardFiles: React.FC = () => {
               { cat: 'service' as FileCategory, label: 'Katalog Layanan', desc: 'Berkas terkait modul list layanan', icon: '🛠️' },
               { cat: 'image' as FileCategory, label: 'Gambar & Poster', desc: 'Aset gambar naskah atau promosi', icon: '🖼️' },
               { cat: 'presentation' as FileCategory, label: 'Presentasi', desc: 'Slide atau proposal berformat PPTX/PDF', icon: '📉' },
-              { cat: 'gdrive' as FileCategory, label: 'Google Drive', desc: 'Sinkronisasi berkas dengan awan Google Drive', icon: '☁️' },
               { cat: 'other' as FileCategory, label: 'Berkas Lainnya', desc: 'Kategori berkas tak terdefinisi', icon: '📁' },
             ].map(act => (
               <button
                 key={act.cat}
                 onClick={() => handleNavigate(act.cat)}
                 style={{
-                  flex: '1 1 33.33%',
+                  flex: '1 1 25%',
                   minWidth: '180px',
                   display: 'flex',
                   flexDirection: 'column',

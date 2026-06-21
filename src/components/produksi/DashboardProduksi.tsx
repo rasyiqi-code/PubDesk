@@ -118,8 +118,8 @@ const DashboardProduksi: React.FC = () => {
             <div 
               key={card.key} 
               style={{ 
-                flex: '1 1 150px',
-                minWidth: '120px',
+                flex: '1 1 33.33%',
+                minWidth: '220px',
                 padding: '16px 20px',
                 display: 'flex',
                 flexDirection: 'column',

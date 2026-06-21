@@ -70,8 +70,8 @@ const DashboardMasterData: React.FC = () => {
               key={card.key}
               onClick={() => setActiveModule(card.module)}
               style={{
-                flex: '1 1 200px',
-                minWidth: '180px',
+                flex: '1 1 33.33%',
+                minWidth: '250px',
                 padding: '20px',
                 cursor: 'pointer',
                 position: 'relative',
