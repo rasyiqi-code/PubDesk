@@ -31,7 +31,17 @@ const formatTanggal = (isoString: string) => {
 
 const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
   const { tim, addTim, updateTim, deleteTim } = useDataMasterContext();
-  const { showConfirm, showToast, setSelectedTimId, setRightPanelVisible, addFile, files, registerImportExportActions } = useAppContext();
+  const { 
+    showConfirm, 
+    showToast, 
+    setSelectedTimId, 
+    setRightPanelVisible, 
+    addFile, 
+    files, 
+    registerImportExportActions,
+    directAddNewModule,
+    setDirectAddNewModule
+  } = useAppContext();
 
   useEffect(() => {
     const actions = {
@@ -201,6 +211,14 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [currentMember, setCurrentMember] = useState<Tim | null>(null);
+
+  useEffect(() => {
+    if (directAddNewModule === 'tim') {
+      setCurrentMember(null);
+      setIsEditing(true);
+      setDirectAddNewModule(null);
+    }
+  }, [directAddNewModule]);
 
   // ID baris yang sedang terseleksi (highlight lokal)
   const [selectedId, setSelectedId] = useState<number | null>(null);

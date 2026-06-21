@@ -19,7 +19,18 @@ const TIPE_LEGALITAS = ['E-ISBN', 'ISBN', 'QRCBN', 'QRSBN', 'HAKI'];
 
 const LegalitasManager: React.FC<LegalitasManagerProps> = ({ searchQuery = '' }) => {
   const { legalitas, naskah, addLegalitas, updateLegalitas, deleteLegalitas } = useDataMasterContext();
-  const { showConfirm, showToast, setRightPanelVisible, selectedLegalitasId, setSelectedLegalitasId, addFile, files, registerImportExportActions } = useAppContext();
+  const { 
+    showConfirm, 
+    showToast, 
+    setRightPanelVisible, 
+    selectedLegalitasId, 
+    setSelectedLegalitasId, 
+    addFile, 
+    files, 
+    registerImportExportActions,
+    directAddNewModule,
+    setDirectAddNewModule
+  } = useAppContext();
 
   useEffect(() => {
     const actions = {
@@ -201,6 +212,14 @@ const LegalitasManager: React.FC<LegalitasManagerProps> = ({ searchQuery = '' })
 
   const [isEditing, setIsEditing] = useState(false);
   const [currentLegalitas, setCurrentLegalitas] = useState<Legalitas | null>(null);
+
+  useEffect(() => {
+    if (directAddNewModule === 'legalitas') {
+      setCurrentLegalitas(null);
+      setIsEditing(true);
+      setDirectAddNewModule(null);
+    }
+  }, [directAddNewModule]);
 
   const [activeTipe, setActiveTipe] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('');

@@ -26,7 +26,17 @@ const STATUS_LIST = ['Belum Dimulai', 'Sedang Dikerjakan', 'Selesai', 'Batal'];
 
 const NaskahOrdersManager: React.FC<NaskahOrdersManagerProps> = ({ searchQuery = '' }) => {
   const { naskah, penulis, penerbit, addNaskah, updateNaskah, deleteNaskah } = useDataMasterContext();
-  const { showConfirm, showToast, setSelectedNaskahId, setRightPanelVisible, addFile, files, registerImportExportActions } = useAppContext();
+  const { 
+    showConfirm, 
+    showToast, 
+    setSelectedNaskahId, 
+    setRightPanelVisible, 
+    addFile, 
+    files, 
+    registerImportExportActions,
+    directAddNewModule,
+    setDirectAddNewModule
+  } = useAppContext();
 
   useEffect(() => {
     const actions = {
@@ -247,6 +257,14 @@ const NaskahOrdersManager: React.FC<NaskahOrdersManagerProps> = ({ searchQuery =
 
   const [isEditing, setIsEditing] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Naskah | null>(null);
+
+  useEffect(() => {
+    if (directAddNewModule === 'naskah') {
+      setCurrentOrder(null);
+      setIsEditing(true);
+      setDirectAddNewModule(null);
+    }
+  }, [directAddNewModule]);
 
   // ID baris yang sedang terseleksi (highlight lokal)
   const [selectedId, setSelectedId] = useState<number | null>(null);

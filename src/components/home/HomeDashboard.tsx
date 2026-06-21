@@ -7,7 +7,7 @@ import { formatPrice } from '../../utils/format';
 import { getInvoiceMetadata } from '../../utils/invoice';
 
 const HomeDashboard: React.FC = () => {
-  const { invoices, setActiveModule } = useAppContext();
+  const { invoices, setActiveModule, setDirectAddNewModule } = useAppContext();
   const { files } = useFileState();
   const { tasks } = useWorkflowContext();
   const { penulis, penerbit, naskah, tim } = useDataMasterContext();
@@ -20,6 +20,17 @@ const HomeDashboard: React.FC = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const quickActions = [
+    { id: 'tambah-tugas', label: '➕ Tambah Tugas Baru', desc: 'Daftarkan tugas alur kerja produksi baru', color: '#10b981' },
+    { id: 'invoice', label: '✍️ Buat Invoice Baru', desc: 'Buat lembar tagihan kuitansi resmi baru', color: '#06b6d4' },
+    { id: 'penulis', label: '👤 Tambah Kontak/Penulis', desc: 'Daftarkan profil penulis atau klien baru', color: '#3b82f6' },
+    { id: 'naskah', label: '📚 Tambah Naskah Baru', desc: 'Daftarkan pesanan order buku masuk baru', color: '#a855f7' },
+    { id: 'penerbit', label: '🏢 Tambah Mitra Penerbit', desc: 'Daftarkan mitra penerbit kerja sama baru', color: '#f59e0b' },
+    { id: 'tim', label: '👨‍💼 Tambah Anggota Tim', desc: 'Daftarkan staf pelaksana alur produksi baru', color: '#6b7280' },
+    { id: 'legalitas', label: '⚖️ Ajukan Legalitas Buku', desc: 'Ajukan ISBN atau hak cipta buku baru', color: '#ef4444' },
+    { id: 'services', label: '🛠️ Tambah Layanan Jasa', desc: 'Daftarkan jenis layanan baru di katalog', color: '#14b8a6' },
+  ];
 
   const greeting = useMemo(() => {
     const hrs = time.getHours();
@@ -99,6 +110,55 @@ const HomeDashboard: React.FC = () => {
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
               {time.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
             </div>
+          </div>
+        </div>
+
+        {/* Panel Akses Cepat */}
+        <div>
+          <h2 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 14px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            ⚡ Akses Navigasi Cepat
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+            {quickActions.map(action => (
+              <div
+                key={action.id}
+                onClick={() => {
+                  setActiveModule(action.id as any);
+                  if (!['tambah-tugas', 'invoice'].includes(action.id)) {
+                    setDirectAddNewModule(action.id);
+                  }
+                }}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  transition: 'all 0.2s ease',
+                  userSelect: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = action.color;
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                  {action.label}
+                </span>
+                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                  {action.desc}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 

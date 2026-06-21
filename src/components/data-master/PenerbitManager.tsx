@@ -26,13 +26,21 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
     setRightPanelVisible,
     addFile,
     files,
-    registerImportExportActions
+    registerImportExportActions,
+    directAddNewModule,
+    setDirectAddNewModule
   } = useAppContext();
-
-
 
   const [isEditing, setIsEditing] = useState(false);
   const [currentPenerbit, setCurrentPenerbit] = useState<Penerbit | null>(null);
+
+  useEffect(() => {
+    if (directAddNewModule === 'penerbit') {
+      setCurrentPenerbit(null);
+      setIsEditing(true);
+      setDirectAddNewModule(null);
+    }
+  }, [directAddNewModule]);
 
   // State filter status kerja sama
   const [coopFilter, setCoopFilter] = useState<'all' | 'Aktif' | 'Negosiasi' | 'Pasif' | 'Berhenti'>('all');

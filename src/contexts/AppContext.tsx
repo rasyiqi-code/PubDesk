@@ -132,6 +132,8 @@ interface AppContextType {
     services: any[];
     tasks: any[];
   }) => Promise<{ success: boolean; message: string }>;
+  directAddNewModule: string | null;
+  setDirectAddNewModule: (module: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -139,6 +141,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const ui = useUIState();
   const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'service' | 'other' | 'gdrive' | 'pdf' | 'spreadsheet' | 'text' | 'image' | 'presentation'>('all');
+  const [directAddNewModule, setDirectAddNewModule] = useState<string | null>(null);
 
   const booksState = useBookState({ showToast: ui.showToast });
   const contactsState = useContactState({ showToast: ui.showToast });
@@ -310,6 +313,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       registerImportExportActions: ui.registerImportExportActions,
       updateSyncStatus: syncState.updateSyncStatus,
       syncAllDataToCloud: syncState.syncAllDataToCloud,
+      directAddNewModule,
+      setDirectAddNewModule,
     }}>
       {children}
     </AppContext.Provider>

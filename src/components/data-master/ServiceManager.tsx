@@ -27,7 +27,22 @@ interface ServiceManagerProps {
 }
 
 const ServiceManager: React.FC<ServiceManagerProps> = ({ searchQuery = '' }) => {
-  const { services, addService, updateService, deleteService, showToast, selectedServiceId, setSelectedServiceId, addFile, files, showConfirm, setRightPanelVisible, registerImportExportActions } = useAppContext();
+  const { 
+    services, 
+    addService, 
+    updateService, 
+    deleteService, 
+    showToast, 
+    selectedServiceId, 
+    setSelectedServiceId, 
+    addFile, 
+    files, 
+    showConfirm, 
+    setRightPanelVisible, 
+    registerImportExportActions,
+    directAddNewModule,
+    setDirectAddNewModule
+  } = useAppContext();
 
   useEffect(() => {
     const actions = {
@@ -195,6 +210,14 @@ const ServiceManager: React.FC<ServiceManagerProps> = ({ searchQuery = '' }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [currentService, setCurrentService] = useState<Service | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (directAddNewModule === 'services') {
+      setCurrentService(null);
+      setIsEditing(true);
+      setDirectAddNewModule(null);
+    }
+  }, [directAddNewModule]);
 
   const filteredServices = useMemo(() => {
     if (!searchQuery) return services;

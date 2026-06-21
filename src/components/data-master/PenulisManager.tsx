@@ -18,12 +18,33 @@ interface PenulisManagerProps {
 
 const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => {
   const { penulis, addPenulis, updatePenulis, deletePenulis } = useDataMasterContext();
-  const { showConfirm, showToast, contacts, addContact, updateContact, deleteContact, selectedPenulisId, setSelectedPenulisId, setRightPanelVisible, addFile, files, registerImportExportActions } = useAppContext();
-
-
+  const { 
+    showConfirm, 
+    showToast, 
+    contacts, 
+    addContact, 
+    updateContact, 
+    deleteContact, 
+    selectedPenulisId, 
+    setSelectedPenulisId, 
+    setRightPanelVisible, 
+    addFile, 
+    files, 
+    registerImportExportActions,
+    directAddNewModule,
+    setDirectAddNewModule
+  } = useAppContext();
   
   const [isEditing, setIsEditing] = useState(false);
   const [currentPenulis, setCurrentPenulis] = useState<Penulis | null>(null);
+
+  useEffect(() => {
+    if (directAddNewModule === 'penulis' || directAddNewModule === 'kontak') {
+      setCurrentPenulis(null);
+      setIsEditing(true);
+      setDirectAddNewModule(null);
+    }
+  }, [directAddNewModule]);
   
   // State filter
   const [statusFilter, setStatusFilter] = useState('');
