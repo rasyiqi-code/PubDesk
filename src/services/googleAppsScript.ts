@@ -41,6 +41,24 @@ function bytesToBase64(bytes: number[] | Uint8Array): string {
   return window.btoa(binary);
 }
 
+/**
+ * Parse response dari GAS dengan validasi — mencegah error "<" token
+ * jika GAS mengembalikan HTML (redirect/error page) alih-alih JSON
+ */
+function parseGasResponse(responseText: string): any {
+  const trimmed = responseText.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+    const preview = trimmed.substring(0, 200);
+    console.error('[GAS] Response bukan JSON:', preview);
+    throw new Error(
+      trimmed.toLowerCase().includes('<html') || trimmed.startsWith('<')
+        ? 'Google Apps Script mengembalikan halaman HTML — kemungkinan URL sudah kadaluwarsa atau perlu di-deploy ulang.'
+        : `Response tidak valid dari server: ${preview}`
+    );
+  }
+  return JSON.parse(trimmed);
+}
+
 export const googleAppsScriptService = {
   /**
    * Mendapatkan konfigurasi URL dan Token dari localStorage
@@ -102,7 +120,7 @@ export const googleAppsScriptService = {
       payloadJson: JSON.stringify(payload)
     });
 
-    const result = JSON.parse(responseText);
+    const result = parseGasResponse(responseText);
     if (result.status === 'error') {
       throw new Error(result.message || 'Terjadi kesalahan dari Google Apps Script');
     }
@@ -143,7 +161,7 @@ export const googleAppsScriptService = {
       payloadJson: JSON.stringify(payload)
     });
 
-    const result = JSON.parse(responseText);
+    const result = parseGasResponse(responseText);
     if (result.status === 'error') {
       throw new Error(result.message || 'Terjadi kesalahan dari Google Apps Script');
     }
@@ -171,7 +189,7 @@ export const googleAppsScriptService = {
       payloadJson: null
     });
 
-    const data = JSON.parse(responseText);
+    const data = parseGasResponse(responseText);
     if (data && data.status === 'error') {
       throw new Error(data.message || 'Terjadi kesalahan dari Google Apps Script');
     }
@@ -201,7 +219,7 @@ export const googleAppsScriptService = {
       payloadJson: JSON.stringify(payload)
     });
 
-    const result = JSON.parse(responseText);
+    const result = parseGasResponse(responseText);
     if (result.status === 'error') {
       throw new Error(result.message || 'Terjadi kesalahan dari Google Apps Script');
     }
@@ -236,7 +254,7 @@ export const googleAppsScriptService = {
       payloadJson: JSON.stringify(payload)
     });
 
-    const result = JSON.parse(responseText);
+    const result = parseGasResponse(responseText);
     if (result.status === 'error') {
       throw new Error(result.message || 'Terjadi kesalahan dari Google Apps Script');
     }
