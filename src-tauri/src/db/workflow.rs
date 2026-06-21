@@ -65,7 +65,7 @@ impl Database {
              FROM tasks t \
              LEFT JOIN naskah n ON t.naskah_id = n.id \
              LEFT JOIN tim ON t.assigned_team_id = tim.id \
-             LEFT JOIN penulis p ON n.penulis_id = p.id"
+             LEFT JOIN contacts p ON n.penulis_id = p.id"
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(Task {
