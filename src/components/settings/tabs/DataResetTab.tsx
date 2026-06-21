@@ -1,12 +1,196 @@
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppContext } from '../../../contexts/AppContext';
+import * as XLSX from 'xlsx';
+import { save } from '@tauri-apps/plugin-dialog';
 
 const DataResetTab: React.FC = () => {
   const { showToast } = useAppContext();
   const [isSeeding, setIsSeeding] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      const [
+        naskahData,
+        tasksData,
+        timData,
+        contactsData,
+        penerbitData,
+        booksData,
+        invoicesData,
+        servicesData,
+        legalitasData
+      ] = await Promise.all([
+        invoke<any[]>('get_naskah').catch(() => []),
+        invoke<any[]>('get_tasks').catch(() => []),
+        invoke<any[]>('get_tim').catch(() => []),
+        invoke<any[]>('get_contacts').catch(() => []),
+        invoke<any[]>('get_penerbit').catch(() => []),
+        invoke<any[]>('get_books').catch(() => []),
+        invoke<any[]>('get_invoices').catch(() => []),
+        invoke<any[]>('get_services').catch(() => []),
+        invoke<any[]>('get_legalitas').catch(() => [])
+      ]);
+
+      const wb = XLSX.utils.book_new();
+
+      const addSheet = (data: any[], sheetName: string) => {
+        const ws = XLSX.utils.json_to_sheet(data.length > 0 ? data : [{}]);
+        if (data.length > 0) {
+          const maxLens = Object.keys(data[0] || {}).map(key => {
+            return Math.max(
+              key.length,
+              ...data.map(row => String((row as any)[key] || '').length)
+            );
+          });
+          ws['!cols'] = maxLens.map(len => ({ wch: Math.min(len + 3, 50) }));
+        }
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      };
+
+      addSheet(naskahData.map((d, i) => ({
+        "No": i + 1,
+        "ID Code": d.naskah_id_code || '',
+        "Judul Naskah": d.title || '',
+        "ID Penulis": d.penulis_id || '',
+        "ID Penerbit": d.penerbit_id || '',
+        "Tipe Paket": d.package_type || '',
+        "Tipe Order": d.order_type || '',
+        "Jumlah Eksemplar": d.copies || 0,
+        "Ukuran Buku": d.book_size || '',
+        "Genre": d.genre || '',
+        "Jumlah Halaman": d.total_pages || 0,
+        "Sinopsis": d.synopsis || '',
+        "Status": d.status || '',
+        "Tanggal Dibuat": d.created_at || ''
+      })), "Naskah");
+
+      addSheet(tasksData.map((d, i) => ({
+        "No": i + 1,
+        "ID Naskah": d.naskah_id || '',
+        "Nama Tahapan": d.step_name || '',
+        "Urutan Tahapan": d.step_order || 0,
+        "ID Tim PIC": d.assigned_team_id || '',
+        "Status": d.status || '',
+        "Prioritas": d.priority || '',
+        "Tanggal Mulai": d.start_date || '',
+        "Tenggat Waktu": d.due_date || '',
+        "Tanggal Selesai": d.completed_date || '',
+        "Catatan": d.notes || ''
+      })), "Tugas & Alur");
+
+      addSheet(timData.map((d, i) => ({
+        "No": i + 1,
+        "Nama Anggota": d.name || '',
+        "Peran": d.role || '',
+        "Divisi/Departemen": d.department || '',
+        "Target Mingguan": d.weekly_target || 0,
+        "Status": d.is_active === 1 ? 'Aktif' : 'Nonaktif',
+        "Catatan": d.notes || '',
+        "Tanggal Terdaftar": d.created_at || ''
+      })), "Tim");
+
+      addSheet(contactsData.map((d, i) => ({
+        "No": i + 1,
+        "Nama Kontak": d.name || '',
+        "Nomor WA": d.wa_number || '',
+        "Email": d.email || '',
+        "Alamat": d.address || '',
+        "Provinsi": d.province || '',
+        "Kota": d.city || '',
+        "Pekerjaan": d.job || '',
+        "Institusi": d.institution || '',
+        "Tipe": d.type || '',
+        "Tanggal Terdaftar": d.created_at || ''
+      })), "Kontak & Penulis");
+
+      addSheet(penerbitData.map((d, i) => ({
+        "No": i + 1,
+        "Nama Penerbit": d.name || '',
+        "Kota": d.city || '',
+        "Provinsi": d.province || '',
+        "Alamat": d.address || '',
+        "Email": d.email || '',
+        "Nomor WA": d.wa_number || '',
+        "Instagram": d.instagram || '',
+        "Facebook": d.facebook || '',
+        "Status Kerjasama": d.cooperation_status || '',
+        "Catatan": d.notes || '',
+        "Tanggal Terdaftar": d.created_at || ''
+      })), "Penerbit");
+
+      addSheet(booksData.map((d, i) => ({
+        "No": i + 1,
+        "Judul Buku": d.title || '',
+        "ISBN": d.isbn || '',
+        "Harga Reguler": d.regular_price || 0,
+        "Harga PO": d.po_price || 0,
+        "Berat (gram)": d.weight_grams || 0,
+        "ID Penulis": d.author_id || '',
+        "Tanggal Dibuat": d.created_at || ''
+      })), "Buku");
+
+      addSheet(invoicesData.map((d, i) => ({
+        "No": i + 1,
+        "ID Pelanggan": d.customer_id || '',
+        "ID Naskah": d.naskah_id || '',
+        "Biaya Pengiriman": d.shipping_cost || 0,
+        "Biaya Admin": d.admin_fee || 0,
+        "Total": d.total || 0,
+        "Format Ekspor": d.export_format || '',
+        "Status Pembayaran": d.payment_status || '',
+        "Jumlah Dibayar": d.paid_amount || 0,
+        "Sisa Pembayaran": d.remaining_amount || 0,
+        "Catatan Pembayaran": d.payment_notes || '',
+        "Tanggal Dibuat": d.created_at || ''
+      })), "Invoice");
+
+      addSheet(servicesData.map((d, i) => ({
+        "No": i + 1,
+        "Nama Layanan": d.name || '',
+        "Harga": d.price || 0,
+        "Kategori": d.category || '',
+        "Deskripsi": d.description || '',
+        "Tanggal Dibuat": d.created_at || ''
+      })), "Layanan");
+
+      addSheet(legalitasData.map((d, i) => ({
+        "No": i + 1,
+        "ID Naskah": d.naskah_id || '',
+        "Judul Buku": d.judul_buku || '',
+        "Nama Penulis": d.nama_penulis || '',
+        "Tipe Dokumen": d.tipe || '',
+        "Nomor Dokumen": d.nomor_dokumen || '',
+        "Tanggal Pengajuan": d.tanggal_pengajuan || '',
+        "Tanggal Keluar": d.tanggal_keluar || '',
+        "Status": d.status || '',
+        "Keterangan": d.keterangan || '',
+        "Tanggal Dibuat": d.created_at || ''
+      })), "Legalitas");
+
+      const filePath = await save({
+        filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }],
+        defaultPath: 'PubDesk_All_Data_Export.xlsx'
+      });
+
+      if (!filePath) return;
+
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const bytes = new Uint8Array(wbout);
+      await invoke('write_binary_file', { path: filePath, bytes: Array.from(bytes) });
+
+      showToast('Semua data berhasil diekspor ke Excel!', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast(`Gagal mengekspor data: ${err}`, 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleSeed = async () => {
     setIsSeeding(true);
@@ -19,6 +203,7 @@ const DataResetTab: React.FC = () => {
       setIsSeeding(false);
     }
   };
+
 
   const handleReset = async () => {
     if (!confirmReset) {
@@ -43,8 +228,48 @@ const DataResetTab: React.FC = () => {
         Data & Reset
       </h2>
       <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 24px 0' }}>
-        Kelola data sample untuk pengujian fitur produksi naskah.
+        Kelola ekspor data, pemulihan data sample, dan reset data workflow.
       </p>
+
+      {/* Export Semua Data ke Excel */}
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '16px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: 'var(--text-primary)' }}>
+              📥 Export Semua Data ke Excel
+            </h3>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              Ekspor seluruh data dari database (Naskah, Tugas, Tim, Kontak, Penerbit, Buku, Invoice, Layanan, dan Legalitas) 
+              ke dalam satu file Excel (.xlsx) dengan masing-masing tabel berada di sheet yang terpisah.
+            </p>
+          </div>
+          <button
+            onClick={handleExportAll}
+            disabled={isExporting}
+            style={{
+              padding: '8px 20px',
+              background: '#22c55e',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: isExporting ? 'wait' : 'pointer',
+              fontSize: '13px',
+              whiteSpace: 'nowrap',
+              marginLeft: '16px',
+              opacity: isExporting ? 0.7 : 1
+            }}
+          >
+            {isExporting ? 'Mengekspor...' : 'Export ke Excel'}
+          </button>
+        </div>
+      </div>
 
       {/* Muat Data Sample */}
       <div style={{
