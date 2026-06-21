@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Task } from '../../types/workflow.types';
 import { useUniqueValues } from '../../hooks/useUniqueValues';
+import { StatCard } from '../../ui/molecules/StatCard';
+import { Button } from '../../ui/atoms/Button';
+import { Badge } from '../../ui/atoms/Badge';
+import { FilterBar, FilterGroup, FilterDivider } from '../../ui/molecules/FilterBar';
+import { tableStyles } from '../../ui/molecules/DataTable';
 
-// Assuming Legalitas structure has status
 interface Legalitas {
   id: number;
   naskah_id: number;
@@ -28,7 +32,7 @@ const LaporanOperasional: React.FC = () => {
     try {
       const [taskData, legalitasData] = await Promise.all([
         invoke<Task[]>('get_tasks'),
-        invoke<Legalitas[]>('get_legalitas').catch(() => []) // gracefully fallback if not fully implemented
+        invoke<Legalitas[]>('get_legalitas').catch(() => [])
       ]);
       setTasks(taskData);
       setLegalitasList(legalitasData);
@@ -78,122 +82,153 @@ const LaporanOperasional: React.FC = () => {
   const uniqueStatuses = useUniqueValues(tasks, 'status');
 
   const handleExport = () => {
-    // Simulasi ekspor
     alert("Mengekspor data ke Excel... (Fitur segera hadir)");
   };
 
   return (
-    <div className="module-content" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '28px', fontWeight: '700' }}>Laporan Operasional</h2>
-        <p style={{ margin: '6px 0 0 0', color: 'var(--text-secondary)', fontSize: '15px' }}>
-          Dasbor analitik untuk metrik produksi, kinerja tim, dan legalitas.
-        </p>
-      </div>
+    <div className="module-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-dark)' }}>
+      {/* Filter Bar Terstandar (Full Width, No Header) */}
+      <FilterBar style={{ borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+        <FilterGroup>
+          <Badge 
+            label={periode === 'Semua' ? 'Periode' : `Periode: ${periode}`} 
+            variant={periode === 'Semua' ? 'neutral' : 'accent'} 
+            style={{ marginRight: '4px' }} 
+          />
+          <select value={periode} onChange={e => setPeriode(e.target.value)} className="compact-select" style={{ minWidth: '110px' }}>
+            <option value="Semua">Semua Waktu</option>
+            <option value="Bulan Ini">Bulan Ini</option>
+            <option value="Tahun Ini">Tahun Ini</option>
+          </select>
+        </FilterGroup>
 
-      {/* Filter Bar */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', alignItems: 'center', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-        <select value={periode} onChange={e => setPeriode(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-panel)', color: 'var(--text-primary)' }}>
-          <option value="Semua">Semua Waktu</option>
-          <option value="Bulan Ini">Bulan Ini</option>
-          <option value="Tahun Ini">Tahun Ini</option>
-        </select>
-        <select value={filterPic} onChange={e => setFilterPic(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-panel)', color: 'var(--text-primary)' }}>
-          <option value="">[Semua PIC]</option>
-          {uniquePics.map(pic => <option key={pic as string} value={pic as string}>{pic}</option>)}
-        </select>
-        <select value={filterPenerbit} onChange={e => setFilterPenerbit(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-panel)', color: 'var(--text-primary)' }}>
-          <option value="">[Semua Penerbit]</option>
-          <option value="penerbit_a">Penerbit A</option>
-        </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-panel)', color: 'var(--text-primary)' }}>
-          <option value="">[Semua Status]</option>
-          {uniqueStatuses.map(s => <option key={s as string} value={s as string}>{s}</option>)}
-        </select>
-        
+        <FilterDivider />
+
+        <FilterGroup>
+          <Badge 
+            label={filterPic === '' ? 'PIC' : `PIC: ${filterPic}`} 
+            variant={filterPic === '' ? 'neutral' : 'accent'} 
+            style={{ marginRight: '4px' }} 
+          />
+          <select value={filterPic} onChange={e => setFilterPic(e.target.value)} className="compact-select" style={{ minWidth: '100px' }}>
+            <option value="">Semua PIC</option>
+            {uniquePics.map(pic => <option key={pic as string} value={pic as string}>{pic}</option>)}
+          </select>
+        </FilterGroup>
+
+        <FilterDivider />
+
+        <FilterGroup>
+          <Badge 
+            label={filterPenerbit === '' ? 'Penerbit' : `Penerbit: ${filterPenerbit === 'penerbit_a' ? 'Penerbit A' : filterPenerbit}`} 
+            variant={filterPenerbit === '' ? 'neutral' : 'accent'} 
+            style={{ marginRight: '4px' }} 
+          />
+          <select value={filterPenerbit} onChange={e => setFilterPenerbit(e.target.value)} className="compact-select" style={{ minWidth: '120px' }}>
+            <option value="">Semua Penerbit</option>
+            <option value="penerbit_a">Penerbit A</option>
+          </select>
+        </FilterGroup>
+
+        <FilterDivider />
+
+        <FilterGroup>
+          <Badge 
+            label={filterStatus === '' ? 'Status' : `Status: ${filterStatus}`} 
+            variant={filterStatus === '' ? 'neutral' : 'accent'} 
+            style={{ marginRight: '4px' }} 
+          />
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="compact-select" style={{ minWidth: '110px' }}>
+            <option value="">Semua Status</option>
+            {uniqueStatuses.map(s => <option key={s as string} value={s as string}>{s}</option>)}
+          </select>
+        </FilterGroup>
+
         <div style={{ flex: 1 }}></div>
-        <button onClick={handleExport} style={{ padding: '8px 16px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}>
-          📥 Export Excel
-        </button>
-      </div>
 
-      <div style={{ overflowY: 'auto', flex: 1, paddingRight: '8px' }}>
+        <Button onClick={handleExport} variant="primary" size="sm" icon={<span>📥</span>}>
+          Export Excel
+        </Button>
+      </FilterBar>
+
+      <div style={{ overflowY: 'auto', flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {isLoading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat laporan...</div>
         ) : (
           <>
-            {/* Metric Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderTop: '4px solid #3b82f6', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Naskah Aktif</div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{activeTasks.length}</div>
-          </div>
-          <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderTop: '4px solid #22c55e', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Tugas Selesai</div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{finishedTasks.length}</div>
-          </div>
-          <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderTop: '4px solid #ef4444', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Tugas Overdue</div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{overdueTasks.length}</div>
-          </div>
-          <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', borderTop: '4px solid #a855f7', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Legalitas Diproses</div>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{prosesLegalitas.length}</div>
-          </div>
-        </div>
-
-        {/* Beban Kerja Tim */}
-        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', padding: '20px', marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: 'var(--text-primary)' }}>Beban Kerja Tim (Tugas Aktif)</h3>
-          {bebanKerjaArr.length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Tidak ada beban kerja saat ini.</div>
-          ) : (
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              {bebanKerjaArr.map(([pic, count]) => (
-                <div key={pic} style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-panel)', padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <span style={{ fontWeight: '500', color: 'var(--text-primary)', marginRight: '8px' }}>{pic}:</span>
-                  <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{count} tugas</span>
-                </div>
-              ))}
+            {/* Metric Cards Terstandar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              <StatCard label="Naskah Aktif" value={activeTasks.length} color="#3b82f6" />
+              <StatCard label="Tugas Selesai" value={finishedTasks.length} color="#22c55e" />
+              <StatCard label="Tugas Overdue" value={overdueTasks.length} color="#ef4444" />
+              <StatCard label="Legalitas Diproses" value={prosesLegalitas.length} color="#a855f7" />
             </div>
-          )}
-        </div>
 
-        {/* Task Terlambat */}
-        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-panel)' }}>
-            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>Task Terlambat (Overdue)</h3>
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
-            <thead style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)' }}>
-              <tr>
-                <th style={{ padding: '12px 20px', color: 'var(--text-secondary)' }}>Judul Naskah</th>
-                <th style={{ padding: '12px 20px', color: 'var(--text-secondary)' }}>Tahap</th>
-                <th style={{ padding: '12px 20px', color: 'var(--text-secondary)' }}>PIC</th>
-                <th style={{ padding: '12px 20px', color: 'var(--text-secondary)' }}>Deadline</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overdueTasks.length === 0 ? (
-                <tr>
-                  <td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Hebat! Tidak ada tugas yang terlambat.</td>
-                </tr>
+            {/* Beban Kerja Tim Terstandar */}
+            <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', padding: '20px' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Beban Kerja Tim (Tugas Aktif)</h3>
+              {bebanKerjaArr.length === 0 ? (
+                <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Tidak ada beban kerja saat ini.</div>
               ) : (
-                overdueTasks.map(task => (
-                  <tr key={task.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '12px 20px', fontWeight: '500', color: 'var(--text-primary)' }}>{task.naskah_title || `Naskah #${task.naskah_id}`}</td>
-                    <td style={{ padding: '12px 20px', color: 'var(--text-primary)' }}>{task.step_name}</td>
-                    <td style={{ padding: '12px 20px', color: 'var(--text-primary)' }}>{task.pic_name || '-'}</td>
-                    <td style={{ padding: '12px 20px', color: '#ef4444', fontWeight: '600' }}>
-                      {task.due_date ? new Date(task.due_date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-'}
-                    </td>
-                  </tr>
-                ))
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {bebanKerjaArr.map(([pic, count]) => (
+                    <div key={pic} style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-panel)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', gap: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{pic}</span>
+                      <Badge label={`${count} tugas`} variant={count > 3 ? "warning" : "info"} />
+                    </div>
+                  ))}
+                </div>
               )}
-            </tbody>
-          </table>
-        </div>
-        </>
+            </div>
+
+            {/* Task Terlambat Terstandar */}
+            <div style={{ background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', marginBottom: '10px' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-panel)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Task Terlambat (Overdue)</h3>
+                {overdueTasks.length > 0 && <Badge label={`${overdueTasks.length} Terlambat`} variant="danger" />}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={tableStyles.table}>
+                  <thead style={tableStyles.thead}>
+                    <tr style={tableStyles.headerRow}>
+                      <th style={tableStyles.th}>Judul Naskah</th>
+                      <th style={tableStyles.th}>Tahap</th>
+                      <th style={tableStyles.th}>PIC</th>
+                      <th style={tableStyles.th}>Deadline</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {overdueTasks.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                          🎉 Hebat! Tidak ada tugas yang terlambat.
+                        </td>
+                      </tr>
+                    ) : (
+                      overdueTasks.map(task => (
+                        <tr
+                          key={task.id}
+                          style={tableStyles.row}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <td style={tableStyles.tdTitle}>{task.naskah_title || `Naskah #${task.naskah_id}`}</td>
+                          <td style={tableStyles.td}>{task.step_name}</td>
+                          <td style={tableStyles.td}>{task.pic_name || '-'}</td>
+                          <td style={tableStyles.td}>
+                            <Badge
+                              label={task.due_date ? new Date(task.due_date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-'}
+                              variant="danger"
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
