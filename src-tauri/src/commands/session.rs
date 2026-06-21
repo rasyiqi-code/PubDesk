@@ -127,17 +127,24 @@ pub async fn call_gas_api(
     method: String,
     payload_json: Option<String>,
 ) -> Result<String, String> {
-    let client = reqwest::Client::new();
+    // Buat client yang mengikuti redirect (GAS selalu redirect sebelum memproses)
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::limited(10))
+        .build()
+        .map_err(|e| format!("Gagal membuat HTTP client: {}", e))?;
+
     let response = if method.to_uppercase() == "POST" {
         let body = payload_json.unwrap_or_default();
         client.post(&url)
             .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
             .body(body)
             .send()
             .await
             .map_err(|e| format!("Request POST gagal: {}", e))?
     } else {
         client.get(&url)
+            .header("Accept", "application/json")
             .send()
             .await
             .map_err(|e| format!("Request GET gagal: {}", e))?
@@ -148,7 +155,7 @@ pub async fn call_gas_api(
         .map_err(|e| format!("Gagal membaca response text: {}", e))?;
 
     if !status.is_success() {
-        return Err(format!("Server merespons dengan status {}: {}", status, text));
+        return Err(format!("Server merespons dengan status {}: {}", status, &text[..text.len().min(500)]));
     }
 
     Ok(text)
