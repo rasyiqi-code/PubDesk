@@ -6,13 +6,14 @@ import { useWorkflowContext } from '../../contexts/WorkflowContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { TextArea } from '../../ui/atoms/TextArea';
 import { Select } from '../../ui/atoms/Select';
+import { SearchableSelect } from '../../ui/atoms/SearchableSelect';
 import { Button } from '../../ui/atoms/Button';
 import { DatePicker } from '../../ui/atoms/DatePicker';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 
 const TaskFormPage: React.FC = () => {
   const { showToast, setActiveModule, selectedTaskId, appState } = useAppContext();
-  const { tim } = useDataMasterContext();
+  const { tim, naskah } = useDataMasterContext();
   const { addTask, updateTask, tasks } = useWorkflowContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [useManualPic, setUseManualPic] = useState(false);
@@ -50,6 +51,14 @@ const TaskFormPage: React.FC = () => {
     ...tim.map(member => ({ value: member.name, label: member.name }))
   ];
 
+  const naskahOptions = [
+    { value: '', label: '-- Pilih Naskah --' },
+    ...naskah.map(n => ({
+      value: String(n.id),
+      label: `${n.title} (${n.naskah_id_code || `ID: ${n.id}`})`
+    }))
+  ];
+
   // Load task data if in edit mode
   useEffect(() => {
     if (isEdit && selectedTaskId) {
@@ -77,7 +86,7 @@ const TaskFormPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEdit && (!naskahId.trim() || !stepName.trim())) {
-      showToast('ID Naskah dan Nama Tahap tidak boleh kosong!', 'error');
+      showToast('Naskah dan Nama Tahap tidak boleh kosong!', 'error');
       return;
     }
     setIsSubmitting(true);
@@ -129,13 +138,13 @@ const TaskFormPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {!isEdit && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <TextField 
-                    required 
-                    type="number" 
-                    label="ID Naskah" 
-                    placeholder="Masukkan ID Naskah"
-                    value={naskahId} 
-                    onChange={e => setNaskahId(e.target.value)} 
+                  <SearchableSelect
+                    label="Pilih Naskah"
+                    options={naskahOptions}
+                    value={naskahId}
+                    onChange={setNaskahId}
+                    placeholder="Cari judul naskah..."
+                    emptyMessage="Tidak ada naskah yang cocok"
                     fullWidth
                   />
                   <TextField 
