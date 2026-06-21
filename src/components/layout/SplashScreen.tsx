@@ -3,6 +3,20 @@ import React, { useEffect, useState } from 'react';
 const SplashScreen: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('Menginisialisasi aplikasi...');
+  const [splashLogo, setSplashLogo] = useState('📚');
+  const [logoType, setLogoType] = useState<'emoji' | 'image'>('emoji');
+
+  useEffect(() => {
+    const savedLogo = localStorage.getItem('splash_logo');
+    if (savedLogo) {
+      setSplashLogo(savedLogo);
+      if (savedLogo.startsWith('data:image')) {
+        setLogoType('image');
+      } else {
+        setLogoType('emoji');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -57,11 +71,16 @@ const SplashScreen: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '42px',
+          fontSize: logoType === 'emoji' ? '42px' : 'unset',
           boxShadow: '0 8px 30px rgba(59, 130, 246, 0.15)',
           animation: 'pulseLogo 2s infinite ease-in-out',
+          overflow: 'hidden'
         }}>
-          📚
+          {logoType === 'emoji' ? (
+            splashLogo
+          ) : (
+            <img src={splashLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          )}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '8px' }}>

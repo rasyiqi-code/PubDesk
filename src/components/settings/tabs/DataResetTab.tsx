@@ -11,6 +11,50 @@ const DataResetTab: React.FC = () => {
   const [confirmReset, setConfirmReset] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  const [logoType, setLogoType] = useState<'emoji' | 'image'>(() => {
+    const saved = localStorage.getItem('splash_logo');
+    if (saved && saved.startsWith('data:image')) {
+      return 'image';
+    }
+    return 'emoji';
+  });
+
+  const [splashLogo, setSplashLogo] = useState<string>(() => {
+    return localStorage.getItem('splash_logo') || '📚';
+  });
+
+  const handleSaveLogo = () => {
+    localStorage.setItem('splash_logo', splashLogo);
+    showToast('Logo Splash Screen berhasil disimpan!', 'success');
+  };
+
+  const handleResetLogo = () => {
+    setSplashLogo('📚');
+    setLogoType('emoji');
+    localStorage.setItem('splash_logo', '📚');
+    showToast('Logo Splash Screen dikembalikan ke bawaan!', 'success');
+  };
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Ukuran file gambar maksimal adalah 2MB!', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const base64 = evt.target?.result as string;
+      if (base64) {
+        setSplashLogo(base64);
+        setLogoType('image');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleExportAll = async () => {
     setIsExporting(true);
     try {
@@ -268,6 +312,145 @@ const DataResetTab: React.FC = () => {
           >
             {isExporting ? 'Mengekspor...' : 'Export ke Excel'}
           </button>
+        </div>
+      </div>
+
+      {/* Kustomisasi Logo Splash Screen */}
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '16px'
+      }}>
+        <h3 style={{ margin: '0 0 6px 0', fontSize: '15px', color: 'var(--text-primary)' }}>
+          🎨 Logo Splash Screen
+        </h3>
+        <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+          Sesuaikan logo yang tampil saat aplikasi pertama kali dimuat. Anda dapat mengetik emoji atau mengunggah berkas gambar kustom.
+        </p>
+
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          {/* Preview Bulat */}
+          <div style={{
+            width: '80px',
+            height: '80px',
+            borderRadius: '24px',
+            background: 'linear-gradient(135deg, var(--accent, #3b82f6) 0%, #1d4ed8 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: logoType === 'emoji' ? '42px' : 'unset',
+            boxShadow: '0 8px 20px rgba(59, 130, 246, 0.15)',
+            overflow: 'hidden'
+          }}>
+            {logoType === 'emoji' ? (
+              splashLogo
+            ) : (
+              <img src={splashLogo} alt="Custom Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setLogoType('emoji')}
+                style={{
+                  padding: '4px 12px',
+                  background: logoType === 'emoji' ? 'var(--accent)' : 'transparent',
+                  color: logoType === 'emoji' ? '#fff' : 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                Gunakan Emoji
+              </button>
+              <button
+                onClick={() => document.getElementById('splash-logo-file-input')?.click()}
+                style={{
+                  padding: '4px 12px',
+                  background: logoType === 'image' ? 'var(--accent)' : 'transparent',
+                  color: logoType === 'image' ? '#fff' : 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                Unggah Gambar
+              </button>
+              <input
+                type="file"
+                id="splash-logo-file-input"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleLogoFileChange}
+              />
+            </div>
+
+            {logoType === 'emoji' ? (
+              <input
+                type="text"
+                value={splashLogo.startsWith('data:image') ? '📚' : splashLogo}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSplashLogo(val || '📚');
+                }}
+                maxLength={4}
+                style={{
+                  padding: '6px 12px',
+                  background: 'var(--bg-panel)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  width: '120px'
+                }}
+                placeholder="Emoji / Teks"
+              />
+            ) : (
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                Berkas gambar kustom aktif (maks. 2MB)
+              </span>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button
+                onClick={handleSaveLogo}
+                style={{
+                  padding: '6px 16px',
+                  background: '#22c55e',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Simpan Logo
+              </button>
+              <button
+                onClick={handleResetLogo}
+                style={{
+                  padding: '6px 12px',
+                  background: 'transparent',
+                  color: '#ef4444',
+                  border: '1px solid #ef4444',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >
+                Reset Default
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
