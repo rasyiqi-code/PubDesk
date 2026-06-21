@@ -101,12 +101,12 @@ const DashboardProduksi: React.FC = () => {
 
       {/* Konten Dashboard yang scrollable */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {/* Grid Stat Cards terpadu tanpa space (no gap) dan membulat (round) */}
+      {/* Grid Stat Cards terpadu tanpa space/gap dan tidak membulat (siku) */}
       <div style={{ 
         display: 'flex', 
         background: 'var(--bg-card)', 
         border: '1px solid var(--border)', 
-        borderRadius: '12px', 
+        borderRadius: '0px', 
         overflow: 'hidden',
         boxSizing: 'border-box'
       }}>
