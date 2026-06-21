@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Legalitas } from '../../types/data-master.types';
 import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useAppContext } from '../../contexts/AppContext';
+import { googleAppsScriptService } from '../../services/googleAppsScript';
 import { TextField } from '../../ui/atoms/TextField';
 import { SearchableSelect } from '../../ui/atoms/SearchableSelect';
 import { Select } from '../../ui/atoms/Select';
@@ -42,6 +43,9 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
   const [tanggalPengajuan, setTanggalPengajuan] = useState('');
   const [keterangan, setKeterangan] = useState('');
   const [status, setStatus] = useState('Diajukan');
+  const [nomorDokumen, setNomorDokumen] = useState('');
+  const [proof, setProof] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
@@ -62,6 +66,8 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
       setTanggalPengajuan(initialData.tanggal_pengajuan || '');
       setKeterangan(initialData.keterangan || '');
       setStatus(initialData.status);
+      setNomorDokumen(initialData.nomor_dokumen || '');
+      setProof(initialData.proof_path_or_link || '');
     } else {
       setNaskahId(undefined);
       setJudulBuku('');
@@ -70,6 +76,8 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
       setTanggalPengajuan('');
       setKeterangan('');
       setStatus('Diajukan');
+      setNomorDokumen('');
+      setProof('');
     }
   }, [initialData]);
 
@@ -83,6 +91,52 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
         const penulisName = found.penulis_id ? (penulis.find(p => p.id === found.penulis_id)?.name || '') : '';
         if (penulisName) setNamaPenulis(penulisName);
       }
+    }
+  };
+
+  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!googleAppsScriptService.isConfigured()) {
+      showToast('Harap konfigurasikan Google Apps Script terlebih dahulu di setelan!', 'error');
+      return;
+    }
+
+    setIsUploading(true);
+    showToast(`Mengunggah ${file.name} ke Google Drive...`, 'info');
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const resultStr = reader.result as string;
+          const base64String = resultStr.split(',')[1];
+          const result = await googleAppsScriptService.uploadFileToCloud(
+            file.name,
+            base64String,
+            'Legalitas',
+            file.type
+          );
+          
+          if (result.success && result.file_url) {
+            setProof(result.file_url);
+            showToast('Dokumen legalitas berhasil diunggah!', 'success');
+          } else {
+            showToast('Gagal mengunggah dokumen.', 'error');
+          }
+        } catch (err: any) {
+          console.error(err);
+          showToast(`Gagal mengunggah: ${err.message || String(err)}`, 'error');
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error(err);
+      showToast('Gagal membaca dokumen.', 'error');
+      setIsUploading(false);
     }
   };
 
@@ -102,6 +156,8 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
       tanggal_pengajuan: tanggalPengajuan || undefined,
       keterangan: keterangan.trim() || undefined,
       status,
+      nomor_dokumen: nomorDokumen.trim() || undefined,
+      proof_path_or_link: proof.trim() || undefined,
     });
   };
 
@@ -185,6 +241,67 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
                 onChange={setTanggalPengajuan}
                 fullWidth
               />
+
+              <TextField
+                label="Nomor Dokumen (ISBN / HAKI / QRCBN)"
+                placeholder="Masukkan nomor dokumen jika sudah terbit..."
+                value={nomorDokumen}
+                onChange={(e) => setNomorDokumen(e.target.value)}
+                fullWidth
+              />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Bukti / Berkas Legalitas (URL / Upload)
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      value={proof}
+                      onChange={(e) => setProof(e.target.value)}
+                      placeholder="Tautan Google Drive atau klik unggah berkas..."
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: 'var(--bg-card)',
+                        color: 'var(--text-primary)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('legalitas-proof-upload')?.click()}
+                    disabled={isUploading}
+                    style={{
+                      padding: '0 16px',
+                      background: 'var(--bg-panel)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {isUploading ? '⏳ Uploading...' : '📤 Unggah'}
+                  </button>
+                  <input
+                    id="legalitas-proof-upload"
+                    type="file"
+                    style={{ display: 'none' }}
+                    onChange={handleUploadFile}
+                  />
+                </div>
+              </div>
 
               <TextArea
                 label="Keterangan"

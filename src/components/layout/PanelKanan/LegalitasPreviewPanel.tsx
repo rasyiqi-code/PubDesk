@@ -90,6 +90,38 @@ const LegalitasPreviewPanel: React.FC = () => {
           </div>
         </div>
 
+        {/* Dokumen & Bukti */}
+        {(data.nomor_dokumen || data.proof_path_or_link) && (
+          <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Dokumen & Bukti
+            </h3>
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {data.nomor_dokumen && (
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Nomor Dokumen</div>
+                  <div style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500' }}>{data.nomor_dokumen}</div>
+                </div>
+              )}
+              {data.proof_path_or_link && (
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Bukti / Berkas Legalitas</div>
+                  <div style={{ fontSize: '14px' }}>
+                    <a 
+                      href={data.proof_path_or_link} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      🔗 Lihat Dokumen Cloud
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Info Tambahan */}
         <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
