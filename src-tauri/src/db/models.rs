@@ -483,9 +483,25 @@ pub struct ActivityLog {
     pub id: Option<i64>,
     pub entity_type: String,
     pub entity_id: Option<i64>,
-    pub action: String, // "CREATE", "UPDATE", "DELETE"
+    pub action: String,
     pub description: String,
+    pub performed_by: Option<i64>,
+    pub performed_by_name: Option<String>,
+    pub old_value: Option<String>,
+    pub new_value: Option<String>,
+    pub module: Option<String>,
     pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppSession {
+    pub id: Option<i64>,
+    pub tim_id: i64,
+    pub tim_name: String,
+    pub tim_role: String,
+    pub login_at: String,
+    pub logout_at: Option<String>,
+    pub is_active: i32,
 }
 
 // ==========================================

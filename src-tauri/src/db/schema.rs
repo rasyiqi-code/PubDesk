@@ -655,6 +655,27 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
     let _ = conn.execute("ALTER TABLE legalitas ADD COLUMN cloud_file_url TEXT", []);
     let _ = conn.execute("ALTER TABLE tasks ADD COLUMN cloud_file_url TEXT", []);
 
+    // Tabel sesi login karyawan lokal
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS app_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tim_id INTEGER NOT NULL REFERENCES tim(id),
+            tim_name TEXT NOT NULL,
+            tim_role TEXT NOT NULL,
+            login_at TEXT NOT NULL,
+            logout_at TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1
+        )",
+        [],
+    )?;
+
+    // Migrasi kolom audit trail ke activity_log
+    let _ = conn.execute("ALTER TABLE activity_log ADD COLUMN performed_by INTEGER REFERENCES tim(id)", []);
+    let _ = conn.execute("ALTER TABLE activity_log ADD COLUMN performed_by_name TEXT", []);
+    let _ = conn.execute("ALTER TABLE activity_log ADD COLUMN old_value TEXT", []);
+    let _ = conn.execute("ALTER TABLE activity_log ADD COLUMN new_value TEXT", []);
+    let _ = conn.execute("ALTER TABLE activity_log ADD COLUMN module TEXT", []);
+
     Ok(())
 }
 

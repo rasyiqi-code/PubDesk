@@ -11,6 +11,7 @@ use std::io::{Read, Write};
 
 pub struct AppState {
     pub db: Mutex<Option<Database>>,
+    pub active_session: Mutex<Option<AppSession>>,
 }
 
 struct WatcherState {
@@ -883,6 +884,74 @@ async fn get_work_sessions(state: State<'_, AppState>, limit: i64) -> Result<Vec
     db.get_work_sessions(limit).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn login_user(state: State<'_, AppState>, tim_id: i64) -> Result<AppSession, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    let tim_list = db.get_all_tim().map_err(|e| e.to_string())?;
+    let member = tim_list.into_iter().find(|t| t.id == Some(tim_id))
+        .ok_or_else(|| "Anggota tim tidak ditemukan".to_string())?;
+    let session = db.login_session(tim_id, &member.name, &member.role).map_err(|e| e.to_string())?;
+    let _ = db.log_activity_audit("session", None, "LOGIN", &format!("Karyawan '{}' login ke sistem", member.name), Some(tim_id), Some(&member.name), None, None, Some("auth"));
+    drop(db);
+    let mut active = state.active_session.lock().unwrap();
+    *active = Some(session.clone());
+    Ok(session)
+}
+
+#[tauri::command]
+async fn logout_user(state: State<'_, AppState>) -> Result<(), String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    {
+        let active = state.active_session.lock().unwrap();
+        if let Some(ref session) = *active {
+            let _ = db.log_activity_audit("session", None, "LOGOUT", &format!("Karyawan '{}' logout dari sistem", session.tim_name), Some(session.tim_id), Some(&session.tim_name), None, None, Some("auth"));
+        }
+    }
+    db.logout_session().map_err(|e| e.to_string())?;
+    drop(db);
+    let mut active = state.active_session.lock().unwrap();
+    *active = None;
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_current_user(state: State<'_, AppState>) -> Result<Option<AppSession>, String> {
+    {
+        let active = state.active_session.lock().unwrap();
+        if active.is_some() {
+            return Ok(active.clone());
+        }
+    }
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    let session = db.get_active_session().map_err(|e| e.to_string())?;
+    if let Some(ref s) = session {
+        let mut active = state.active_session.lock().unwrap();
+        *active = Some(s.clone());
+    }
+    Ok(session)
+}
+
+#[tauri::command]
+async fn get_activity_log_filtered(
+    state: State<'_, AppState>,
+    limit: i64,
+    performed_by: Option<i64>,
+    entity_type: Option<String>,
+    action: Option<String>,
+) -> Result<Vec<ActivityLog>, String> {
+    let db = state.db.lock().unwrap();
+    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    db.get_activity_log_filtered(
+        limit,
+        performed_by,
+        entity_type.as_deref(),
+        action.as_deref(),
+    ).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -890,6 +959,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState {
             db: Mutex::new(None),
+            active_session: Mutex::new(None),
         })
         .manage(WatcherState {
             manager: Mutex::new(None),
@@ -981,7 +1051,11 @@ pub fn run() {
             start_work_session,
             stop_work_session,
             get_active_work_session,
-            get_work_sessions
+            get_work_sessions,
+            login_user,
+            logout_user,
+            get_current_user,
+            get_activity_log_filtered
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

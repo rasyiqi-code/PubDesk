@@ -1157,19 +1157,40 @@ impl Database {
         Ok(())
     }
 
-    // Activity Log helper
-    pub fn log_activity(&self, entity_type: &str, entity_id: Option<i64>, action: &str, description: &str) -> Result<(), DbError> {
+    // Activity Log helper — mendukung audit trail karyawan
+    pub fn log_activity(
+        &self,
+        entity_type: &str,
+        entity_id: Option<i64>,
+        action: &str,
+        description: &str,
+    ) -> Result<(), DbError> {
+        self.log_activity_audit(entity_type, entity_id, action, description, None, None, None, None, None)
+    }
+
+    pub fn log_activity_audit(
+        &self,
+        entity_type: &str,
+        entity_id: Option<i64>,
+        action: &str,
+        description: &str,
+        performed_by: Option<i64>,
+        performed_by_name: Option<&str>,
+        old_value: Option<&str>,
+        new_value: Option<&str>,
+        module: Option<&str>,
+    ) -> Result<(), DbError> {
         let created_at = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "INSERT INTO activity_log (entity_type, entity_id, action, description, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![entity_type, entity_id, action, description, created_at],
+            "INSERT INTO activity_log (entity_type, entity_id, action, description, performed_by, performed_by_name, old_value, new_value, module, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![entity_type, entity_id, action, description, performed_by, performed_by_name, old_value, new_value, module, created_at],
         )?;
         Ok(())
     }
 
     pub fn get_activity_log(&self, limit: i64) -> Result<Vec<ActivityLog>, DbError> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, entity_type, entity_id, action, description, created_at FROM activity_log ORDER BY created_at DESC LIMIT ?1"
+            "SELECT id, entity_type, entity_id, action, description, performed_by, performed_by_name, old_value, new_value, module, created_at FROM activity_log ORDER BY created_at DESC LIMIT ?1"
         )?;
         let rows = stmt.query_map(params![limit], |row| {
             Ok(ActivityLog {
@@ -1178,7 +1199,12 @@ impl Database {
                 entity_id: row.get(2)?,
                 action: row.get(3)?,
                 description: row.get(4)?,
-                created_at: row.get(5)?,
+                performed_by: row.get(5)?,
+                performed_by_name: row.get(6)?,
+                old_value: row.get(7)?,
+                new_value: row.get(8)?,
+                module: row.get(9)?,
+                created_at: row.get(10)?,
             })
         })?;
         
@@ -1188,6 +1214,113 @@ impl Database {
         }
         Ok(res)
     }
+
+    pub fn get_activity_log_filtered(
+        &self,
+        limit: i64,
+        performed_by: Option<i64>,
+        entity_type: Option<&str>,
+        action: Option<&str>,
+    ) -> Result<Vec<ActivityLog>, DbError> {
+        let mut conditions: Vec<String> = Vec::new();
+        if performed_by.is_some() { conditions.push("performed_by = ?2".to_string()); }
+        if entity_type.is_some() { conditions.push("entity_type = ?3".to_string()); }
+        if action.is_some() { conditions.push("action = ?4".to_string()); }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        let sql = format!(
+            "SELECT id, entity_type, entity_id, action, description, performed_by, performed_by_name, old_value, new_value, module, created_at FROM activity_log {} ORDER BY created_at DESC LIMIT ?1",
+            where_clause
+        );
+
+        let mut stmt = self.conn.prepare(&sql)?;
+        let rows = stmt.query_map(
+            params![limit, performed_by, entity_type, action],
+            |row| {
+                Ok(ActivityLog {
+                    id: row.get(0)?,
+                    entity_type: row.get(1)?,
+                    entity_id: row.get(2)?,
+                    action: row.get(3)?,
+                    description: row.get(4)?,
+                    performed_by: row.get(5)?,
+                    performed_by_name: row.get(6)?,
+                    old_value: row.get(7)?,
+                    new_value: row.get(8)?,
+                    module: row.get(9)?,
+                    created_at: row.get(10)?,
+                })
+            },
+        )?;
+
+        let mut res = Vec::new();
+        for r in rows {
+            res.push(r?);
+        }
+        Ok(res)
+    }
+
+    // Auth session management — login/logout karyawan lokal
+    pub fn login_session(&self, tim_id: i64, tim_name: &str, tim_role: &str) -> Result<AppSession, DbError> {
+        let now = chrono::Local::now().to_rfc3339();
+        // Nonaktifkan sesi sebelumnya
+        self.conn.execute(
+            "UPDATE app_sessions SET is_active = 0, logout_at = ?1 WHERE is_active = 1",
+            params![now],
+        )?;
+        // Buat sesi baru
+        self.conn.execute(
+            "INSERT INTO app_sessions (tim_id, tim_name, tim_role, login_at, is_active) VALUES (?1, ?2, ?3, ?4, 1)",
+            params![tim_id, tim_name, tim_role, now],
+        )?;
+        let id = self.conn.last_insert_rowid();
+        Ok(AppSession {
+            id: Some(id),
+            tim_id,
+            tim_name: tim_name.to_string(),
+            tim_role: tim_role.to_string(),
+            login_at: now,
+            logout_at: None,
+            is_active: 1,
+        })
+    }
+
+    pub fn logout_session(&self) -> Result<(), DbError> {
+        let now = chrono::Local::now().to_rfc3339();
+        self.conn.execute(
+            "UPDATE app_sessions SET is_active = 0, logout_at = ?1 WHERE is_active = 1",
+            params![now],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_active_session(&self) -> Result<Option<AppSession>, DbError> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, tim_id, tim_name, tim_role, login_at, logout_at, is_active FROM app_sessions WHERE is_active = 1 ORDER BY login_at DESC LIMIT 1"
+        )?;
+        let mut rows = stmt.query_map([], |row| {
+            Ok(AppSession {
+                id: row.get(0)?,
+                tim_id: row.get(1)?,
+                tim_name: row.get(2)?,
+                tim_role: row.get(3)?,
+                login_at: row.get(4)?,
+                logout_at: row.get(5)?,
+                is_active: row.get(6)?,
+            })
+        })?;
+        if let Some(row) = rows.next() {
+            Ok(Some(row?))
+        } else {
+            Ok(None)
+        }
+    }
+
 
     // Work Session management
     pub fn start_work_session(&self, start_time: &str) -> Result<i64, DbError> {

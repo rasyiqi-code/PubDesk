@@ -35,6 +35,11 @@ import DashboardMasterData from '../data-master/DashboardMasterData';
 import DashboardInvoice from '../invoice/DashboardInvoice';
 import DashboardFiles from '../files/DashboardFiles';
 
+// Modul Auth Lokal
+import { useAuth } from '../../contexts/AuthContext';
+import LoginPage from '../auth/LoginPage';
+
+
 // Modul Pengaturan Tambahan
 import ImportExcel from '../import/ImportExcel';
 
@@ -227,6 +232,24 @@ const MainLayout = () => {
   );
 };
 
-export { MainLayout };
-export default MainLayout;
- 
+const MainLayoutInner = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-dark)', color: 'var(--text-secondary)', fontSize: '14px' }}>
+        Memuat aplikasi...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  return <MainLayout />;
+};
+
+export { MainLayout, MainLayoutInner };
+export default MainLayoutInner;
+

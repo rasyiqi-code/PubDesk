@@ -1,0 +1,250 @@
+import React, { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { useAuth } from '../../contexts/AuthContext';
+
+interface TimMember {
+  id?: number;
+  name: string;
+  role: string;
+  department?: string;
+  is_active: number;
+}
+
+// Warna avatar berdasarkan index
+const AVATAR_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
+  '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6',
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+const LoginPage: React.FC = () => {
+  const { login } = useAuth();
+  const [members, setMembers] = useState<TimMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loggingIn, setLoggingIn] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await invoke<TimMember[]>('get_tim');
+        setMembers(data.filter(m => m.is_active === 1));
+      } catch (e) {
+        setError('Gagal memuat data anggota tim.');
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleLogin = async (member: TimMember) => {
+    if (!member.id) return;
+    setLoggingIn(member.id);
+    setError(null);
+    try {
+      await login(member.id);
+    } catch (e) {
+      setError('Gagal login. Silakan coba lagi.');
+      console.error(e);
+    } finally {
+      setLoggingIn(null);
+    }
+  };
+
+  return (
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--bg-dark)',
+      padding: '24px',
+    }}>
+      {/* Header */}
+      <div style={{ marginBottom: '40px', textAlign: 'center' }}>
+        <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏭</div>
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          color: 'var(--text-primary)',
+          margin: '0 0 8px 0',
+        }}>
+          PubDesk
+        </h1>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
+          Pilih identitas Anda untuk memulai sesi kerja
+        </p>
+      </div>
+
+      {/* Container kartu anggota */}
+      <div style={{
+        background: 'var(--bg-panel)',
+        border: '1px solid var(--border)',
+        borderRadius: '0px',
+        width: '100%',
+        maxWidth: '680px',
+        overflow: 'hidden',
+      }}>
+        {/* Header panel */}
+        <div style={{
+          padding: '14px 20px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'var(--bg-card)',
+        }}>
+          <span style={{ fontSize: '14px' }}>👥</span>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+            Anggota Tim Aktif
+          </span>
+        </div>
+
+        {isLoading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            Memuat daftar tim...
+          </div>
+        ) : members.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>😕</div>
+            <p style={{ color: 'var(--text-secondary)', margin: '0 0 16px 0', fontSize: '14px' }}>
+              Belum ada anggota tim yang terdaftar.
+            </p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '12px', margin: 0 }}>
+              Tambahkan anggota tim melalui menu Master Data → Anggota Tim terlebih dahulu.
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            background: 'var(--bg-card)',
+            borderBottom: '1px solid var(--border)',
+          }}>
+            {members.map((member, idx) => {
+              const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+              const isLoggingIn = loggingIn === member.id;
+              return (
+                <button
+                  key={member.id}
+                  onClick={() => handleLogin(member)}
+                  disabled={loggingIn !== null}
+                  style={{
+                    flex: '1 1 200px',
+                    minWidth: '180px',
+                    padding: '20px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px',
+                    border: 'none',
+                    borderRight: '1px solid var(--border)',
+                    borderBottom: '1px solid var(--border)',
+                    background: isLoggingIn ? 'var(--bg-panel)' : 'transparent',
+                    cursor: loggingIn !== null ? 'wait' : 'pointer',
+                    transition: 'background 0.15s ease',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                    opacity: loggingIn !== null && !isLoggingIn ? 0.5 : 1,
+                  }}
+                  onMouseOver={(e) => {
+                    if (loggingIn === null) e.currentTarget.style.background = 'var(--bg-panel)';
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isLoggingIn) e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {/* Avatar */}
+                  <div style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '50%',
+                    background: color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: '#ffffff',
+                    flexShrink: 0,
+                    position: 'relative',
+                  }}>
+                    {isLoggingIn ? (
+                      <span style={{ fontSize: '20px', animation: 'spin 1s linear infinite' }}>⌛</span>
+                    ) : (
+                      getInitials(member.name)
+                    )}
+                  </div>
+                  {/* Info */}
+                  <div>
+                    <div style={{
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: 'var(--text-primary)',
+                      marginBottom: '2px',
+                    }}>
+                      {member.name}
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: 'var(--text-secondary)',
+                      marginBottom: '2px',
+                    }}>
+                      {member.role}
+                    </div>
+                    {member.department && (
+                      <div style={{
+                        fontSize: '10px',
+                        color: color,
+                        fontWeight: '500',
+                      }}>
+                        {member.department}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div style={{
+            padding: '12px 20px',
+            borderTop: '1px solid var(--border)',
+            background: 'rgba(239,68,68,0.06)',
+            borderLeft: '4px solid #ef4444',
+            color: '#ef4444',
+            fontSize: '13px',
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{
+          padding: '12px 20px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--bg-dark)',
+        }}>
+          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0, textAlign: 'center' }}>
+            Setiap aksi yang dilakukan akan tercatat di Activity Log beserta identitas Anda.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;

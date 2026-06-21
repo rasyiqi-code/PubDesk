@@ -115,5 +115,20 @@ export interface ActivityLogEntry {
   entity_id?: number;
   action: string;
   description: string;
+  performed_by?: number;
+  performed_by_name?: string;
+  old_value?: string;
+  new_value?: string;
+  module?: string;
   created_at: string;
+}
+
+export interface AppSession {
+  id?: number;
+  tim_id: number;
+  tim_name: string;
+  tim_role: string;
+  login_at: string;
+  logout_at?: string;
+  is_active: number;
 }
