@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Task } from '../../types/workflow.types';
+import { Tim } from '../../types/data-master.types';
 import { useUniqueValues } from '../../hooks/useUniqueValues';
+import { useAuth } from '../../contexts/AuthContext';
 import { StatCard } from '../../ui/molecules/StatCard';
 import { Button } from '../../ui/atoms/Button';
 import { Badge } from '../../ui/atoms/Badge';
@@ -17,8 +19,10 @@ interface Legalitas {
 }
 
 const LaporanOperasional: React.FC = () => {
+  const { currentUser } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [legalitasList, setLegalitasList] = useState<Legalitas[]>([]);
+  const [timList, setTimList] = useState<Tim[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Filters
@@ -31,12 +35,14 @@ const LaporanOperasional: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [taskData, legalitasData] = await Promise.all([
+      const [taskData, legalitasData, timData] = await Promise.all([
         invoke<Task[]>('get_tasks'),
-        invoke<Legalitas[]>('get_legalitas').catch(() => [])
+        invoke<Legalitas[]>('get_legalitas').catch(() => []),
+        invoke<Tim[]>('get_tim').catch(() => [])
       ]);
       setTasks(taskData);
       setLegalitasList(legalitasData);
+      setTimList(timData);
     } catch (err) {
       console.error('Error fetching laporan data:', err);
     } finally {
@@ -81,6 +87,30 @@ const LaporanOperasional: React.FC = () => {
 
   const uniquePics = useUniqueValues(tasks, 'pic_name');
   const uniqueStatuses = useUniqueValues(tasks, 'status');
+
+  // Metrik Personal untuk Insight Karyawan
+  const startOfWeek = new Date();
+  const currentDay = startOfWeek.getDay();
+  const diffDays = startOfWeek.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Awal minggu (Senin)
+  startOfWeek.setDate(diffDays);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const myActiveTasks = tasks.filter(t => 
+    t.pic_name === currentUser?.tim_name && 
+    t.status !== 'Selesai' && 
+    t.status !== 'Batal'
+  );
+
+  const myFinishedThisWeekTasks = tasks.filter(t => {
+    if (t.pic_name !== currentUser?.tim_name) return false;
+    if (t.status !== 'Selesai') return false;
+    if (!t.completed_date) return false;
+    const completedDate = new Date(t.completed_date);
+    return completedDate >= startOfWeek;
+  });
+
+  const currentUserTimProfile = timList.find(t => t.id === currentUser?.tim_id);
+  const myWeeklyTarget = currentUserTimProfile?.weekly_target || 5;
 
   const handleExport = () => {
     alert("Mengekspor data ke Excel... (Fitur segera hadir)");
@@ -194,6 +224,65 @@ const LaporanOperasional: React.FC = () => {
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat laporan...</div>
         ) : (
           <>
+            {/* Insight Anda - Tampil jika user login */}
+            {currentUser && (
+              <div style={{ padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Insight Anda ({currentUser.tim_name})</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 2fr', gap: '16px', background: 'var(--bg-card)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  {/* Target Mingguan */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderRight: '1px solid var(--border)', paddingRight: '16px' }}>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: '600' }}>Target Mingguan Saya</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', margin: '4px 0' }}>
+                      <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-primary)' }}>{myFinishedThisWeekTasks.length}</span>
+                      <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>/ {myWeeklyTarget} Selesai</span>
+                    </div>
+                    {/* Progress Bar */}
+                    <div style={{ width: '100%', height: '6px', background: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(100, (myFinishedThisWeekTasks.length / myWeeklyTarget) * 100)}%`, height: '100%', background: myFinishedThisWeekTasks.length >= myWeeklyTarget ? '#22c55e' : '#3b82f6', transition: 'width 0.3s ease' }}></div>
+                    </div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      {myFinishedThisWeekTasks.length >= myWeeklyTarget ? '🎉 Target tercapai!' : `${myWeeklyTarget - myFinishedThisWeekTasks.length} tugas lagi untuk mencapai target.`}
+                    </span>
+                  </div>
+
+                  {/* Tugas Aktif Saya */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: '600' }}>Tugas Aktif Saya ({myActiveTasks.length})</span>
+                    {myActiveTasks.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', padding: '12px 0' }}>
+                        🎉 Tidak ada tugas aktif untuk Anda saat ini. Selamat!
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '110px', overflowY: 'auto' }}>
+                        {myActiveTasks.slice(0, 3).map(task => (
+                          <div key={task.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-panel)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {task.naskah_title || `Naskah #${task.naskah_id}`}
+                              </span>
+                              <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Tahap: {task.step_name}</span>
+                            </div>
+                            {task.due_date && (
+                              <Badge 
+                                label={new Date(task.due_date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})} 
+                                variant={isOverdue(task) ? "danger" : "info"} 
+                                size="sm" 
+                              />
+                            )}
+                          </div>
+                        ))}
+                        {myActiveTasks.length > 3 && (
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                            + {myActiveTasks.length - 3} tugas aktif lainnya. Gunakan filter PIC untuk melihat detail lengkap.
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Beban Kerja Tim Terstandar tanpa container card */}
             <div style={{ padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <h3 style={{ margin: 0, fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Beban Kerja Tim (Tugas Aktif)</h3>
