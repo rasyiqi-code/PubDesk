@@ -13,8 +13,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
     const active = appState.activeModule;
     return {
-      files: active === 'files',
-      invoice: ['invoice', 'invoice-manager', 'invoice-insight'].includes(active),
+      files: ['files', 'files-parent'].includes(active),
+      invoice: ['invoice', 'invoice-manager', 'invoice-insight', 'invoice-parent'].includes(active),
       'master-data-parent': ['kontak', 'penerbit', 'naskah', 'tim', 'legalitas', 'services', 'master-data-parent'].includes(active),
       'produksi-parent': ['produksi-board', 'produksi-list', 'produksi-kendala', 'produksi-approval', 'tambah-tugas', 'edit-tugas', 'produksi-parent'].includes(active)
     };
@@ -42,7 +42,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       <nav style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
         {menuItems.map((item) => {
         const isActive = item.id === 'invoice'
-          ? (appState.activeModule === 'invoice' || appState.activeModule === 'invoice-manager' || appState.activeModule === 'invoice-insight')
+          ? (appState.activeModule === 'invoice' || appState.activeModule === 'invoice-manager' || appState.activeModule === 'invoice-insight' || appState.activeModule === 'invoice-parent')
+          : item.id === 'files'
+          ? (appState.activeModule === 'files' || appState.activeModule === 'files-parent')
           : item.id === 'master-data-parent'
           ? (
               appState.activeModule === 'kontak' ||
@@ -99,18 +101,15 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                   }
 
                   if (item.id === 'invoice') {
-                    if (appState.activeModule !== 'invoice' && appState.activeModule !== 'invoice-manager' && appState.activeModule !== 'invoice-insight') {
-                      setActiveModule('invoice');
-                    }
+                    setActiveModule('invoice-parent');
+                  } else if (item.id === 'files') {
+                    setActiveModule('files-parent');
                   } else if (item.id === 'master-data-parent') {
                     setActiveModule('master-data-parent');
                   } else if (item.id === 'produksi-parent') {
                     setActiveModule('produksi-parent');
                   } else {
                     setActiveModule(item.id);
-                    if (item.id === 'files') {
-                      setFileCategory('all');
-                    }
                   }
                 }}
                 onMouseOver={(e) => {

@@ -32,6 +32,8 @@ import TaskFormPage from '../produksi/TaskFormPage';
 import LaporanOperasional from '../laporan/LaporanOperasional';
 import DashboardProduksi from '../produksi/DashboardProduksi';
 import DashboardMasterData from '../data-master/DashboardMasterData';
+import DashboardInvoice from '../invoice/DashboardInvoice';
+import DashboardFiles from '../files/DashboardFiles';
 
 // Modul Pengaturan Tambahan
 import ImportExcel from '../import/ImportExcel';
@@ -128,6 +130,10 @@ const MainLayout = () => {
         return <DashboardProduksi />;
       case 'master-data-parent':
         return <DashboardMasterData />;
+      case 'invoice-parent':
+        return <DashboardInvoice />;
+      case 'files-parent':
+        return <DashboardFiles />;
       case 'produksi-board':
         return <ProduksiBoard searchQuery={fileSearchQuery} />;
       case 'produksi-list':

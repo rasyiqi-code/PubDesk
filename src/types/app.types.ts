@@ -31,7 +31,9 @@ export type AppModule =
   | 'tambah-tugas'
   | 'edit-tugas'
   | 'produksi-parent'
-  | 'master-data-parent';
+  | 'master-data-parent'
+  | 'invoice-parent'
+  | 'files-parent';
 
 export interface AppState {
   activeModule: AppModule;
