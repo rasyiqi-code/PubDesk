@@ -216,8 +216,8 @@ const InvoiceInsight: React.FC<InvoiceInsightProps> = ({
           
           const cardStyle: React.CSSProperties = isDashboard
             ? {
-                flex: '1 1 200px',
-                minWidth: '180px',
+                flex: '1 1 25%',
+                minWidth: '220px',
                 padding: '20px',
                 position: 'relative',
                 display: 'flex',
