@@ -9,6 +9,7 @@ import InvoiceManager from '../invoice/InvoiceManager';
 import InvoiceInsight from '../invoice/InvoiceInsight';
 import { useAppContext } from '../../contexts/AppContext';
 import InvoiceSettings from '../settings/InvoiceSettings';
+import { SyncConnectionPanel } from '@pubhub/shared-ui/src/shared/SyncConnectionPanel';
 import ServiceManager from '../data-master/ServiceManager';
 import PelangganManager from '../data-master/PelangganManager';
 import ActivityLog from '../data-master/ActivityLog';
@@ -121,6 +122,8 @@ const MainLayout = () => {
         return <LaporanOperasional />;
       case 'settings-invoice':
         return renderSettingsModule('Setelan Invoice', '📄', <InvoiceSettings />);
+      case 'settings-p2p':
+        return renderSettingsModule('Koneksi Jaringan', '🔗', <SyncConnectionPanel />);
       default:
         return <InvoiceGenerator />;
     }

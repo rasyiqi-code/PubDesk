@@ -26,3 +26,4 @@ export * from './molecules/TabBar';
 // Shared Components
 export * from './shared/Toast';
 export * from './shared/ConfirmDialog';
+export * from './shared/SyncConnectionPanel';

@@ -26,6 +26,20 @@ export interface WatchFolder {
   created_at: string;
 }
 
+export interface DiscoveredPeer {
+  peer_id: string;
+  addresses: string[];
+}
+
+export interface P2PConnectionInfo {
+  is_connected: boolean;
+  peer_id: string;
+  active_peers: string[];
+  local_addresses: string[];
+  discovered_peers: DiscoveredPeer[];
+  role: string;
+}
+
 interface AppContextType {
   appState: AppState;
   setActiveModule: (module: AppState['activeModule']) => void;
@@ -144,6 +158,9 @@ interface AppContextType {
   directAddNewModule: string | null;
   setDirectAddNewModule: (module: string | null) => void;
   isDbInitialized: boolean;
+  p2pConnectionInfo: P2PConnectionInfo | null;
+  discoveredPeers: DiscoveredPeer[];
+  setDiscoveredPeers: (peers: DiscoveredPeer[]) => void;
 }
 
 
@@ -154,6 +171,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'service' | 'other' | 'gdrive' | 'pdf' | 'spreadsheet' | 'text' | 'image' | 'presentation'>('all');
   const [directAddNewModule, setDirectAddNewModule] = useState<string | null>(null);
   const [isDbInitialized, setIsDbInitialized] = useState(false);
+  const [discoveredPeers, setDiscoveredPeers] = useState<DiscoveredPeer[]>([]);
+  const [p2pConnectionInfo, setP2pConnectionInfo] = useState<P2PConnectionInfo | null>(null);
 
 
   const booksState = useBookState({ showToast: ui.showToast });
@@ -187,8 +206,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    let unlistenLocal: (() => void) | undefined;
     const init = async () => {
       try {
         await invoke('init_database');
@@ -205,26 +222,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     init();
 
-    const setupListener = async () => {
+    const unlistenPromises: Promise<() => void>[] = [];
+
+    const setupListeners = async () => {
       try {
-        unlisten = await listen<string>('gdrive-oauth-code', async (event) => {
+        const u1 = listen<string>('gdrive-oauth-code', async (event) => {
           const code = event.payload;
           if (code) {
             await gdriveState.exchangeCodeForToken(code);
           }
         });
-        unlistenLocal = await listen<void>('local-files-changed', async () => {
+        unlistenPromises.push(u1);
+
+        const u2 = listen<void>('local-files-changed', async () => {
           await filesState.loadFiles();
         });
+        unlistenPromises.push(u2);
+
+        const u3 = listen<DiscoveredPeer>('p2p-peer-discovered', (event) => {
+          setDiscoveredPeers(prev => {
+            const existing = prev.find(p => p.peer_id === event.payload.peer_id);
+            if (existing) {
+              return prev.map(p =>
+                p.peer_id === event.payload.peer_id ? { ...p, addresses: [...new Set([...p.addresses, ...event.payload.addresses])] } : p
+              );
+            }
+            return [...prev, event.payload];
+          });
+        });
+        unlistenPromises.push(u3);
+
+        const u4 = listen<DiscoveredPeer>('p2p-peer-expired', (event) => {
+          setDiscoveredPeers(prev => prev.filter(p => p.peer_id !== event.payload.peer_id));
+        });
+        unlistenPromises.push(u4);
+
       } catch (err) {
-        console.error('Gagal memasang event listener oauth:', err);
+        console.error('Gagal memasang event listener:', err);
       }
     };
-    setupListener();
+    setupListeners();
 
     return () => {
-      if (unlisten) unlisten();
-      if (unlistenLocal) unlistenLocal();
+      Promise.all(unlistenPromises).then(unlisteners => {
+        unlisteners.forEach(fn => fn());
+      });
     };
   }, []);
 
@@ -331,6 +373,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       directAddNewModule,
       setDirectAddNewModule,
       isDbInitialized,
+      p2pConnectionInfo,
+      discoveredPeers,
+      setDiscoveredPeers,
     }}>
       {children}
     </AppContext.Provider>

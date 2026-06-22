@@ -701,6 +701,18 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
         [],
     )?;
 
+    // ==========================================
+    // LOCAL-FIRST SYNC (P2P)
+    // ==========================================
+    crate::sync::engine::init_sync_schema(conn)?;
+    let _ = crate::sync::engine::ensure_device_id(conn);
+
+    // WAL mode for better concurrent access between sync and UI.
+    let _ = conn.execute("PRAGMA journal_mode=WAL;", []);
+
+    // Dynamically create sync triggers for all tracked tables.
+    crate::sync::engine::create_sync_triggers(conn)?;
+
     Ok(())
 }
 

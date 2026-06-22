@@ -3,361 +3,552 @@ mod watcher;
 pub mod indexing;
 pub mod commands;
 pub mod p2p;
+pub mod sync;
 
 use db::*;
 use watcher::WatcherManager;
-use std::sync::Mutex;
-use tauri::{State, Emitter};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use tauri::{Emitter, Manager, State};
 use std::net::TcpListener;
 use std::io::{Read, Write};
+use std::time::Duration;
+
+pub struct SyncState {
+    pub enabled: bool,
+    pub workspace_id: Option<String>,
+    pub network: Option<Arc<sync::SyncNetwork>>,
+    pub master_key: Option<[u8; 32]>,
+    pub last_sync_at: Option<String>,
+    pub error: Option<String>,
+}
+
+impl Default for SyncState {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            workspace_id: None,
+            network: None,
+            master_key: None,
+            last_sync_at: None,
+            error: None,
+        }
+    }
+}
 
 pub struct AppState {
     pub db: Mutex<Option<Database>>,
     pub active_session: Mutex<Option<AppSession>>,
-    pub p2p_manager: Mutex<Option<std::sync::Arc<crate::p2p::P2PManager>>>,
+    pub db_path: Mutex<Option<PathBuf>>,
+    pub sync: Mutex<SyncState>,
 }
 
 pub struct WatcherState {
     pub manager: Mutex<Option<WatcherManager>>,
 }
 
-// Inisialisasi P2P Instance & Database P2P/Local
-pub fn setup_p2p_instance(
-    local_db_path: &std::path::PathBuf,
-    app_state: &AppState,
+#[tauri::command]
+async fn init_database(
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+    watcher_state: State<'_, WatcherState>,
 ) -> Result<(), String> {
-    // 1. Buka koneksi lokal sementara untuk membaca konfigurasi P2P
-    let local_conn = rusqlite::Connection::open(local_db_path)
-        .map_err(|e| format!("Gagal membuka DB lokal untuk P2P: {}", e))?;
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    init_db(&db_path).map_err(|e| e.to_string())?;
 
-    // Pastikan tabel p2p_config ada
-    local_conn.execute(
-        "CREATE TABLE IF NOT EXISTS p2p_config (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
-        []
-    ).map_err(|e| e.to_string())?;
+    *state.db_path.lock().unwrap() = Some(db_path.clone());
 
-    // 2. Baca/generate keypair
-    let keypair_b64: String = match local_conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'keypair'",
-        [],
-        |row| row.get(0)
-    ) {
-        Ok(val) => val,
-        Err(_) => {
-            let keypair = libp2p::identity::Keypair::generate_ed25519();
-            let encoded = keypair.to_protobuf_encoding().unwrap();
-            let b64 = base64::Engine::encode(&base64::prelude::BASE64_STANDARD, &encoded);
-            local_conn.execute(
-                "INSERT INTO p2p_config (key, value) VALUES ('keypair', ?1)",
-                [&b64]
-            ).map_err(|e| e.to_string())?;
-            b64
-        }
-    };
-    let keypair_bytes = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, &keypair_b64).map_err(|e| e.to_string())?;
+    let db = Database::new(&db_path).map_err(|e| e.to_string())?;
+    *state.db.lock().unwrap() = Some(db);
 
-    // 3. Baca/generate auth_token
-    let _auth_token: String = match local_conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'auth_token'",
-        [],
-        |row| row.get(0)
-    ) {
-        Ok(val) => val,
-        Err(_) => {
-            // Generate token acak sederhana
-            let token = format!("{:x}", chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0));
-            local_conn.execute(
-                "INSERT INTO p2p_config (key, value) VALUES ('auth_token', ?1)",
-                [&token]
-            ).map_err(|e| e.to_string())?;
-            token
-        }
-    };
-
-    // 4. Baca p2p_enabled, p2p_role, p2p_host_address
-    let mut p2p_enabled: String = local_conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'p2p_enabled'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "false".to_string());
-
-    let p2p_role: String = local_conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'p2p_role'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "client".to_string());
-
-    let mut p2p_host_address: String = local_conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'p2p_host_address'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "".to_string());
-
-    let mut auth_token: String = local_conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'auth_token'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "".to_string());
-
-    // Muat konfigurasi bersama dari Host jika role kita adalah client
-    if p2p_role == "client" {
-        if let Ok(home) = std::env::var("HOME") {
-            let shared_conf_path = std::path::PathBuf::from(home)
-                .join(".config")
-                .join("pubhub")
-                .join("p2p_shared_config.json");
-            if shared_conf_path.exists() {
-                if let Ok(content) = std::fs::read_to_string(&shared_conf_path) {
-                    if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&content) {
-                        let mut shared_enabled = false;
-                        if let Some(enabled) = json_val.get("enabled").and_then(|v| v.as_bool()) {
-                            shared_enabled = enabled;
-                            p2p_enabled = if enabled { "true".to_string() } else { "false".to_string() };
-                        }
-                        if let Some(host_addr) = json_val.get("host_address").and_then(|v| v.as_str()) {
-                            p2p_host_address = host_addr.to_string();
-                        }
-                        if let Some(token) = json_val.get("auth_token").and_then(|v| v.as_str()) {
-                            auth_token = token.to_string();
-                        }
-
-                        // Simpan konfigurasi termuat ke database lokal agar wrapper.rs bisa menggunakannya
-                        let _ = local_conn.execute(
-                            "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('p2p_enabled', ?1)",
-                            [if shared_enabled { "true" } else { "false" }]
-                        );
-                        let _ = local_conn.execute(
-                            "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('p2p_host_address', ?1)",
-                            [&p2p_host_address]
-                        );
-                        let _ = local_conn.execute(
-                            "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('auth_token', ?1)",
-                            [&auth_token]
-                        );
-                    }
-                }
-            }
+    // Try to load persisted sync settings. Sync network itself is only started
+    // after the user unlocks with PIN.
+    if let Ok(conn) = rusqlite::Connection::open(&db_path) {
+        if let Ok(cfg) = sync::engine::get_sync_config(&conn) {
+            let mut s = state.sync.lock().unwrap();
+            s.enabled = cfg.enabled;
+            s.workspace_id = cfg.workspace_id;
         }
     }
 
-    // Tutup koneksi lokal sementara
-    drop(local_conn);
+    let watch_folders = {
+        let db_lock = state.db.lock().unwrap();
+        let db = db_lock.as_ref().ok_or("Database tidak terinisialisasi")?;
+        db.get_watch_folders().map_err(|e| e.to_string())?
+    };
+    let paths: Vec<std::path::PathBuf> = watch_folders
+        .iter()
+        .map(|f| std::path::PathBuf::from(&f.path))
+        .collect();
 
-    if p2p_enabled == "true" {
-        let db_conn_provider = std::sync::Arc::new(std::sync::Mutex::new(None));
-        
-        let manager = std::sync::Arc::new(
-            crate::p2p::P2PManager::new(keypair_bytes, db_conn_provider.clone())
-                .map_err(|e| format!("Gagal membuat P2PManager: {}", e))?
-        );
+    let manager = WatcherManager::new(app_handle.clone());
+    let mut manager_lock = watcher_state.manager.lock().unwrap();
+    *manager_lock = Some(manager);
 
-        *app_state.p2p_manager.lock().unwrap() = Some(manager.clone());
-
-        if p2p_role == "host" {
-            // Kita adalah Host. Database lokal terhubung langsung.
-            let db_conn = rusqlite::Connection::open(local_db_path).map_err(|e| e.to_string())?;
-            // Berikan koneksi database ke manager agar dia bisa merespons kueri masuk
-            *db_conn_provider.lock().unwrap() = Some(rusqlite::Connection::open(local_db_path).map_err(|e| e.to_string())?);
-            
-            let db = Database {
-                conn: crate::db::Connection::Local(db_conn)
-            };
-            *app_state.db.lock().unwrap() = Some(db);
-
-            // Mulai mendengarkan
-            let manager_clone = manager.clone();
-            tokio::spawn(async move {
-                if let Err(e) = manager_clone.start_listening().await {
-                    println!("Gagal memulai listen P2P: {:?}", e);
-                }
-            });
-        } else {
-            // Kita adalah Client.
-            if p2p_host_address.is_empty() {
-                return Err("Alamat host P2P kosong".to_string());
-            }
-            let addr: libp2p::Multiaddr = p2p_host_address.parse()
-                .map_err(|e| format!("Format alamat host salah: {}", e))?;
-
-            // Dapatkan peer ID host dari multiaddress
-            let host_peer_id = addr.iter().find_map(|p| match p {
-                libp2p::multiaddr::Protocol::P2p(peer_id) => Some(peer_id),
-                _ => None
-            }).ok_or_else(|| "Alamat host tidak menyertakan Peer ID (/p2p/...)".to_string())?;
-
-            // Hubungkan (dial) ke host secara asinkron
-            let manager_clone = manager.clone();
-            let addr_clone = addr.clone();
-            tokio::spawn(async move {
-                if let Err(e) = manager_clone.dial(addr_clone).await {
-                    println!("Gagal mendial host P2P: {:?}", e);
-                }
-            });
-
-            // Inisialisasi Database P2P
-            let db = Database::new_p2p(local_db_path, manager, host_peer_id)
-                .map_err(|e| format!("Gagal inisialisasi DB P2P: {}", e))?;
-            *app_state.db.lock().unwrap() = Some(db);
-        }
-    } else {
-        // P2P tidak diaktifkan, load SQLite lokal biasa
-        let db = Database::new(local_db_path).map_err(|e| e.to_string())?;
-        *app_state.db.lock().unwrap() = Some(db);
+    if let Some(manager) = manager_lock.as_mut() {
+        let _ = manager.start(paths);
     }
 
     Ok(())
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct P2PConfigPayload {
-    pub enabled: bool,
-    pub role: String,
-    pub host_address: String,
-    pub auth_token: String,
-    pub local_peer_id: String,
-}
-
 #[tauri::command]
-async fn get_p2p_config(
+async fn get_sync_config_command(
     app_handle: tauri::AppHandle,
-    state: State<'_, AppState>,
-) -> Result<P2PConfigPayload, String> {
+) -> Result<sync::types::SyncConfig, String> {
     let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
-    let conn = rusqlite::Connection::open(db_path).map_err(|e| e.to_string())?;
-
-    let enabled: String = conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'p2p_enabled'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "false".to_string());
-
-    let role: String = conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'p2p_role'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "host".to_string());
-
-    let host_address: String = conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'p2p_host_address'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "".to_string());
-
-    let auth_token: String = conn.query_row(
-        "SELECT value FROM p2p_config WHERE key = 'auth_token'",
-        [],
-        |row| row.get(0)
-    ).unwrap_or_else(|_| "".to_string());
-
-    let local_peer_id = {
-        let mgr = state.p2p_manager.lock().unwrap();
-        if let Some(m) = mgr.as_ref() {
-            m.peer_id.to_string()
-        } else {
-            // Ambil dari keypair jika manager belum start
-            let keypair_b64: Result<String, _> = conn.query_row(
-                "SELECT value FROM p2p_config WHERE key = 'keypair'",
-                [],
-                |row| row.get(0)
-            );
-            if let Ok(k_b64) = keypair_b64 {
-                if let Ok(bytes) = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, &k_b64) {
-                    if let Ok(id_keys) = libp2p::identity::Keypair::from_protobuf_encoding(&bytes) {
-                        id_keys.public().to_peer_id().to_string()
-                    } else {
-                        "".to_string()
-                    }
-                } else {
-                    "".to_string()
-                }
-            } else {
-                "".to_string()
-            }
-        }
-    };
-
-    Ok(P2PConfigPayload {
-        enabled: enabled == "true",
-        role,
-        host_address,
-        auth_token,
-        local_peer_id,
-    })
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    sync::engine::get_sync_config(&conn).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn set_p2p_config(
+async fn set_sync_enabled(
     app_handle: tauri::AppHandle,
     state: State<'_, AppState>,
     enabled: bool,
-    role: String,
-    host_address: String,
-    auth_token: String,
 ) -> Result<(), String> {
     let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
     let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
-
     conn.execute(
-        "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('p2p_enabled', ?1)",
-        [if enabled { "true" } else { "false" }]
-    ).map_err(|e| e.to_string())?;
+        "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('sync_enabled', ?1)",
+        [if enabled { "true" } else { "false" }],
+    )
+    .map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('p2p_role', ?1)",
-        [&role]
-    ).map_err(|e| e.to_string())?;
+    state.sync.lock().unwrap().enabled = enabled;
 
-    conn.execute(
-        "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('p2p_host_address', ?1)",
-        [&host_address]
-    ).map_err(|e| e.to_string())?;
-
-    conn.execute(
-        "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('auth_token', ?1)",
-        [&auth_token]
-    ).map_err(|e| e.to_string())?;
-
-    drop(conn);
-
-    // Stop P2P manager lama jika ada
-    {
-        let mut mgr = state.p2p_manager.lock().unwrap();
-        *mgr = None;
+    if !enabled {
+        // Stop network if running.
+        let mut s = state.sync.lock().unwrap();
+        s.network = None;
+        s.master_key = None;
     }
-
-    // Re-inisialisasi database dan P2P
-    setup_p2p_instance(&db_path, &state)?;
 
     Ok(())
 }
 
 #[tauri::command]
-async fn get_p2p_status_command(
+async fn create_sync_workspace(
+    app_handle: tauri::AppHandle,
     state: State<'_, AppState>,
-) -> Result<crate::p2p::P2PStatus, String> {
-    let mgr = {
-        let guard = state.p2p_manager.lock().unwrap();
-        guard.as_ref().cloned()
-    };
-    if let Some(m) = mgr {
-        m.get_status().await
-    } else {
-        Err("P2P Manager tidak aktif".to_string())
+    admin_pin: String,
+) -> Result<String, String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let ws = sync::engine::create_workspace(&conn, &admin_pin)?;
+
+    {
+        let mut s = state.sync.lock().unwrap();
+        s.enabled = true;
+        s.workspace_id = Some(ws.clone());
     }
+
+    start_sync_network_if_ready(&app_handle, &state).await?;
+    Ok(ws)
+}
+
+#[tauri::command]
+async fn join_sync_workspace(
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+    invite_code: String,
+    employee_pin: String,
+) -> Result<String, String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let ws = sync::engine::join_workspace(&conn, &invite_code, &employee_pin)?;
+
+    {
+        let mut s = state.sync.lock().unwrap();
+        s.enabled = true;
+        s.workspace_id = Some(ws.clone());
+    }
+
+    start_sync_network_if_ready(&app_handle, &state).await?;
+    Ok(ws)
+}
+
+#[tauri::command]
+async fn unlock_sync(
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+    pin: String,
+) -> Result<String, String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let master = sync::engine::unlock_master_key(&conn, &pin)?;
+
+    {
+        let mut s = state.sync.lock().unwrap();
+        s.master_key = Some(master);
+        s.error = None;
+    }
+
+    start_sync_network_if_ready(&app_handle, &state).await?;
+
+    let ws = state.sync.lock().unwrap().workspace_id.clone().unwrap_or_default();
+    Ok(ws)
+}
+
+#[tauri::command]
+async fn lock_sync(state: State<'_, AppState>) -> Result<(), String> {
+    let mut s = state.sync.lock().unwrap();
+    s.master_key = None;
+    s.network = None;
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_sync_rendezvous_url(app_handle: tauri::AppHandle) -> Result<String, String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    Ok(sync::rendezvous::get_rendezvous_url(&conn))
+}
+
+#[tauri::command]
+async fn set_sync_rendezvous_url(
+    app_handle: tauri::AppHandle,
+    url: String,
+) -> Result<(), String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    sync::rendezvous::set_rendezvous_url(&conn, &url).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn create_employee_invite(
+    app_handle: tauri::AppHandle,
+    admin_pin: String,
+    employee_pin: String,
+) -> Result<String, String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    sync::engine::create_employee_invite(&conn, &admin_pin, &employee_pin)
+}
+
+#[tauri::command]
+async fn get_sync_status(
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<sync::types::SyncStatus, String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+
+    let (enabled, workspace_id, local_peer_id, last_sync_at, error) = {
+        let s = state.sync.lock().unwrap();
+        let peer_id = s
+            .network
+            .as_ref()
+            .map(|n| n.peer_id.to_string())
+            .unwrap_or_default();
+        (
+            s.enabled,
+            s.workspace_id.clone(),
+            peer_id,
+            s.last_sync_at.clone(),
+            s.error.clone(),
+        )
+    };
+
+    // Fetch connected peers asynchronously.
+    let connected_peers = {
+        let net = {
+            let s = state.sync.lock().unwrap();
+            s.network.clone()
+        };
+        if let Some(net) = net {
+            net.status().await.connected_peers
+        } else {
+            Vec::new()
+        }
+    };
+
+    sync::engine::build_sync_status(
+        &conn,
+        enabled,
+        workspace_id,
+        local_peer_id,
+        connected_peers,
+        last_sync_at,
+        error,
+    )
+    .map_err(|e| e.to_string())
+}
+
+/// Start the sync network if we have a workspace_id and a master key.
+async fn start_sync_network_if_ready(
+    app_handle: &tauri::AppHandle,
+    state: &State<'_, AppState>,
+) -> Result<(), String> {
+    let (workspace_id, master_key, should_start) = {
+        let s = state.sync.lock().unwrap();
+        (
+            s.workspace_id.clone(),
+            s.master_key,
+            s.enabled && s.workspace_id.is_some() && s.master_key.is_some() && s.network.is_none(),
+        )
+    };
+
+    if !should_start {
+        return Ok(());
+    }
+
+    let workspace_id = workspace_id.unwrap();
+    let _master_key = master_key.unwrap();
+    let db_path = get_db_path(app_handle).map_err(|e| e.to_string())?;
+
+    // Load or create keypair.
+    let keypair_b64: String = {
+        let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+        match conn.query_row("SELECT value FROM p2p_config WHERE key = 'keypair'", [], |row| {
+            row.get::<_, String>(0)
+        }) {
+            Ok(v) => v,
+            Err(_) => {
+                let kp = libp2p::identity::Keypair::generate_ed25519();
+                let enc = kp.to_protobuf_encoding().unwrap();
+                let b64 = base64::Engine::encode(&base64::prelude::BASE64_STANDARD, &enc);
+                let _ = conn.execute(
+                    "INSERT INTO p2p_config (key, value) VALUES ('keypair', ?1)",
+                    [&b64],
+                );
+                b64
+            }
+        }
+    };
+    let keypair_bytes = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, &keypair_b64)
+        .map_err(|e| e.to_string())?;
+
+    let (network, mut event_rx) = sync::SyncNetwork::new(keypair_bytes, workspace_id.clone())
+        .map_err(|e| format!("Gagal membuat sync network: {}", e))?;
+    let network = Arc::new(network);
+    let _ = network.start_listening(0).await;
+
+    {
+        let mut s = state.sync.lock().unwrap();
+        s.network = Some(network.clone());
+    }
+
+    let db_path_for_events = db_path.clone();
+    let handle_for_events = app_handle.clone();
+    tokio::spawn(async move {
+        while let Some(event) = event_rx.recv().await {
+            let state = handle_for_events.state::<AppState>();
+            match event {
+                sync::NetworkEvent::EnvelopeReceived { peer_id, envelope } => {
+                    let maybe_master = {
+                        let s = state.sync.lock().unwrap();
+                        s.master_key
+                    };
+                    if let Some(key) = maybe_master {
+                        match base64::Engine::decode(
+                            &base64::prelude::BASE64_STANDARD,
+                            &envelope.payload_b64,
+                        ) {
+                            Ok(encrypted) => {
+                                match sync::crypto::decrypt_sync_message(&key, &encrypted) {
+                                    Ok(plain) => {
+                                        if let Ok(op) =
+                                            serde_json::from_slice::<sync::types::SyncOperation>(&plain)
+                                        {
+                                            let mut conn = match rusqlite::Connection::open(
+                                                &db_path_for_events,
+                                            ) {
+                                                Ok(c) => c,
+                                                Err(_) => continue,
+                                            };
+                                            if let Err(e) = sync::engine::apply_operation(
+                                                &mut conn,
+                                                &op,
+                                                &peer_id,
+                                            ) {
+                                                eprintln!("Gagal apply op {}: {}", op.op_id, e);
+                                            } else {
+                                                let _ = handle_for_events.emit(
+                                                    "sync-applied",
+                                                    serde_json::json!({
+                                                        "table": op.table,
+                                                        "row_id": op.row_id,
+                                                        "action": format!("{:?}", op.action),
+                                                        "peer_id": peer_id,
+                                                    }),
+                                                );
+                                            }
+                                        }
+                                    }
+                                    Err(e) => eprintln!("Decrypt error: {}", e),
+                                }
+                            }
+                            Err(e) => eprintln!("Base64 decode error: {}", e),
+                        }
+                    }
+                }
+                sync::NetworkEvent::PeerConnected(info) => {
+                    let _ = handle_for_events.emit(
+                        "sync-peer-connected",
+                        serde_json::json!({
+                            "peer_id": info.peer_id,
+                            "source": info.source,
+                        }),
+                    );
+                }
+                sync::NetworkEvent::PeerDisconnected(pid) => {
+                    let _ = handle_for_events.emit(
+                        "sync-peer-disconnected",
+                        serde_json::json!({ "peer_id": pid }),
+                    );
+                }
+            }
+        }
+    });
+
+    // Background loop: read outbox and publish.
+    let handle_for_loop = app_handle.clone();
+    let db_path_for_loop = db_path.clone();
+    let workspace_id_for_loop = workspace_id.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(2));
+        loop {
+            interval.tick().await;
+
+            let state = handle_for_loop.state::<AppState>();
+            let (should_run, network, key) = {
+                let s = state.sync.lock().unwrap();
+                (
+                    s.enabled && s.master_key.is_some(),
+                    s.network.clone(),
+                    s.master_key,
+                )
+            };
+
+            if !should_run {
+                continue;
+            }
+            let Some(network) = network else { continue };
+            let Some(key) = key else { continue };
+
+            let conn = match rusqlite::Connection::open(&db_path_for_loop) {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+
+            let pending = match sync::engine::collect_pending_outbox(&conn) {
+                Ok(p) => p,
+                Err(_) => continue,
+            };
+
+            let mut sent = Vec::new();
+            for op in pending {
+                let payload = match serde_json::to_vec(&op) {
+                    Ok(v) => v,
+                    Err(_) => continue,
+                };
+                let encrypted = match sync::crypto::encrypt_sync_message(&key, &payload) {
+                    Ok(v) => v,
+                    Err(_) => continue,
+                };
+                let envelope = sync::types::SyncEnvelope {
+                    workspace_id: workspace_id_for_loop.clone(),
+                    payload_b64: base64::Engine::encode(
+                        &base64::prelude::BASE64_STANDARD,
+                        &encrypted,
+                    ),
+                };
+                if network
+                    .publish(workspace_id_for_loop.clone(), envelope.payload_b64)
+                    .await
+                    .is_ok()
+                {
+                    sent.push(op.op_id);
+                }
+            }
+
+            if !sent.is_empty() {
+                let _ = sync::engine::mark_outbox_sent(&conn, &sent);
+                let now = chrono::Utc::now().to_rfc3339();
+                let state = handle_for_loop.state::<AppState>();
+                let mut s = state.sync.lock().unwrap();
+                s.last_sync_at = Some(now);
+            }
+        }
+    });
+
+    // Rendezvous loop: register ourselves and discover peers via Cloudflare Worker.
+    let handle_for_rendezvous = app_handle.clone();
+    let db_path_for_rendezvous = db_path.clone();
+    tokio::spawn(async move {
+        let client = reqwest::Client::new();
+        let mut interval = tokio::time::interval(Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+
+            let state = handle_for_rendezvous.state::<AppState>();
+            let (should_run, net, ws_id) = {
+                let s = state.sync.lock().unwrap();
+                (
+                    s.enabled && s.network.is_some(),
+                    s.network.clone(),
+                    s.workspace_id.clone(),
+                )
+            };
+
+            if !should_run {
+                continue;
+            }
+            let Some(net) = net else { continue };
+            let Some(ws_id) = ws_id else { continue };
+
+            let conn = match rusqlite::Connection::open(&db_path_for_rendezvous) {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+            let rendezvous_url = sync::rendezvous::get_rendezvous_url(&conn);
+            let status = net.status().await;
+
+            let _ = sync::rendezvous::register(
+                &client,
+                &rendezvous_url,
+                &ws_id,
+                &status.peer_id,
+                &status.local_addresses,
+            )
+            .await;
+
+            if let Ok(peers) =
+                sync::rendezvous::fetch_peers(&client, &rendezvous_url, &ws_id).await
+            {
+                for peer in peers {
+                    if peer.peer_id == status.peer_id {
+                        continue;
+                    }
+                    for addr in peer.addresses {
+                        if let Ok(ma) = addr.parse::<libp2p::Multiaddr>() {
+                            let _ = net.dial(ma, sync::network::SOURCE_CLOUDFLARE.to_string()).await;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+fn greet(name: &str) -> String {
+    format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
 #[tauri::command]
 async fn start_oauth_server(app_handle: tauri::AppHandle, port: u16) -> Result<String, String> {
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port))
         .map_err(|e| format!("Gagal mendengarkan di port: {}", e))?;
-    
-    // Set non-blocking agar bisa timeout dan keluar jika user menutup browser
+
     listener.set_nonblocking(true).map_err(|e| e.to_string())?;
 
     std::thread::spawn(move || {
         let start_time = std::time::Instant::now();
         loop {
-            // Timeout server setelah 5 menit
             if start_time.elapsed().as_secs() > 300 {
                 break;
             }
@@ -367,17 +558,14 @@ async fn start_oauth_server(app_handle: tauri::AppHandle, port: u16) -> Result<S
                     let mut buffer = [0; 2048];
                     if let Ok(size) = stream.read(&mut buffer) {
                         let request = String::from_utf8_lossy(&buffer[..size]);
-                        
-                        // Cari parameter "code" di request URI (e.g. GET /?code=... HTTP/1.1)
+
                         if let Some(code_pos) = request.find("code=") {
                             let after_code = &request[code_pos + 5..];
                             let end_pos = after_code.find(' ').or_else(|| after_code.find('&')).unwrap_or(after_code.len());
                             let auth_code = &after_code[..end_pos];
-                            
-                            // Kirim event ke frontend Tauri
+
                             let _ = app_handle.emit("gdrive-oauth-code", auth_code.to_string());
-                            
-                            // Tampilkan halaman sukses di browser
+
                             let response_body = "
                                 <html>
                                 <head><title>Login Sukses</title></head>
@@ -414,50 +602,6 @@ async fn start_oauth_server(app_handle: tauri::AppHandle, port: u16) -> Result<S
     Ok("Server dimulai".to_string())
 }
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[tauri::command]
-async fn init_database(
-    app_handle: tauri::AppHandle,
-    state: State<'_, AppState>,
-    watcher_state: State<'_, WatcherState>,
-) -> Result<(), String> {
-    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
-    init_db(&db_path).map_err(|e| e.to_string())?;
-    
-    // Inisialisasi P2P Instance & Database
-    setup_p2p_instance(&db_path, &state)?;
-    
-    // Ambil referensi database yang baru diinisialisasi
-    let db_lock = state.db.lock().unwrap();
-    let db = db_lock.as_ref().ok_or("Database tidak terinisialisasi")?;
-    
-    // Pemuatan watch folders dari SQLite
-    let watch_folders = db.get_watch_folders().map_err(|e| e.to_string())?;
-    let paths: Vec<std::path::PathBuf> = watch_folders
-        .iter()
-        .map(|f| std::path::PathBuf::from(&f.path))
-        .collect();
-
-    drop(db_lock); // lepas lock sebelum inisialisasi watcher
-
-    // Inisialisasi watcher manager
-    let manager = WatcherManager::new(app_handle.clone());
-    let mut manager_lock = watcher_state.manager.lock().unwrap();
-    *manager_lock = Some(manager);
-
-    // Mulai watcher
-    if let Some(manager) = manager_lock.as_mut() {
-        let _ = manager.start(paths);
-    }
-    
-    Ok(())
-}
-
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -465,7 +609,8 @@ pub fn run() {
         .manage(AppState {
             db: Mutex::new(None),
             active_session: Mutex::new(None),
-            p2p_manager: Mutex::new(None),
+            db_path: Mutex::new(None),
+            sync: Mutex::new(SyncState::default()),
         })
         .manage(WatcherState {
             manager: Mutex::new(None),
@@ -474,9 +619,16 @@ pub fn run() {
             greet,
             init_database,
             start_oauth_server,
-            get_p2p_config,
-            set_p2p_config,
-            get_p2p_status_command,
+            get_sync_config_command,
+            set_sync_enabled,
+            create_sync_workspace,
+            join_sync_workspace,
+            unlock_sync,
+            lock_sync,
+            create_employee_invite,
+            get_sync_status,
+            get_sync_rendezvous_url,
+            set_sync_rendezvous_url,
             // Book commands
             commands::book::get_books,
             commands::book::add_book,

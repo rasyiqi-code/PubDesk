@@ -110,7 +110,7 @@ pub fn run_indexing_pipeline(app_handle: &AppHandle, file_id: i64) -> Result<(),
         let db = db_lock.as_mut().ok_or("Database tidak diinisialisasi")?;
 
         // Mulai transaksi database
-        let tx = db.conn.transaction().map_err(|e| e.to_string())?;
+        let mut tx = db.conn.transaction().map_err(|e| e.to_string())?;
 
         // Simpan entitas ke DB
         let _ = tx.execute("DELETE FROM file_entities WHERE file_id = ?1", params![file_id]);
@@ -157,17 +157,24 @@ pub fn run_indexing_pipeline(app_handle: &AppHandle, file_id: i64) -> Result<(),
         let _ = tx.execute("DELETE FROM file_relations WHERE source_file_id = ?1 OR target_file_id = ?1", params![file_id]);
 
         // Cari duplikat persis menggunakan hash
-        if let Ok(mut stmt_dup) = tx.prepare(
-            "SELECT DISTINCT file_id FROM file_entities WHERE entity_type = 'hash' AND entity_value = ?1 AND file_id != ?2"
-        ) {
-            if let Ok(dup_rows) = stmt_dup.query_map(params![hash_val, file_id], |row| row.get::<_, i64>(0)) {
-                for dup_id in dup_rows.flatten() {
-                    let _ = tx.execute(
-                        "INSERT OR IGNORE INTO file_relations (source_file_id, target_file_id, relation_type, confidence) VALUES (?1, ?2, ?3, ?4)",
-                        params![file_id, dup_id, "duplicate_of", 1.0]
-                    );
+        let dup_ids: Vec<i64> = {
+            let stmt_dup = tx.prepare(
+                "SELECT DISTINCT file_id FROM file_entities WHERE entity_type = 'hash' AND entity_value = ?1 AND file_id != ?2"
+            );
+            match stmt_dup {
+                Ok(mut s) => {
+                    if let Ok(rows) = s.query_map(params![hash_val, file_id], |row| row.get::<_, i64>(0)) {
+                        rows.flatten().collect()
+                    } else { Vec::new() }
                 }
+                Err(_) => Vec::new(),
             }
+        };
+        for dup_id in dup_ids {
+            let _ = tx.execute(
+                "INSERT OR IGNORE INTO file_relations (source_file_id, target_file_id, relation_type, confidence) VALUES (?1, ?2, ?3, ?4)",
+                params![file_id, dup_id, "duplicate_of", 1.0]
+            );
         }
 
         for (other_id, other_vector) in all_embeddings {
@@ -206,68 +213,74 @@ pub fn run_indexing_pipeline(app_handle: &AppHandle, file_id: i64) -> Result<(),
             if entity.0 == "summary" {
                 continue;
             }
-            // Cari berkas lain yang memiliki entitas yang sama
-            if let Ok(mut stmt_rel) = tx.prepare(
-                "SELECT DISTINCT file_id FROM file_entities WHERE entity_type = ?1 AND entity_value = ?2 AND file_id != ?3"
-            ) {
-                if let Ok(rows) = stmt_rel.query_map(params![entity.0, entity.1, file_id], |r| r.get::<_, i64>(0)) {
-                    for other_file_id in rows.flatten() {
-                        let rel_type = if entity.0 == "judul" { "part_of" } else { "related_to" };
-                        let _ = tx.execute(
-                            "INSERT OR IGNORE INTO file_relations (source_file_id, target_file_id, relation_type, confidence) VALUES (?1, ?2, ?3, ?4)",
-                            params![file_id, other_file_id, rel_type, 0.70]
-                        );
+            let rel_type = if entity.0 == "judul" { "part_of" } else { "related_to" };
+            let other_ids: Vec<i64> = {
+                let stmt_rel = tx.prepare(
+                    "SELECT DISTINCT file_id FROM file_entities WHERE entity_type = ?1 AND entity_value = ?2 AND file_id != ?3"
+                );
+                match stmt_rel {
+                    Ok(mut s) => {
+                        if let Ok(rows) = s.query_map(params![entity.0, entity.1, file_id], |r| r.get::<_, i64>(0)) {
+                            rows.flatten().collect()
+                        } else { Vec::new() }
                     }
+                    Err(_) => Vec::new(),
                 }
+            };
+            for other_file_id in other_ids {
+                let _ = tx.execute(
+                    "INSERT OR IGNORE INTO file_relations (source_file_id, target_file_id, relation_type, confidence) VALUES (?1, ?2, ?3, ?4)",
+                    params![file_id, other_file_id, rel_type, 0.70]
+                );
             }
         }
 
         // 5b. Relasi Graf berdasarkan Konteks Folder Induk & Kemiripan Nama Berkas (Cross-File-Type)
-        if let Ok(mut stmt_all) = tx.prepare("SELECT id, path, filename FROM files WHERE id != ?1") {
-            let path_curr = Path::new(&path);
-            let parent_curr = path_curr.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
-            let stem_curr = path_curr.file_stem().map(|s| s.to_string_lossy().to_string().to_lowercase()).unwrap_or_default();
+        let path_curr = Path::new(&path);
+        let parent_curr = path_curr.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+        let stem_curr = path_curr.file_stem().map(|s| s.to_string_lossy().to_string().to_lowercase()).unwrap_or_default();
 
-            if let Ok(all_rows) = stmt_all.query_map(params![file_id], |row| {
-                let id: i64 = row.get(0)?;
-                let other_path: String = row.get(1)?;
-                let other_filename: String = row.get(2)?;
-                Ok((id, other_path, other_filename))
-            }) {
-                for (other_id, other_path_str, _other_filename) in all_rows.flatten() {
-                    let path_other = Path::new(&other_path_str);
-                    let parent_other = path_other.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
-                    let stem_other = path_other.file_stem().map(|s| s.to_string_lossy().to_string().to_lowercase()).unwrap_or_default();
-
-                    let is_same_folder = !parent_curr.is_empty() && parent_curr == parent_other;
-                    
-                    // Kemiripan nama (substring match yang signifikan, minimal 3 karakter)
-                    let is_name_related = if stem_curr.len() >= 3 && stem_other.len() >= 3 {
-                        stem_curr.contains(&stem_other) || stem_other.contains(&stem_curr)
-                    } else {
-                        false
-                    };
-
-                    let mut confidence: f32 = 0.0;
-                    if is_same_folder && is_name_related {
-                        // Sangat berelasi: di folder yang sama dan nama berkas mirip
-                        confidence = 0.85;
-                    } else if is_name_related {
-                        // Cukup berelasi: nama mirip walaupun beda folder
-                        confidence = 0.70;
-                    } else if is_same_folder {
-                        // Berelasi karena satu folder (konteks lokasi sama)
-                        confidence = 0.50;
-                    }
-
-                    if confidence > 0.0 {
-                        // Catat relasi lintas berkas
-                        let _ = tx.execute(
-                            "INSERT INTO file_relations (source_file_id, target_file_id, relation_type, confidence) VALUES (?1, ?2, ?3, ?4)",
-                            params![file_id, other_id, "related_to", confidence]
-                        );
-                    }
+        let all_files: Vec<(i64, String)> = {
+            let stmt_all = tx.prepare("SELECT id, path FROM files WHERE id != ?1");
+            match stmt_all {
+                Ok(mut s) => {
+                    if let Ok(rows) = s.query_map(params![file_id], |row| {
+                        Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+                    }) {
+                        rows.flatten().collect()
+                    } else { Vec::new() }
                 }
+                Err(_) => Vec::new(),
+            }
+        };
+
+        for (other_id, other_path_str) in all_files {
+            let path_other = Path::new(&other_path_str);
+            let parent_other = path_other.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+            let stem_other = path_other.file_stem().map(|s| s.to_string_lossy().to_string().to_lowercase()).unwrap_or_default();
+
+            let is_same_folder = !parent_curr.is_empty() && parent_curr == parent_other;
+
+            let is_name_related = if stem_curr.len() >= 3 && stem_other.len() >= 3 {
+                stem_curr.contains(&stem_other) || stem_other.contains(&stem_curr)
+            } else {
+                false
+            };
+
+            let mut confidence: f32 = 0.0;
+            if is_same_folder && is_name_related {
+                confidence = 0.85;
+            } else if is_name_related {
+                confidence = 0.70;
+            } else if is_same_folder {
+                confidence = 0.50;
+            }
+
+            if confidence > 0.0 {
+                let _ = tx.execute(
+                    "INSERT INTO file_relations (source_file_id, target_file_id, relation_type, confidence) VALUES (?1, ?2, ?3, ?4)",
+                    params![file_id, other_id, "related_to", confidence]
+                );
             }
         }
 

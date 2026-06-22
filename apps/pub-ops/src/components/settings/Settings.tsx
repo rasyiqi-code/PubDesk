@@ -6,7 +6,7 @@ import GASCloudSettings from './GASCloudSettings';
 import GDriveSettingsTab from './tabs/GDriveSettingsTab';
 import LocalFoldersTab from './tabs/LocalFoldersTab';
 import DataResetTab from './tabs/DataResetTab';
-import P2PConnectionTab from './tabs/P2PConnectionTab';
+import { SyncConnectionPanel } from '@pubhub/shared-ui/src/shared/SyncConnectionPanel';
 
 // Definisi tab — urutan dan label
 const SETTINGS_TABS = [
@@ -41,7 +41,7 @@ const Settings: React.FC = () => {
       case 'local-folders':
         return <LocalFoldersTab />;
       case 'p2p-connection':
-        return <P2PConnectionTab />;
+        return <SyncConnectionPanel />;
       case 'google-drive':
         return <GDriveSettingsTab />;
       case 'google-apps-script':

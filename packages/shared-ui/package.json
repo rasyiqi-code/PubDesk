@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0"
+  },
   "peerDependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "@tauri-apps/api": "^2.0.0"
   }
 }

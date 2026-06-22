@@ -287,24 +287,31 @@ impl Database {
     }
 
     pub fn import_alur_naskah_batch(&mut self, payloads: Vec<ImportTaskPayload>) -> Result<usize, DbError> {
-        let tx = self.conn.transaction()?;
+        let mut tx = self.conn.transaction()?;
         let now = chrono::Local::now().to_rfc3339();
         let mut count = 0;
 
         for p in payloads {
             // Find or create Naskah by title
-            let naskah_id: i64;
-            let mut stmt = tx.prepare("SELECT id FROM naskah WHERE title = ?1 LIMIT 1")?;
-            let mut rows = stmt.query(params![p.judul])?;
-            if let Some(row) = rows.next()? {
-                naskah_id = row.get(0)?;
-            } else {
-                tx.execute(
-                    "INSERT INTO naskah (title, created_at) VALUES (?1, ?2)",
-                    params![p.judul, now]
-                )?;
-                naskah_id = tx.last_insert_rowid();
-            }
+            let naskah_id = {
+                let mut stmt = tx.prepare("SELECT id FROM naskah WHERE title = ?1 LIMIT 1")?;
+                let mut rows = stmt.query(params![p.judul])?;
+                if let Some(row) = rows.next()? {
+                    Some(row.get::<_, i64>(0)?)
+                } else {
+                    None
+                }
+            };
+            let naskah_id = match naskah_id {
+                Some(id) => id,
+                None => {
+                    tx.execute(
+                        "INSERT INTO naskah (title, created_at) VALUES (?1, ?2)",
+                        params![p.judul, now]
+                    )?;
+                    tx.last_insert_rowid()
+                }
+            };
 
             // Simple insert into tasks
             tx.execute(

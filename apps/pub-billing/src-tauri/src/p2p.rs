@@ -1,10 +1,8 @@
 use std::error::Error;
-use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use futures::{prelude::*, select};
 use libp2p::{
-    core::upgrade,
     identity,
     noise,
     request_response,
@@ -13,7 +11,6 @@ use libp2p::{
     yamux,
     Multiaddr,
     PeerId,
-    Swarm,
     SwarmBuilder,
 };
 use serde::{Deserialize, Serialize};
@@ -39,6 +36,20 @@ pub enum P2PResponse {
     },
     Pong,
     Error(String),
+}
+
+// Event discovery dari mDNS
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscoveredPeer {
+    pub peer_id: String,
+    pub addresses: Vec<String>,
+}
+
+/// Event yang dikirim ke luar (untuk Tauri event emission)
+#[derive(Debug, Clone)]
+pub enum P2PDiscoveryEvent {
+    PeerDiscovered(DiscoveredPeer),
+    PeerExpired(DiscoveredPeer),
 }
 
 // Crate codec JSON sederhana untuk libp2p Request-Response
@@ -115,6 +126,7 @@ impl request_response::Codec for JsonCodec {
 // Perintah internal ke background loop libp2p
 pub enum P2PCommand {
     StartListening {
+        port: u16,
         sender: oneshot::Sender<Result<Multiaddr, String>>,
     },
     Dial {
@@ -129,6 +141,10 @@ pub enum P2PCommand {
     GetConnectionStatus {
         sender: oneshot::Sender<P2PStatus>,
     },
+    Reconnect {
+        addr: Multiaddr,
+        sender: oneshot::Sender<Result<(), String>>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -137,6 +153,7 @@ pub struct P2PStatus {
     pub peer_id: String,
     pub active_peers: Vec<String>,
     pub local_addresses: Vec<String>,
+    pub role: String,
 }
 
 // Manager utama untuk P2P
@@ -149,32 +166,38 @@ impl P2PManager {
     pub fn new(
         keypair_bytes: Vec<u8>,
         db_conn_provider: Arc<Mutex<Option<rusqlite::Connection>>>,
-    ) -> Result<Self, Box<dyn Error>> {
-        // Load keypair dari bytes yang tersimpan
+        role: String,
+    ) -> Result<(Self, mpsc::Receiver<P2PDiscoveryEvent>), Box<dyn Error>> {
         let id_keys = identity::Keypair::from_protobuf_encoding(&keypair_bytes)?;
         let peer_id = id_keys.public().to_peer_id();
-        
-        let (cmd_tx, cmd_rx) = mpsc::channel(100);
 
-        // Spawn background tokio task
+        let (cmd_tx, cmd_rx) = mpsc::channel(100);
+        let (discovery_tx, discovery_rx) = mpsc::channel(100);
+
         tokio::spawn(async move {
-            if let Err(e) = run_p2p_loop(id_keys, cmd_rx, db_conn_provider).await {
+            if let Err(e) = run_p2p_loop(id_keys, cmd_rx, discovery_tx, db_conn_provider, role).await {
                 println!("Error in P2P background loop: {:?}", e);
             }
         });
 
-        Ok(Self { cmd_tx, peer_id })
+        Ok((Self { cmd_tx, peer_id }, discovery_rx))
     }
 
-    pub async fn start_listening(&self) -> Result<Multiaddr, String> {
+    pub async fn start_listening(&self, port: u16) -> Result<Multiaddr, String> {
         let (tx, rx) = oneshot::channel();
-        let _ = self.cmd_tx.send(P2PCommand::StartListening { sender: tx }).await;
+        let _ = self.cmd_tx.send(P2PCommand::StartListening { port, sender: tx }).await;
         rx.await.map_err(|_| "Background task channel closed".to_string())?
     }
 
     pub async fn dial(&self, addr: Multiaddr) -> Result<(), String> {
         let (tx, rx) = oneshot::channel();
         let _ = self.cmd_tx.send(P2PCommand::Dial { addr, sender: tx }).await;
+        rx.await.map_err(|_| "Background task channel closed".to_string())?
+    }
+
+    pub async fn reconnect(&self, addr: Multiaddr) -> Result<(), String> {
+        let (tx, rx) = oneshot::channel();
+        let _ = self.cmd_tx.send(P2PCommand::Reconnect { addr, sender: tx }).await;
         rx.await.map_err(|_| "Background task channel closed".to_string())?
     }
 
@@ -209,11 +232,13 @@ impl P2PManager {
 async fn run_p2p_loop(
     id_keys: identity::Keypair,
     mut cmd_rx: mpsc::Receiver<P2PCommand>,
+    discovery_tx: mpsc::Sender<P2PDiscoveryEvent>,
     db_conn_provider: Arc<Mutex<Option<rusqlite::Connection>>>,
+    role: String,
 ) -> Result<(), Box<dyn Error>> {
     let local_peer_id = id_keys.public().to_peer_id();
 
-    // Setup network behaviour
+    // Setup network behaviour (request-response only, mDNS runs separately)
     let behaviour = request_response::Behaviour::with_codec(
         JsonCodec,
         std::iter::once((
@@ -232,38 +257,78 @@ async fn run_p2p_loop(
             yamux::Config::default,
         )?
         .with_behaviour(|_| behaviour)?
-        .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(60)))
+        .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(120)))
         .build();
 
     let mut pending_dials = std::collections::HashMap::new();
     let mut pending_requests = std::collections::HashMap::new();
     let mut local_addresses = Vec::new();
     let mut active_peers = std::collections::HashSet::new();
+    // Spawn mDNS discovery task (runs separately from swarm)
+    let mdns_peer_id = local_peer_id;
+    let mdns_discovery_tx = discovery_tx.clone();
+    tokio::spawn(async move {
+        run_mdns_discovery(mdns_peer_id, mdns_discovery_tx).await;
+    });
 
     loop {
         select! {
             cmd = cmd_rx.recv().fuse() => {
                 match cmd {
-                    Some(P2PCommand::StartListening { sender }) => {
-                        // Dengarkan di port acak (TCP)
-                        match swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?) {
-                            Ok(listener_id) => {
-                                // Tunggu sebentar sampai Multiaddress didaftarkan
-                                let _ = sender.send(Ok(Multiaddr::empty())); // return dummy, real addr will be populated on SwarmEvent
+                    Some(P2PCommand::StartListening { port, sender }) => {
+                        let listen_addr = if port > 0 {
+                            format!("/ip4/0.0.0.0/tcp/{}", port)
+                        } else {
+                            "/ip4/0.0.0.0/tcp/0".to_string()
+                        };
+                        let parsed_addr = match listen_addr.parse::<libp2p::Multiaddr>() {
+                            Ok(a) => a,
+                            Err(e) => {
+                                eprintln!("ADDR PARSE ERROR: {:?} for '{}'", e, listen_addr);
+                                let _ = sender.send(Err(format!("Parse error: {}", e)));
+                                continue;
+                            }
+                        };
+                        match swarm.listen_on(parsed_addr) {
+                            Ok(_listener_id) => {
+                                let _ = sender.send(Ok(Multiaddr::empty()));
                             }
                             Err(e) => {
-                                let _ = sender.send(Err(e.to_string()));
+                                let err_msg = format!("{:?}", e);
+                                let _ = sender.send(Err(err_msg));
                             }
                         }
                     }
                     Some(P2PCommand::Dial { addr, sender }) => {
                         match swarm.dial(addr.clone()) {
                             Ok(_) => {
-                                // Simpan sender untuk dikembalikan setelah terkoneksi
                                 if let Some(peer_id) = addr.iter().find_map(|p| match p {
                                     libp2p::multiaddr::Protocol::P2p(peer_id) => Some(peer_id),
                                     _ => None
                                 }) {
+                                    pending_dials.insert(peer_id, sender);
+                                } else {
+                                    let _ = sender.send(Ok(()));
+                                }
+                            }
+                            Err(e) => {
+                                let _ = sender.send(Err(e.to_string()));
+                            }
+                        }
+                    }
+                    Some(P2PCommand::Reconnect { addr, sender }) => {
+                        let peer_id_to_disconnect: Option<PeerId> = addr.iter().find_map(|p| match p {
+                            libp2p::multiaddr::Protocol::P2p(peer_id) => Some(peer_id),
+                            _ => None
+                        });
+                        if let Some(pid) = peer_id_to_disconnect {
+                            active_peers.remove(&pid);
+                            let _ = swarm.disconnect_peer_id(pid);
+                        }
+                        tokio::time::sleep(Duration::from_millis(500)).await;
+                        match swarm.dial(addr.clone()) {
+                            Ok(_) => {
+                                if let Some(peer_id) = peer_id_to_disconnect {
                                     pending_dials.insert(peer_id, sender);
                                 } else {
                                     let _ = sender.send(Ok(()));
@@ -284,6 +349,7 @@ async fn run_p2p_loop(
                             peer_id: local_peer_id.to_string(),
                             active_peers: active_peers.iter().map(|p: &PeerId| p.to_string()).collect(),
                             local_addresses: local_addresses.iter().map(|a: &Multiaddr| a.to_string()).collect(),
+                            role: role.clone(),
                         };
                         let _ = sender.send(status);
                     }
@@ -293,67 +359,24 @@ async fn run_p2p_loop(
             event = swarm.select_next_some() => {
                 match event {
                     SwarmEvent::NewListenAddr { address, .. } => {
-                        local_addresses.push(address.clone());
-                        // Tulis konfigurasi bersama jika kita adalah host
-                        if let Some(conn) = db_conn_provider.lock().unwrap().as_ref() {
-                            let p2p_role: String = conn.query_row(
-                                "SELECT value FROM p2p_config WHERE key = 'p2p_role'",
-                                [],
-                                |row| row.get(0)
-                            ).unwrap_or_else(|_| "host".to_string());
-
-                            let p2p_enabled: String = conn.query_row(
-                                "SELECT value FROM p2p_config WHERE key = 'p2p_enabled'",
-                                [],
-                                |row| row.get(0)
-                            ).unwrap_or_else(|_| "false".to_string());
-
-                            let auth_token: String = conn.query_row(
-                                "SELECT value FROM p2p_config WHERE key = 'auth_token'",
-                                [],
-                                |row| row.get(0)
-                            ).unwrap_or_else(|_| "".to_string());
-
-                            if p2p_role == "host" && p2p_enabled == "true" {
-                                let address_str = address.to_string();
-                                if let Ok(home) = std::env::var("HOME") {
-                                    let conf_dir = std::path::PathBuf::from(home).join(".config").join("pubhub");
-                                    let _ = std::fs::create_dir_all(&conf_dir);
-                                    let file_path = conf_dir.join("p2p_shared_config.json");
-                                    
-                                    // Cek apakah file sudah ada dan berisi IP non-loopback
-                                    let mut should_write = true;
-                                    if file_path.exists() && address_str.contains("127.0.0.1") {
-                                        if let Ok(existing_content) = std::fs::read_to_string(&file_path) {
-                                            if !existing_content.contains("127.0.0.1") {
-                                                should_write = false; // jangan timpa IP LAN dengan 127.0.0.1
-                                            }
-                                        }
-                                    }
-
-                                    if should_write {
-                                        let host_addr = format!("{}/p2p/{}", address_str, local_peer_id);
-                                        let json_data = serde_json::json!({
-                                            "enabled": true,
-                                            "host_address": host_addr,
-                                            "auth_token": auth_token
-                                        });
-                                        if let Ok(json_str) = serde_json::to_string_pretty(&json_data) {
-                                            let _ = std::fs::write(file_path, json_str);
-                                        }
-                                    }
-                                }
-                            }
+                        if !local_addresses.contains(&address) {
+                            local_addresses.push(address.clone());
+                            println!("P2P listening on: {:?}", address);
                         }
+                    }
+                    SwarmEvent::ListenerError { listener_id, error } => {
+                        println!("P2P Listener error {:?}: {:?}", listener_id, error);
                     }
                     SwarmEvent::ConnectionEstablished { peer_id, .. } => {
                         active_peers.insert(peer_id);
                         if let Some(sender) = pending_dials.remove(&peer_id) {
                             let _ = sender.send(Ok(()));
                         }
+                        println!("P2P connected to: {:?}", peer_id);
                     }
                     SwarmEvent::ConnectionClosed { peer_id, .. } => {
                         active_peers.remove(&peer_id);
+                        println!("P2P disconnected from: {:?}", peer_id);
                     }
                     SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
                         if let Some(peer_id) = peer_id {
@@ -365,7 +388,6 @@ async fn run_p2p_loop(
                     SwarmEvent::Behaviour(request_response::Event::Message { message, .. }) => {
                         match message {
                             request_response::Message::Request { request, channel, .. } => {
-                                // Eksekusi request SQL secara lokal
                                 let response = handle_incoming_request(request, &db_conn_provider);
                                 let _ = swarm.behaviour_mut().send_response(channel, response);
                             }
@@ -385,6 +407,87 @@ async fn run_p2p_loop(
     Ok(())
 }
 
+/// mDNS discovery task - runs independently from the main swarm loop
+async fn run_mdns_discovery(
+    local_peer_id: PeerId,
+    discovery_tx: mpsc::Sender<P2PDiscoveryEvent>,
+) {
+    use libp2p::mdns;
+
+    // Build an mDNS behaviour using its own identity
+    let mdns_keypair = identity::Keypair::generate_ed25519();
+    let mdns_behaviour: mdns::Behaviour<mdns::tokio::Tokio> = match mdns::Behaviour::new(mdns::Config::default(), local_peer_id) {
+        Ok(b) => b,
+        Err(e) => {
+            println!("Failed to create mDNS behaviour: {:?}", e);
+            return;
+        }
+    };
+
+    let builder = match SwarmBuilder::with_existing_identity(mdns_keypair)
+        .with_tokio()
+        .with_tcp(
+            tcp::Config::default(),
+            noise::Config::new,
+            yamux::Config::default,
+        ) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("mDNS TCP config error: {:?}", e);
+            return;
+        }
+    };
+
+    let mut mdns_swarm = match builder.with_behaviour(|_| mdns_behaviour) {
+        Ok(swarm_builder) => swarm_builder
+            .with_swarm_config(|c| c.with_idle_connection_timeout(Duration::from_secs(60)))
+            .build(),
+        Err(e) => {
+            eprintln!("mDNS behaviour error: {:?}", e);
+            return;
+        }
+    };
+
+    // mDNS listens on a fixed UDP port (5353 typically, handled by OS)
+    // Just poll for events
+    loop {
+        let event = mdns_swarm.select_next_some().await;
+        match event {
+            SwarmEvent::Behaviour(mdns_event) => {
+                match mdns_event {
+                    mdns::Event::Discovered(discovered_list) => {
+                        for (peer_id, addr) in discovered_list {
+                            if peer_id == local_peer_id {
+                                continue;
+                            }
+                            let _ = discovery_tx.try_send(P2PDiscoveryEvent::PeerDiscovered(
+                                DiscoveredPeer {
+                                    peer_id: peer_id.to_string(),
+                                    addresses: vec![addr.to_string()],
+                                }
+                            ));
+                        }
+                    }
+                    mdns::Event::Expired(expired_list) => {
+                        for (peer_id, addr) in expired_list {
+                            if peer_id == local_peer_id {
+                                continue;
+                            }
+                            let _ = discovery_tx.try_send(P2PDiscoveryEvent::PeerExpired(
+                                DiscoveredPeer {
+                                    peer_id: peer_id.to_string(),
+                                    addresses: vec![addr.to_string()],
+                                }
+                            ));
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
 // Penanganan query SQL di host
 fn handle_incoming_request(
     request: P2PRequest,
@@ -396,7 +499,6 @@ fn handle_incoming_request(
         None => return P2PResponse::Error("Database not initialized on host".to_string()),
     };
 
-    // Validasi token
     let token = match &request {
         P2PRequest::Query { token, .. } => token,
         P2PRequest::Execute { token, .. } => token,
@@ -433,7 +535,6 @@ fn handle_incoming_request(
                 .map(|i| stmt.column_name(i).unwrap_or("").to_string())
                 .collect();
 
-            // Ubah params ke format rusqlite params
             let rusqlite_params: Vec<Box<dyn rusqlite::types::ToSql>> = params
                 .iter()
                 .map(|v| -> Box<dyn rusqlite::types::ToSql> {
@@ -467,13 +568,13 @@ fn handle_incoming_request(
                     let json_value = match value {
                         rusqlite::types::ValueRef::Null => serde_json::Value::Null,
                         rusqlite::types::ValueRef::Integer(i) => serde_json::Value::Number(i.into()),
-                        rusqlite::types::ValueRef::Real(r) => serde_json::Value::Number(serde_json::Number::from_f64(r).unwrap()),
+                        rusqlite::types::ValueRef::Real(r) => serde_json::Value::Number(serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0))),
                         rusqlite::types::ValueRef::Text(t) => {
                             let text = std::str::from_utf8(t).unwrap_or("");
                             serde_json::Value::String(text.to_string())
                         }
                         rusqlite::types::ValueRef::Blob(b) => {
-                            serde_json::Value::String(base64::encode(b)) // fallback blob ke base64 string
+                            serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b))
                         }
                     };
                     row_values.push(json_value);

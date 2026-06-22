@@ -19,7 +19,6 @@ pub use error::DbError;
 pub use models::*;
 pub use wrapper::PubhubConnection as Connection;
 pub use wrapper::PubhubRow as Row;
-pub use wrapper::PubhubTransaction as Transaction;
 use std::path::PathBuf;
 use tauri::Manager;
 

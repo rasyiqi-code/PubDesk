@@ -6,6 +6,7 @@ import { Toast } from '../../components/shared/Toast';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { useAppContext } from '../../contexts/AppContext';
 import Settings from '../settings/Settings';
+import { SyncConnectionPanel } from '@pubhub/shared-ui/src/shared/SyncConnectionPanel';
 // Modul CRM & Manajemen Kontak Pelanggan
 import PenulisManager from '../data-master/PenulisManager';
 import PenerbitManager from '../data-master/PenerbitManager';
@@ -80,6 +81,31 @@ const MainLayout = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  // Helper untuk render halaman setelan dengan header seragam
+  const renderSettingsModule = (title: string, icon: string, component: React.ReactNode) => {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-panel)',
+          height: 44,
+          boxSizing: 'border-box',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: '16px' }}>{icon}</span>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{title}</span>
+        </div>
+        <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+          {component}
+        </div>
+      </div>
+    );
+  };
+
   const renderModule = () => {
     switch (appState.activeModule) {
       case 'home':
@@ -115,6 +141,8 @@ const MainLayout = () => {
         return <ActivityLog />;
       case 'settings':
         return <Settings />;
+      case 'settings-p2p':
+        return renderSettingsModule('Koneksi Jaringan', '🔗', <SyncConnectionPanel />);
       case 'tambah-tugas':
       case 'edit-tugas':
         return <TaskFormPage />;

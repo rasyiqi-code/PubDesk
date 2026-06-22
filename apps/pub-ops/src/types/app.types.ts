@@ -4,22 +4,12 @@
 
 export type AppModule =
   | 'home'
-  | 'invoice'
-  | 'invoice-manager'
-  | 'invoice-insight'
-  | 'extractor'
-  | 'files'
-  | 'ledger'
   | 'settings'
-  | 'books'
-  | 'services'
   | 'kontak'
   | 'penulis'
   | 'penerbit'
   | 'naskah'
-  | 'tim'
   | 'legalitas'
-  | 'pelanggan'
   | 'activity-log'
   | 'pekerjaan-saya'
   | 'produksi-board'
@@ -32,8 +22,7 @@ export type AppModule =
   | 'edit-tugas'
   | 'produksi-parent'
   | 'master-data-parent'
-  | 'invoice-parent'
-  | 'files-parent';
+  | 'settings-p2p';
 
 export interface AppState {
   activeModule: AppModule;

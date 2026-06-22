@@ -27,3 +27,6 @@ dist-ssr
 **/target
 **/Cargo.lock
 **/gen/
+
+# Cloudflared sidecar binary (bundled at build time)
+apps/pub-admin/src-tauri/binaries/*.exe

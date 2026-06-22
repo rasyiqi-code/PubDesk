@@ -4,4 +4,3 @@
 fn main() {
     pubhub_admin_lib::run()
 }
-

@@ -1,25 +1,9 @@
 import React from 'react';
 import { useAppContext } from '../../contexts/AppContext';
-import { useFileState } from '../../contexts/FileContext';
-import FilePreviewPanel from './PanelKanan/FilePreviewPanel';
-import ServicePreviewPanel from './PanelKanan/ServicePreviewPanel';
-import InsightPanel from './PanelKanan/InsightPanel';
-import PenulisPreviewPanel from './PanelKanan/PenulisPreviewPanel';
-import PenerbitPreviewPanel from './PanelKanan/PenerbitPreviewPanel';
-import NaskahPreviewPanel from './PanelKanan/NaskahPreviewPanel';
 import TimPreviewPanel from './PanelKanan/TimPreviewPanel';
-import LegalitasPreviewPanel from './PanelKanan/LegalitasPreviewPanel';
-import PelangganPreviewPanel from './PanelKanan/PelangganPreviewPanel';
-import TaskPreviewPanel from './PanelKanan/TaskPreviewPanel';
 
 /**
- * PanelKanan — orchestrator panel pratinjau di sisi kanan layar.
- * Mendelegasikan rendering ke sub-panel berdasarkan modul aktif.
- * Sub-panel ada di folder PanelKanan/:
- *   - FilePreviewPanel   → Smart Folders & Manajemen Invoice
- *   - ServicePreviewPanel → Layanan / Settings > Services
- *   - InsightPanel        → Invoice Insight
- *   - PenulisPreviewPanel  → Lead Penulis (CRM)
+ * PanelKanan — panel pratinjau di sisi kanan layar.
  */
 const SettingsHelpPanel: React.FC<{ tab: string }> = ({ tab }) => {
   const getHelpContent = () => {
@@ -164,20 +148,7 @@ const SettingsHelpPanel: React.FC<{ tab: string }> = ({ tab }) => {
 };
 
 const PanelKanan: React.FC = () => {
-  const {
-    appState,
-    services,
-    selectedServiceId,
-    selectedInsightMetric,
-    invoices,
-    setActiveModule,
-    selectedPenulisId,
-    selectedPenerbitId,
-    selectedNaskahId,
-    selectedTimId,
-  } = useAppContext();
-
-  const { files, selectedFileId, setSelectedFileId, setRightPanelVisible } = useFileState();
+  const { appState, selectedTimId } = useAppContext();
 
   const { activeModule } = appState;
 
@@ -191,63 +162,8 @@ const PanelKanan: React.FC = () => {
     case 'settings-data-reset':
       return <SettingsHelpPanel tab="data-reset" />;
 
-
-
-    // Manajemen berkas dan manajemen invoice — panel preview berkas
-    case 'files':
-    case 'invoice-manager':
-      return <FilePreviewPanel selectedFileId={selectedFileId} />;
-
-    case 'invoice-parent':
-    case 'invoice-insight':
-      return (
-        <InsightPanel
-          selectedMetric={selectedInsightMetric}
-          invoices={invoices}
-          onNavigateToManager={(invoiceId) => {
-            const fileEntry = files.find(f => f.type === 'invoice' && f.version_label === String(invoiceId));
-            if (fileEntry) {
-              setSelectedFileId(fileEntry.id || null);
-              setRightPanelVisible(true);
-            }
-            setActiveModule('invoice-manager');
-          }}
-        />
-      );
-
-    // Modul layanan — preview layanan terpilih
-    case 'services':
-      return <ServicePreviewPanel serviceId={selectedServiceId} services={services} />;
-
-
-
-    // Modul Kontak terpadu (Penulis + Pelanggan)
-    case 'kontak':
-    case 'penulis':
-      return <PenulisPreviewPanel penulisId={selectedPenulisId} />;
-
-    case 'penerbit':
-      return <PenerbitPreviewPanel penerbitId={selectedPenerbitId} />;
-
-    case 'naskah':
-      return <NaskahPreviewPanel naskahId={selectedNaskahId} />;
-
     case 'tim':
       return <TimPreviewPanel timId={selectedTimId} />;
-
-    case 'legalitas':
-      return <LegalitasPreviewPanel />;
-
-    case 'pelanggan':
-      return <PelangganPreviewPanel />;
-
-    case 'pekerjaan-saya':
-    case 'produksi-board':
-    case 'produksi-list':
-    case 'produksi-kendala':
-    case 'produksi-approval':
-    case 'produksi-timeline':
-      return <TaskPreviewPanel />;
 
     default:
       return (

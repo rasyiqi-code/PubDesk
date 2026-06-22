@@ -31,11 +31,15 @@ zip = "0.6"
 calamine = "0.24"
 sha2 = "0.10"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-libp2p = { version = "0.53", features = ["tcp", "dns", "noise", "yamux", "ping", "identify", "request-response", "relay", "dcutr", "tokio"] }
+libp2p = { version = "0.53", features = ["tcp", "dns", "noise", "yamux", "ping", "identify", "request-response", "gossipsub", "relay", "dcutr", "tokio", "mdns", "macros"] }
 tokio = { version = "1", features = ["full"] }
 futures = "0.3"
 base64 = "0.22"
 async-trait = "0.1"
-
-
-
+aes-gcm = "0.10"
+pbkdf2 = "0.12"
+hmac = "0.12"
+hkdf = "0.12"
+rand = "0.8"
+hex = "0.4"
+zeroize = "1"

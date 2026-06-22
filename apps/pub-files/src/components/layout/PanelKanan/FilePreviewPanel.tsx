@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppContext } from '../../../contexts/AppContext';
 import { useFileState } from '../../../contexts/FileContext';
-import { useInvoiceContext } from '../../../contexts/InvoiceContext';
-import InvoicePreview from '../../invoice/InvoicePreview';
 import { parseModifiedBy, formatBytes, getMimeLabel } from '../../../utils/gdrive';
 import { formatPrice } from '../../../utils/format';
 
@@ -23,7 +21,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     refreshAccessToken,
     gdriveAccounts,
     refreshAccountToken,
-    setActiveModule,
   } = useAppContext();
 
   const {
@@ -33,8 +30,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     removeFileTag,
     getFileTags,
   } = useFileState();
-
-  const { loadInvoiceToForm } = useInvoiceContext();
 
   const [fileMetadata, setFileMetadata] = useState<any | null>(null);
   const [relatedFiles, setRelatedFiles] = useState<any[]>([]);

@@ -14,7 +14,7 @@ import LoginPage from '../auth/LoginPage';
 // Import komponen setelan individual
 import GASCloudSettings from '../settings/GASCloudSettings';
 import DataResetTab from '../settings/tabs/DataResetTab';
-import P2PConnectionTab from '../settings/tabs/P2PConnectionTab';
+import { SyncConnectionPanel } from '@pubhub/shared-ui/src/shared/SyncConnectionPanel';
 
 const MainLayout = () => {
   const { appState, rightPanelVisible } = useAppContext();
@@ -104,7 +104,7 @@ const MainLayout = () => {
       case 'activity-log':
         return <ActivityLog />;
       case 'settings-p2p':
-        return renderSettingsModule('Koneksi P2P', '🔗', <P2PConnectionTab />);
+        return renderSettingsModule('Sinkronisasi P2P', '🔗', <SyncConnectionPanel isAdmin />);
       case 'settings-gas':
         return renderSettingsModule('Google Sheets (GAS)', '📊', <GASCloudSettings showToast={showToast} />);
       case 'settings-data-reset':

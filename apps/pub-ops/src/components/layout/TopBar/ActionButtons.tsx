@@ -12,8 +12,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
   const {
     rightPanelVisible,
     setRightPanelVisible,
-    fileLayoutMode,
-    setFileLayoutMode
   } = useFileState();
   
   const { 
@@ -32,16 +30,14 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
     penulis, 
     penerbit, 
     naskah, 
-    tim, 
     legalitas,
     loadPenulis,
     loadPenerbit,
     loadNaskah,
-    loadTim,
     loadLegalitas
   } = useDataMasterContext();
   
-  const { tasks, loadTasks } = useWorkflowContext();
+  const { loadTasks } = useWorkflowContext();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -62,7 +58,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
         loadPenulis(),
         loadPenerbit(),
         loadNaskah(),
-        loadTim(),
         loadLegalitas(),
         loadTasks()
       ]);

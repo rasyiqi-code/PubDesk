@@ -24,6 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   ];
 
   const bottomItems = [
+    { id: 'settings-p2p' as const, label: 'Koneksi Jaringan', icon: '🔗' },
     { id: 'settings-invoice' as const, label: 'Setelan Invoice', icon: '📄' },
     { id: 'activity-log' as const, label: 'Activity Log', icon: '📋' },
   ];

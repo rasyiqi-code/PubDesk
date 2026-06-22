@@ -10,6 +10,7 @@ import ActivityLog from '../data-master/ActivityLog';
 import DashboardFiles from '../files/DashboardFiles';
 import GDriveSettingsTab from '../settings/tabs/GDriveSettingsTab';
 import LocalFoldersTab from '../settings/tabs/LocalFoldersTab';
+import { SyncConnectionPanel } from '@pubhub/shared-ui/src/shared/SyncConnectionPanel';
 import HomeDashboard from '../home/HomeDashboard';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginPage from '../auth/LoginPage';
@@ -106,6 +107,8 @@ const MainLayout = () => {
         return renderSettingsModule('Folder Lokal Dipantau', '📁', <LocalFoldersTab />);
       case 'settings-gdrive':
         return renderSettingsModule('Google Drive', '☁️', <GDriveSettingsTab />);
+      case 'settings-p2p':
+        return renderSettingsModule('Koneksi Jaringan', '🔗', <SyncConnectionPanel />);
       default:
         return <FileManager searchQuery={fileSearchQuery} />;
     }

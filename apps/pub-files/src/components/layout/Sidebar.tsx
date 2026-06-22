@@ -23,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   ];
 
   const bottomItems = [
+    { id: 'settings-p2p' as const, label: 'Koneksi Jaringan', icon: '🔗' },
     { id: 'settings-local-folders' as const, label: 'Folder Lokal Dipantau', icon: '📁' },
     { id: 'settings-gdrive' as const, label: 'Google Drive', icon: '☁️' },
     { id: 'activity-log' as const, label: 'Activity Log', icon: '📋' },

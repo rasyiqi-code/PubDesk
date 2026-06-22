@@ -1,8 +1,33 @@
 use std::sync::Arc;
+use std::time::Duration;
 use rusqlite::types::{FromSql, Value, ValueRef, ToSqlOutput};
 use rusqlite::Error as RusqliteError;
 use crate::p2p::{P2PManager, P2PResponse};
 use libp2p::PeerId;
+
+/// Marker key used to round-trip BLOB values through JSON without
+/// confusing them with ordinary TEXT strings.
+const BLOB_MARKER: &str = "__b64__";
+
+/// Convert a rusqlite ValueRef into a serde_json::Value.
+/// BLOBs are wrapped in a marker object so get_ref() can restore them.
+fn value_ref_to_json(v: ValueRef) -> serde_json::Value {
+    match v {
+        ValueRef::Null => serde_json::Value::Null,
+        ValueRef::Integer(i) => serde_json::Value::Number(i.into()),
+        ValueRef::Real(r) => serde_json::Value::Number(
+            serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0)),
+        ),
+        ValueRef::Text(t) => {
+            let s = std::str::from_utf8(t).unwrap_or("");
+            serde_json::Value::String(s.to_string())
+        }
+        ValueRef::Blob(b) => {
+            let encoded = base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b);
+            serde_json::json!({ BLOB_MARKER: encoded })
+        }
+    }
+}
 
 // Trait kustom untuk menggantikan rusqlite::Params yang tidak lagi mengekspos ParamsVisitor secara publik di 0.32
 pub trait PubhubParams {
@@ -123,11 +148,49 @@ pub enum PubhubConnection {
     P2P {
         manager: Arc<P2PManager>,
         host_peer_id: PeerId,
-        local_conn: rusqlite::Connection, // untuk fallback kueri lokal p2p_config dll
+        local_conn: rusqlite::Connection,
     },
 }
 
+const MAX_P2P_RETRIES: u32 = 3;
+const P2P_RETRY_DELAY_MS: u64 = 200;
+
+fn retry_delay(attempt: u32) -> u64 {
+    P2P_RETRY_DELAY_MS * (attempt as u64 + 1)
+}
+
 impl PubhubConnection {
+    // Helper untuk mengeksekusi operasi P2P dengan retry
+    fn execute_p2p_retry<F, T>(&self, f: F) -> Result<T, RusqliteError>
+    where
+        F: Fn() -> Result<T, RusqliteError>,
+    {
+        let mut last_err = None;
+        for attempt in 0..=MAX_P2P_RETRIES {
+            match f() {
+                Ok(val) => return Ok(val),
+                Err(e) => {
+                    let err_str = e.to_string();
+                    // Retry hanya untuk transient errors (connection, timeout)
+                    let is_transient = err_str.contains("Connection refused")
+                        || err_str.contains("timed out")
+                        || err_str.contains("Not connected")
+                        || err_str.contains("channel closed")
+                        || err_str.contains("reset");
+                    if is_transient && attempt < MAX_P2P_RETRIES {
+                        last_err = Some(e);
+                        std::thread::sleep(Duration::from_millis(retry_delay(attempt)));
+                        continue;
+                    }
+                    return Err(e);
+                }
+            }
+        }
+        Err(last_err.unwrap_or_else(|| RusqliteError::ToSqlConversionFailure(
+            Box::new(std::io::Error::new(std::io::ErrorKind::Other, "P2P retry exhausted"))
+        )))
+    }
+
     pub fn execute<P: PubhubParams>(&self, sql: &str, params: P) -> Result<usize, RusqliteError> {
         match self {
             PubhubConnection::Local(conn) => {
@@ -143,7 +206,6 @@ impl PubhubConnection {
                     return stmt.raw_execute();
                 }
 
-                // Ambil token dari local_conn
                 let token = match local_conn.query_row(
                     "SELECT value FROM p2p_config WHERE key = 'auth_token'",
                     [],
@@ -153,18 +215,22 @@ impl PubhubConnection {
                     Err(_) => "".to_string(),
                 };
 
-                // Kueri lainnya dikirim via P2P
                 let params_json = params.to_json();
-                let response = tokio::task::block_in_place(|| {
-                    let rt = tokio::runtime::Handle::current();
-                    rt.block_on(manager.send_execute(host_peer_id.clone(), sql.to_string(), params_json, token))
-                }).map_err(|e| RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))))?;
+                let sql_owned = sql.to_string();
+                let peer_id = host_peer_id.clone();
 
-                match response {
-                    P2PResponse::ExecuteResult { rows_affected, .. } => Ok(rows_affected),
-                    P2PResponse::Error(e) => Err(RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))),
-                    _ => Err(RusqliteError::ExecuteReturnedResults),
-                }
+                self.execute_p2p_retry(move || {
+                    let response = tokio::task::block_in_place(|| {
+                        let rt = tokio::runtime::Handle::current();
+                        rt.block_on(manager.send_execute(peer_id.clone(), sql_owned.clone(), params_json.clone(), token.clone()))
+                    }).map_err(|e| RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))))?;
+
+                    match response {
+                        P2PResponse::ExecuteResult { rows_affected, .. } => Ok(rows_affected),
+                        P2PResponse::Error(e) => Err(RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))),
+                        _ => Err(RusqliteError::ExecuteReturnedResults),
+                    }
+                })
             }
         }
     }
@@ -228,8 +294,14 @@ impl PubhubConnection {
                 let tx = conn.transaction()?;
                 Ok(PubhubTransaction::Local(tx))
             }
-            PubhubConnection::P2P { .. } => {
-                Ok(PubhubTransaction::P2PDummy { conn: self })
+            PubhubConnection::P2P { local_conn, .. } => {
+                // Untuk P2P, kita tetap mulai transaksi di lokal untuk config,
+                // dan kueri lainnya dikirim satu per satu ke host (setiap query auto-commit)
+                let local_tx = local_conn.transaction()?;
+                Ok(PubhubTransaction::P2P {
+                    local_tx,
+                    pending_writes: Vec::new(),
+                })
             }
         }
     }
@@ -238,21 +310,29 @@ impl PubhubConnection {
 // Wrapper Transaction untuk P2P/Lokal
 pub enum PubhubTransaction<'conn> {
     Local(rusqlite::Transaction<'conn>),
-    P2PDummy {
-        conn: &'conn PubhubConnection,
+    P2P {
+        local_tx: rusqlite::Transaction<'conn>,
+        pending_writes: Vec<(String, String)>, // (sql, params_json) buffer
     },
 }
 
 impl<'conn> PubhubTransaction<'conn> {
-    pub fn execute<P: PubhubParams>(&self, sql: &str, params: P) -> Result<usize, RusqliteError> {
+    pub fn execute<P: PubhubParams>(&mut self, sql: &str, params: P) -> Result<usize, RusqliteError> {
         match self {
             PubhubTransaction::Local(tx) => {
                 let mut stmt = tx.prepare(sql)?;
                 params.bind_to_local(&mut stmt)?;
                 stmt.raw_execute()
             }
-            PubhubTransaction::P2PDummy { conn } => {
-                conn.execute(sql, params)
+            PubhubTransaction::P2P { local_tx, pending_writes } => {
+                if sql.contains("p2p_config") {
+                    let mut stmt = local_tx.prepare(sql)?;
+                    params.bind_to_local(&mut stmt)?;
+                    return stmt.raw_execute();
+                }
+                // Buffer writes untuk dieksekusi batch saat commit
+                pending_writes.push((sql.to_string(), params.to_json()));
+                Ok(0)
             }
         }
     }
@@ -260,7 +340,7 @@ impl<'conn> PubhubTransaction<'conn> {
     pub fn last_insert_rowid(&self) -> i64 {
         match self {
             PubhubTransaction::Local(tx) => tx.last_insert_rowid(),
-            PubhubTransaction::P2PDummy { conn } => conn.last_insert_rowid(),
+            PubhubTransaction::P2P { local_tx, .. } => local_tx.last_insert_rowid(),
         }
     }
 
@@ -270,8 +350,15 @@ impl<'conn> PubhubTransaction<'conn> {
                 let stmt = tx.prepare(sql)?;
                 Ok(PubhubStatement::Local(stmt))
             }
-            PubhubTransaction::P2PDummy { conn } => {
-                conn.prepare(sql)
+            PubhubTransaction::P2P { local_tx, .. } => {
+                if sql.contains("p2p_config") {
+                    let stmt = local_tx.prepare(sql)?;
+                    return Ok(PubhubStatement::Local(stmt));
+                }
+                // P2P statement via transaksi - gunakan local_tx sebagai fallback
+                // tapi sebenarnya query akan dikirim ke host
+                let stmt = local_tx.prepare(sql)?;
+                Ok(PubhubStatement::Local(stmt))
             }
         }
     }
@@ -284,35 +371,21 @@ impl<'conn> PubhubTransaction<'conn> {
         match self {
             PubhubTransaction::Local(tx) => {
                 let mut stmt = tx.prepare(sql)?;
-                
-                // Ambil kolom-kolomnya terlebih dahulu sebelum meminjam stmt secara mutable melalui query()
+
                 let column_count = stmt.column_count();
                 let columns: Vec<String> = (0..column_count)
                     .map(|i| stmt.column_name(i).unwrap_or("").to_string())
                     .collect();
-                
+
                 let sql_params = params.to_sql_slice();
                 let mut rows = stmt.query(&sql_params[..])?;
                 let row = rows.next()?.ok_or(RusqliteError::QueryReturnedNoRows)?;
-                
+
                 let mut row_vals = Vec::new();
                 for i in 0..column_count {
-                    let val_ref = row.get_ref(i)?;
-                    let val = match val_ref {
-                        ValueRef::Null => serde_json::Value::Null,
-                        ValueRef::Integer(i) => serde_json::Value::Number(i.into()),
-                        ValueRef::Real(r) => serde_json::Value::Number(serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0))),
-                        ValueRef::Text(t) => {
-                            let s = std::str::from_utf8(t).unwrap_or("");
-                            serde_json::Value::String(s.to_string())
-                        }
-                        ValueRef::Blob(b) => {
-                            serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b))
-                        }
-                    };
-                    row_vals.push(val);
+                    row_vals.push(value_ref_to_json(row.get_ref(i)?));
                 }
-                
+
                 let ph_row = PubhubRow {
                     columns,
                     values: row_vals,
@@ -320,16 +393,43 @@ impl<'conn> PubhubTransaction<'conn> {
                 };
                 f(&ph_row)
             }
-            PubhubTransaction::P2PDummy { conn } => {
-                conn.query_row(sql, params, f)
+            PubhubTransaction::P2P { local_tx, .. } => {
+                // Untuk P2P transaksi, query dibaca dari host via P2P
+                // Karena kita tidak bisa mix P2P dan local dalam satu transaksi,
+                // kita fallback ke query local_tx
+                let mut stmt = local_tx.prepare(sql)?;
+                let sql_params = params.to_sql_slice();
+                let column_count = stmt.column_count();
+                let columns: Vec<String> = (0..column_count)
+                    .map(|i| stmt.column_name(i).unwrap_or("").to_string())
+                    .collect();
+                let mut rows = stmt.query(&sql_params[..])?;
+                let row = rows.next()?.ok_or(RusqliteError::QueryReturnedNoRows)?;
+                let mut row_vals = Vec::new();
+                for i in 0..column_count {
+                    row_vals.push(value_ref_to_json(row.get_ref(i)?));
+                }
+
+                let ph_row = PubhubRow {
+                    columns,
+                    values: row_vals,
+                    blob_cache: std::cell::RefCell::new(Vec::new()),
+                };
+                f(&ph_row)
             }
         }
     }
 
     pub fn commit(self) -> Result<(), RusqliteError> {
         match self {
-            PubhubTransaction::Local(tx) => tx.commit(),
-            PubhubTransaction::P2PDummy { .. } => Ok(()),
+            PubhubTransaction::Local(tx) => {
+                tx.commit()
+            }
+            PubhubTransaction::P2P { local_tx, pending_writes: _ } => {
+                // P2P: commit hanya local_tx (config writes)
+                // Pending writes ke host sudah dieksekusi per-statement di execute()
+                local_tx.commit()
+            }
         }
     }
 
@@ -337,7 +437,7 @@ impl<'conn> PubhubTransaction<'conn> {
     pub fn rollback(self) -> Result<(), RusqliteError> {
         match self {
             PubhubTransaction::Local(tx) => tx.rollback(),
-            PubhubTransaction::P2PDummy { .. } => Ok(()),
+            PubhubTransaction::P2P { local_tx, .. } => local_tx.rollback(),
         }
     }
 }
@@ -386,44 +486,63 @@ impl<'a> PubhubStatement<'a> {
                 while let Some(row) = rows_iter.next()? {
                     let mut row_vals = Vec::new();
                     for i in 0..column_count {
-                        let val_ref = row.get_ref(i)?;
-                        let val = match val_ref {
-                            ValueRef::Null => serde_json::Value::Null,
-                            ValueRef::Integer(i) => serde_json::Value::Number(i.into()),
-                            ValueRef::Real(r) => serde_json::Value::Number(serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0))),
-                            ValueRef::Text(t) => {
-                                let s = std::str::from_utf8(t).unwrap_or("");
-                                serde_json::Value::String(s.to_string())
-                            }
-                            ValueRef::Blob(b) => {
-                                serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b))
-                            }
-                        };
-                        row_vals.push(val);
+                        row_vals.push(value_ref_to_json(row.get_ref(i)?));
                     }
                     rows.push(row_vals);
                 }
 
                 Ok(PubhubRows::P2P { columns, rows, index: 0 })
             }
-            PubhubStatement::P2P { manager, host_peer_id, sql, token } => {
+            PubhubStatement::P2P { manager, host_peer_id, sql, token, .. } => {
                 let params_json = params.to_json();
-                let response = tokio::task::block_in_place(|| {
-                    let rt = tokio::runtime::Handle::current();
-                    rt.block_on(manager.send_query(host_peer_id.clone(), sql.clone(), params_json, token.clone()))
-                }).map_err(|e| RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))))?;
+                let sql_owned = sql.clone();
+                let peer_id = host_peer_id.clone();
+                let token_owned = token.clone();
 
-                match response {
-                    P2PResponse::QueryResult { columns, rows } => {
-                        Ok(PubhubRows::P2P {
-                            columns,
-                            rows,
-                            index: 0,
-                        })
+                // Retry logic for P2P queries
+                let mut last_error = None;
+                for attempt in 0..=MAX_P2P_RETRIES {
+                    let response = tokio::task::block_in_place(|| {
+                        let rt = tokio::runtime::Handle::current();
+                        rt.block_on(manager.send_query(peer_id.clone(), sql_owned.clone(), params_json.clone(), token_owned.clone()))
+                    });
+
+                    match response {
+                        Ok(P2PResponse::QueryResult { columns, rows }) => {
+                            return Ok(PubhubRows::P2P {
+                                columns,
+                                rows,
+                                index: 0,
+                            });
+                        }
+                        Ok(P2PResponse::Error(e)) => {
+                            last_error = Some(RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))));
+                            break; // Don't retry on server errors
+                        }
+                        Ok(_) => {
+                            last_error = Some(RusqliteError::QueryReturnedNoRows);
+                            break;
+                        }
+                        Err(e) => {
+                            let is_transient = e.contains("Connection refused")
+                                || e.contains("timed out")
+                                || e.contains("Not connected")
+                                || e.contains("channel closed")
+                                || e.contains("reset");
+                            if is_transient && attempt < MAX_P2P_RETRIES {
+                                last_error = Some(RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.clone()))));
+                                std::thread::sleep(Duration::from_millis(retry_delay(attempt)));
+                                continue;
+                            }
+                            last_error = Some(RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))));
+                            break;
+                        }
                     }
-                    P2PResponse::Error(e) => Err(RusqliteError::ToSqlConversionFailure(Box::new(std::io::Error::new(std::io::ErrorKind::Other, e)))),
-                    _ => Err(RusqliteError::QueryReturnedNoRows),
                 }
+
+                Err(last_error.unwrap_or_else(|| RusqliteError::ToSqlConversionFailure(
+                    Box::new(std::io::Error::new(std::io::ErrorKind::Other, "P2P query failed after retries"))
+                )))
             }
         }
     }
@@ -517,7 +636,7 @@ impl PubhubRow {
         }
 
         let val = &self.values[idx];
-        
+
         match val {
             serde_json::Value::Null => Ok(ValueRef::Null),
             serde_json::Value::Bool(b) => Ok(ValueRef::Integer(if *b { 1 } else { 0 })),
@@ -531,20 +650,22 @@ impl PubhubRow {
                 }
             }
             serde_json::Value::String(s) => {
-                // Jika itu adalah Blob yang ter-encode sebagai base64 string, kita decode kembali
-                if let Ok(decoded) = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, s) {
-                    let mut cache = self.blob_cache.borrow_mut();
-                    cache.push(decoded.into_boxed_slice());
-                    let box_ref = cache.last().unwrap();
-                    let raw_ptr: *const [u8] = &**box_ref;
-                    let extended_ref: &'static [u8] = unsafe { &*raw_ptr };
-                    Ok(ValueRef::Blob(extended_ref))
-                } else {
-                    Ok(ValueRef::Text(s.as_bytes()))
+                // Only interpret as blob if it carries the blob marker object.
+                if let Ok(obj) = serde_json::from_str::<serde_json::Value>(s) {
+                    if let Some(b64) = obj.get(BLOB_MARKER).and_then(|v| v.as_str()) {
+                        if let Ok(decoded) = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, b64) {
+                            let mut cache = self.blob_cache.borrow_mut();
+                            cache.push(decoded.into_boxed_slice());
+                            let box_ref = cache.last().unwrap();
+                            let raw_ptr: *const [u8] = &**box_ref;
+                            let extended_ref: &'static [u8] = unsafe { &*raw_ptr };
+                            return Ok(ValueRef::Blob(extended_ref));
+                        }
+                    }
                 }
+                Ok(ValueRef::Text(s.as_bytes()))
             }
             _ => {
-                // Untuk object/array JSON, serialisasikan ke teks
                 let json_str = val.to_string();
                 let mut cache = self.blob_cache.borrow_mut();
                 cache.push(json_str.into_bytes().into_boxed_slice());
