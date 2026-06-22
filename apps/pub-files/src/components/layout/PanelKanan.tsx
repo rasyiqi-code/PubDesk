@@ -194,6 +194,12 @@ const PanelKanan: React.FC = () => {
           return <SettingsHelpPanel tab={activeSettingsTab} />;
       }
 
+    case 'settings-local-folders':
+      return <SettingsHelpPanel tab="local-folders" />;
+
+    case 'settings-gdrive':
+      return <SettingsHelpPanel tab="google-drive" />;
+
     // Generator invoice — preview langsung dari context form
     case 'invoice':
       return <InvoicePreview />;

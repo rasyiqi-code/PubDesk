@@ -14,10 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   ];
 
   const bottomItems = [
-    { id: 'settings-invoice' as const, label: 'Setelan Invoice', icon: '📄' },
-    { id: 'settings-local-folders' as const, label: 'Folder Lokal Dipantau', icon: '📁' },
     { id: 'settings-p2p' as const, label: 'Koneksi P2P', icon: '🔗' },
-    { id: 'settings-gdrive' as const, label: 'Google Drive', icon: '☁️' },
     { id: 'settings-gas' as const, label: 'Google Sheets (GAS)', icon: '📊' },
     { id: 'settings-data-reset' as const, label: 'Kustomisasi & Data', icon: '🎨' },
     { id: 'activity-log' as const, label: 'Activity Log', icon: '📋' },

@@ -9,6 +9,8 @@ import Settings from '../settings/Settings';
 import { FileManager } from '../files/FileManager';
 import ActivityLog from '../data-master/ActivityLog';
 import DashboardFiles from '../files/DashboardFiles';
+import GDriveSettingsTab from '../settings/tabs/GDriveSettingsTab';
+import LocalFoldersTab from '../settings/tabs/LocalFoldersTab';
 import HomeDashboard from '../home/HomeDashboard';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginPage from '../auth/LoginPage';
@@ -75,6 +77,10 @@ const MainLayout = () => {
         return <ActivityLog />;
       case 'settings':
         return <Settings />;
+      case 'settings-local-folders':
+        return <LocalFoldersTab />;
+      case 'settings-gdrive':
+        return <GDriveSettingsTab />;
       default:
         return <FileManager searchQuery={fileSearchQuery} />;
     }

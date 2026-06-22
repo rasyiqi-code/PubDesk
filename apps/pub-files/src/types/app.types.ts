@@ -11,6 +11,8 @@ export type AppModule =
   | 'files'
   | 'ledger'
   | 'settings'
+  | 'settings-local-folders'
+  | 'settings-gdrive'
   | 'books'
   | 'services'
   | 'kontak'
