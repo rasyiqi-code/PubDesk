@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge, getStatusVariant } from '../../../ui/atoms/Badge';
-import { getWhatsAppLink } from '../../../utils/format';
+import { getWhatsAppLink, formatPrice } from '../../../utils/format';
 
 interface PenerbitPreviewPanelProps {
   penerbitId: number | null;
@@ -23,6 +23,50 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
     if (!penerbitId) return [];
     return naskah.filter((n) => n.penerbit_id === penerbitId);
   }, [naskah, penerbitId]);
+
+  // Naskah aktif (status diterbitkan/cetak/distribusi)
+  const activeNaskah = useMemo(() => {
+    return relatedNaskah.filter(n => 
+      ['Diterbitkan', 'Cetak', 'Distribusi', 'Selesai'].includes(n.status)
+    );
+  }, [relatedNaskah]);
+
+  // Simulasi Dinamis Sisa Deposit Mitra
+  // Nilai default: Rp 10.000.000 dipotong Rp 1.500.000 per naskah aktif
+  const depositStats = useMemo(() => {
+    const initialDeposit = 10000000;
+    const costPerNaskah = 1500000;
+    const usage = relatedNaskah.length * costPerNaskah;
+    const remaining = Math.max(initialDeposit - usage, 1000000);
+    const percent = (remaining / initialDeposit) * 100;
+    return { remaining, percent };
+  }, [relatedNaskah]);
+
+  // Simulasi Royalti Terkumpul (estimasi Rp 750.000 per naskah aktif/selesai)
+  const estimatedRoyalty = useMemo(() => {
+    return activeNaskah.length * 750000;
+  }, [activeNaskah]);
+
+  // Hitung durasi/linimasa kontrak
+  const contractTimeline = useMemo(() => {
+    if (!penerbitData || !penerbitData.created_at) return null;
+    const start = new Date(penerbitData.created_at);
+    const end = new Date(start.getTime());
+    end.setFullYear(start.getFullYear() + 2); // Durasi kontrak 2 tahun
+
+    const now = new Date();
+    const isExpired = now > end;
+    const totalDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    const elapsedDays = Math.min(Math.max((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24), 0), totalDays);
+    const percentTime = isExpired ? 100 : (elapsedDays / totalDays) * 100;
+
+    return {
+      startStr: start.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
+      endStr: end.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
+      isExpired,
+      percentTime
+    };
+  }, [penerbitData]);
 
   const handleCopyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -83,6 +127,52 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
       {/* Detail Informasi */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
+        {/* Sisa Deposit & Kemitraan */}
+        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Keuangan & Saldo Deposit
+          </h5>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Sisa Saldo Deposit:</span>
+            <strong style={{ fontSize: '18px', color: '#f59e0b' }}>{formatPrice(depositStats.remaining)}</strong>
+          </div>
+          <div>
+            <div style={{ width: '100%', height: '6px', background: 'var(--border)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
+              <div style={{ width: `${depositStats.percent}%`, height: '100%', background: '#f59e0b', borderRadius: '3px' }} />
+            </div>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Tingkat kecukupan deposit: {depositStats.percent.toFixed(0)}%</span>
+          </div>
+          
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Estimasi Royalti Mitra:</span>
+            <strong style={{ color: 'var(--text-primary)' }}>{formatPrice(estimatedRoyalty)}</strong>
+          </div>
+        </div>
+
+        {/* Linimasa Kontrak Kerja Sama */}
+        {contractTimeline && (
+          <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Linimasa Kontrak Kerja Sama
+            </h5>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Status Kontrak:</span>
+              <strong style={{ color: contractTimeline.isExpired ? '#dc2626' : '#16a34a' }}>
+                {contractTimeline.isExpired ? 'Kontrak Berakhir' : 'Kontrak Aktif'}
+              </strong>
+            </div>
+            <div>
+              <div style={{ width: '100%', height: '6px', background: 'var(--border)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
+                <div style={{ width: `${contractTimeline.percentTime}%`, height: '100%', background: contractTimeline.isExpired ? '#dc2626' : '#16a34a', borderRadius: '3px' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-secondary)' }}>
+                <span>Mulai: {contractTimeline.startStr}</span>
+                <span>Akhir: {contractTimeline.endStr}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Rincian Kontak */}
         <div>
           <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>Rincian Kontak Resmi</h5>

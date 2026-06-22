@@ -3,14 +3,14 @@ import { useAppContext } from '../../../contexts/AppContext';
 import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge, getStatusVariant } from '../../../ui/atoms/Badge';
 import { Button } from '../../../ui/atoms/Button';
-import { getWhatsAppLink } from '../../../utils/format';
+import { getWhatsAppLink, formatPrice } from '../../../utils/format';
 
 interface PenulisPreviewPanelProps {
   penulisId: number | null;
 }
 
 const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) => {
-  const { contacts, addContact, showToast, showConfirm } = useAppContext();
+  const { contacts, addContact, showToast, showConfirm, invoices } = useAppContext();
   const { penulis, naskah } = useDataMasterContext();
 
   // Cari data penulis terpilih (penulisId bisa negatif jika dari database pelanggan murni)
@@ -40,6 +40,7 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
           created_at: c.created_at,
           is_customer: true,
           is_customer_only: true,
+          is_customer_check: true,
         };
       }
       return null;
@@ -67,6 +68,33 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
     if (!penulisId || penulisId < 0) return [];
     return naskah.filter((n) => n.penulis_id === penulisId);
   }, [naskah, penulisId]);
+
+  // Hitung riwayat invoice dan total tagihan untuk penulis ini
+  const { penulisInvoices, totalBilling } = useMemo(() => {
+    if (!penulisData) return { penulisInvoices: [], totalBilling: 0 };
+
+    const filtered = invoices.filter(inv => {
+      // 1. Cari yang customer_id-nya sama dengan contact id penulis ini (jika ada contact yang sama namanya)
+      const relatedContact = contacts.find(
+        c => c.type === 'customer' && c.name.toLowerCase() === penulisData.name.toLowerCase()
+      );
+      if (relatedContact && inv.customer_id === relatedContact.id) {
+        return true;
+      }
+
+      // 2. Fallback pencocokan nama
+      try {
+        const meta = inv.file_path ? JSON.parse(inv.file_path) : {};
+        if (meta.customerName && penulisData.name && meta.customerName.trim().toLowerCase() === penulisData.name.trim().toLowerCase()) {
+          return true;
+        }
+      } catch {}
+      return false;
+    });
+
+    const total = filtered.reduce((acc, curr) => acc + curr.total, 0);
+    return { penulisInvoices: filtered, totalBilling: total };
+  }, [penulisData, invoices, contacts]);
 
   const handleCopyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -120,6 +148,20 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
   }
 
   const nameInitial = penulisData.name ? penulisData.name.charAt(0).toUpperCase() : '?';
+
+  const getStatusBadgeStyles = (status: string) => {
+    switch (status.toUpperCase()) {
+      case 'LUNAS':
+        return { background: 'rgba(22, 163, 74, 0.1)', color: '#16a34a' };
+      case 'BELUM LUNAS':
+        return { background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626' };
+      case 'DP':
+        return { background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb' };
+      case 'BERMASALAH':
+      default:
+        return { background: 'rgba(217, 119, 6, 0.1)', color: '#d97706' };
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)', padding: '24px', overflowY: 'auto' }}>
@@ -307,6 +349,27 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
           </div>
         </div>
 
+        {/* Ikhtisar Keuangan Penulis */}
+        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Ikhtisar Keuangan Penulis
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Total Tagihan</div>
+              <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: '700' }}>
+                {formatPrice(totalBilling)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Jumlah Invoice</div>
+              <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: '700' }}>
+                {penulisInvoices.length} Lembar
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Naskah Terkait */}
         {relatedNaskah.length > 0 && (
           <div>
@@ -338,6 +401,63 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
                   />
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Riwayat Transaksi */}
+        {penulisInvoices.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Riwayat Invoice ({penulisInvoices.length})
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {penulisInvoices.map(inv => {
+                let meta = { invoiceNo: 'DRAF', invoiceDate: '', paymentStatus: 'LUNAS' };
+                try {
+                  if (inv.file_path) meta = JSON.parse(inv.file_path);
+                } catch {}
+
+                const badge = getStatusBadgeStyles(meta.paymentStatus || 'LUNAS');
+
+                return (
+                  <div
+                    key={inv.id}
+                    style={{
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                        {meta.invoiceNo || 'DRAF'}
+                      </strong>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        {formatPrice(inv.total)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {meta.invoiceDate || new Date(inv.created_at).toLocaleDateString('id-ID')}
+                      </span>
+                      <span style={{
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '9px',
+                        fontWeight: '700',
+                        ...badge
+                      }}>
+                        {meta.paymentStatus || 'LUNAS'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
