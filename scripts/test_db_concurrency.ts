@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Database } from "bun:sqlite";
 import { join } from "path";
 import { homedir } from "os";
