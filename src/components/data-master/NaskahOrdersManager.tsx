@@ -515,7 +515,8 @@ const NaskahOrdersManager: React.FC<NaskahOrdersManagerProps> = ({ searchQuery =
           <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
             <tr style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Judul &amp; Identitas</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Penulis &amp; Penerbit</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Penulis</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Penerbit</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Tipe</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Eks</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Ukuran</th>
@@ -527,7 +528,7 @@ const NaskahOrdersManager: React.FC<NaskahOrdersManagerProps> = ({ searchQuery =
           <tbody>
             {filteredOrders.length === 0 ? (
               <TableEmptyState
-                colSpan={8}
+                colSpan={9}
                 icon="📚"
                 message="Tidak ada data naskah"
                 description={hasActiveFilter ? 'Tidak ada hasil untuk filter yang dipilih.' : 'Belum ada naskah terdaftar. Klik Tambah Naskah untuk menambahkan.'}
@@ -560,8 +561,10 @@ const NaskahOrdersManager: React.FC<NaskahOrdersManagerProps> = ({ searchQuery =
                     </div>
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                    <div>👤 {getPenulisName(o.penulis_id)}</div>
-                    <div style={{ marginTop: '2px' }}>🏢 {getPenerbitName(o.penerbit_id)}</div>
+                    👤 {getPenulisName(o.penulis_id)}
+                  </td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                    🏢 {getPenerbitName(o.penerbit_id)}
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>
                     {o.order_type ? (
