@@ -8,7 +8,6 @@ import InvoiceGenerator from '../invoice/InvoiceGenerator';
 import InvoiceManager from '../invoice/InvoiceManager';
 import InvoiceInsight from '../invoice/InvoiceInsight';
 import { useAppContext } from '../../contexts/AppContext';
-import Settings from '../settings/Settings';
 import InvoiceSettings from '../settings/InvoiceSettings';
 import ServiceManager from '../data-master/ServiceManager';
 import PelangganManager from '../data-master/PelangganManager';
@@ -120,8 +119,6 @@ const MainLayout = () => {
         return <DashboardInvoice />;
       case 'laporan-operasional':
         return <LaporanOperasional />;
-      case 'settings':
-        return <Settings />;
       case 'settings-invoice':
         return renderSettingsModule('Setelan Invoice', '📄', <InvoiceSettings />);
       default:

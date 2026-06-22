@@ -10,7 +10,6 @@ export type AppModule =
   | 'extractor'
   | 'files'
   | 'ledger'
-  | 'settings'
   | 'settings-local-folders'
   | 'settings-gdrive'
   | 'books'

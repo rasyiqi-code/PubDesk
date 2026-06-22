@@ -5,7 +5,6 @@ import { PanelKanan } from './PanelKanan';
 import { Toast } from '../../components/shared/Toast';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { useAppContext } from '../../contexts/AppContext';
-import Settings from '../settings/Settings';
 import { FileManager } from '../files/FileManager';
 import ActivityLog from '../data-master/ActivityLog';
 import DashboardFiles from '../files/DashboardFiles';
@@ -103,8 +102,6 @@ const MainLayout = () => {
         return <DashboardFiles />;
       case 'activity-log':
         return <ActivityLog />;
-      case 'settings':
-        return <Settings />;
       case 'settings-local-folders':
         return renderSettingsModule('Folder Lokal Dipantau', '📁', <LocalFoldersTab />);
       case 'settings-gdrive':
