@@ -42,9 +42,12 @@ pub async fn get_current_user(state: State<'_, AppState>) -> Result<Option<AppSe
             return Ok(active.clone());
         }
     }
-    let db = state.db.lock().unwrap();
-    let db = db.as_ref().ok_or("Database tidak diinisialisasi")?;
+    let db_guard = state.db.lock().unwrap();
+    let db = db_guard.as_ref().ok_or("Database tidak diinisialisasi")?;
     let session = db.get_active_session().map_err(|e| e.to_string())?;
+    
+    drop(db_guard);
+
     if let Some(ref s) = session {
         let mut active = state.active_session.lock().unwrap();
         *active = Some(s.clone());

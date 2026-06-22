@@ -22,14 +22,18 @@ pub use wrapper::PubhubRow as Row;
 use std::path::PathBuf;
 use tauri::Manager;
 
+/// Returns the shared PubHub database path used by all apps in the monorepo.
+/// Uses the OS local data directory (e.g. %LOCALAPPDATA% / ~/.local/share)
+/// so that pub-billing, pub-ops, pub-admin and pub-files open the same file.
 pub fn get_db_path(app_handle: &tauri::AppHandle) -> Result<PathBuf, DbError> {
-    let app_data_dir = app_handle
+    let local_data_dir = app_handle
         .path()
-        .app_data_dir()
+        .local_data_dir()
         .map_err(|_| DbError::PathError)?;
 
-    std::fs::create_dir_all(&app_data_dir)?;
-    Ok(app_data_dir.join("pubhub.db"))
+    let shared_dir = local_data_dir.join("PubHub");
+    std::fs::create_dir_all(&shared_dir)?;
+    Ok(shared_dir.join("pubhub.db"))
 }
 
 pub fn init_db(db_path: &PathBuf) -> Result<(), DbError> {

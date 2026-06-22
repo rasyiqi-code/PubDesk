@@ -73,7 +73,7 @@ const InvoiceGenerator: React.FC = () => {
       const existingPenulis = penulis.find(p => p.name.toLowerCase() === customerNameTrimmed.toLowerCase());
       if (!existingPenulis) {
         try {
-          await addPenulis({
+          contactId = await addPenulis({
             name: customerNameTrimmed,
             wa_number: customer.wa_number?.trim() || '',
             email: customer.email?.trim() || '',
@@ -86,6 +86,7 @@ const InvoiceGenerator: React.FC = () => {
           console.error('Gagal menyimpan penulis baru secara otomatis:', err);
         }
       } else {
+        contactId = existingPenulis.id;
         const hasWaChanged = (customer.wa_number?.trim() || '') !== (existingPenulis.wa_number || '');
         const hasEmailChanged = (customer.email?.trim() || '') !== (existingPenulis.email || '');
         const hasAddressChanged = (customer.address?.trim() || '') !== (existingPenulis.address || '');
@@ -102,8 +103,6 @@ const InvoiceGenerator: React.FC = () => {
           }
         }
       }
-      // Kita biarkan contactId undefined jika penulis, karena customer_id di tabel invoices merujuk pada tabel contacts.
-      // Opsional: kita bisa tetap sinkron ke tabel contacts sebagai cache. Tapi untuk saat ini biarkan null sesuai plan.
     } else {
       // Auto-save/update pelanggan ke database SQLite tabel contacts saat invoice disimpan
       const existingContact = contacts.find(c => c.type === 'customer' && c.name.toLowerCase() === customerNameTrimmed.toLowerCase());
@@ -162,6 +161,14 @@ const InvoiceGenerator: React.FC = () => {
       isPenulis
     };
 
+    const customerSnapshot = JSON.stringify({
+      name: customerNameTrimmed,
+      wa_number: customer.wa_number || '',
+      email: customer.email || '',
+      address: customer.address || '',
+      isPenulis
+    });
+
     const invoiceData = {
       id: editingInvoiceId || undefined,
       created_at: new Date().toISOString(),
@@ -171,7 +178,9 @@ const InvoiceGenerator: React.FC = () => {
       admin_fee: adminFee,
       total,
       export_format: invoiceType,
-      file_path: JSON.stringify(metadata)
+      file_path: JSON.stringify(metadata),
+      customer_snapshot: customerSnapshot,
+      payment_status: paymentStatus
     };
 
     try {

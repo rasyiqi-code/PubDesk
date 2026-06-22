@@ -30,14 +30,16 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
     penulis, 
     penerbit, 
     naskah, 
+    tim,
     legalitas,
     loadPenulis,
     loadPenerbit,
     loadNaskah,
+    loadTim,
     loadLegalitas
   } = useDataMasterContext();
   
-  const { loadTasks } = useWorkflowContext();
+  const { tasks, loadTasks } = useWorkflowContext();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -58,6 +60,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
         loadPenulis(),
         loadPenerbit(),
         loadNaskah(),
+        loadTim(),
         loadLegalitas(),
         loadTasks()
       ]);
@@ -199,34 +202,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
           <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
-
-      {activeModule === 'files' && (
-        <button
-          className={`top-bar-btn ${fileLayoutMode === 'grid' ? 'active' : ''}`}
-          onClick={() => setFileLayoutMode(fileLayoutMode === 'list' ? 'grid' : 'list')}
-          title={fileLayoutMode === 'grid' ? 'Tampilan List' : 'Tampilan Grid'}
-          style={{ color: fileLayoutMode === 'grid' ? 'var(--accent)' : 'var(--text-secondary)', background: fileLayoutMode === 'grid' ? 'var(--bg-card)' : 'transparent' }}
-          aria-label="Toggle grid/list view"
-        >
-          {fileLayoutMode === 'grid' ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6" />
-              <line x1="8" y1="12" x2="21" y2="12" />
-              <line x1="8" y1="18" x2="21" y2="18" />
-              <line x1="3" y1="6" x2="3.01" y2="6" />
-              <line x1="3" y1="12" x2="3.01" y2="12" />
-              <line x1="3" y1="18" x2="3.01" y2="18" />
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-            </svg>
-          )}
-        </button>
-      )}
 
       <div style={{ position: 'relative' }}>
         <button 

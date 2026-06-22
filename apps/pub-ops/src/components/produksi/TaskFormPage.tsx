@@ -6,11 +6,13 @@ import { useWorkflowContext } from '../../contexts/WorkflowContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { TextArea } from '../../ui/atoms/TextArea';
 import { Select } from '../../ui/atoms/Select';
-import { SearchableSelect } from '../../ui/atoms/SearchableSelect';
+
 import { Button } from '../../ui/atoms/Button';
 import { DatePicker } from '../../ui/atoms/DatePicker';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 import { useAuth } from '../../contexts/AuthContext';
+import { SmartRelationField, SmartRelationOption } from '@pubhub/shared-ui';
+import { findBestDuplicate, formatDuplicateReason } from '@pubhub/shared-utils';
 
 const TaskFormPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -37,12 +39,13 @@ const TaskFormPage: React.FC = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [judulPesananInput, setJudulPesananInput] = useState('');
 
-  const timOptions = useMemo(() => {
-    return [
-      { value: '', label: '-- Pilih Penanggung Jawab (PJ) --' },
-      ...tim.map(t => ({ value: String(t.id), label: `👤 ${t.name} (${t.role})` }))
-    ];
-  }, [tim]);
+  // SmartRelation quick-create state
+  const [naskahCreateForm, setNaskahCreateForm] = useState({ title: '', penulis_id: '', copies: 0 });
+  const [naskahDuplicateWarning, setNaskahDuplicateWarning] = useState<{
+    matchedOption: SmartRelationOption;
+    similarity: number;
+    reason: string;
+  } | null>(null);
 
   const statusOptions = [
     { value: 'Belum Mulai', label: 'Belum Mulai' },
@@ -60,25 +63,69 @@ const TaskFormPage: React.FC = () => {
     { value: 'Urgent', label: 'Urgent' }
   ];
 
-
-  const penulisOptions = [
-    { value: '', label: '-- Pilih Pelanggan / Penulis --' },
-    ...penulis.map(p => ({ value: String(p.id), label: p.name }))
-  ];
-
   const filteredNaskahOptions = useMemo(() => {
     let list = naskah;
     if (selectedCustomerId) {
       list = naskah.filter(n => n.penulis_id === Number(selectedCustomerId));
     }
-    return [
-      { value: '', label: '-- Pilih Naskah --' },
-      ...list.map(n => ({
-        value: String(n.id),
-        label: `${n.title} (${n.naskah_id_code || `ID: ${n.id}`})`
-      }))
-    ];
+    return list.map(n => ({
+      value: String(n.id),
+      label: `${n.title} (${n.naskah_id_code || `ID: ${n.id}`})`,
+      penulis_id: n.penulis_id
+    }));
   }, [naskah, selectedCustomerId]);
+
+  const penulisOptions: SmartRelationOption[] = useMemo(
+    () => penulis.map((p) => ({ value: String(p.id), label: p.name, wa_number: p.wa_number, email: p.email })),
+    [penulis]
+  );
+
+  const timOptions: SmartRelationOption[] = useMemo(
+    () => tim.map((t) => ({ value: String(t.id), label: `${t.name} (${t.role})`, role: t.role })),
+    [tim]
+  );
+
+  const checkNaskahDuplicate = (title: string) => {
+    const result = findBestDuplicate(
+      { id: undefined, title },
+      naskah.map((n) => ({ id: String(n.id), title: n.title })),
+      [{ key: 'title', weight: 1, threshold: 0.85 }],
+      0.75
+    );
+    if (result) {
+      setNaskahDuplicateWarning({
+        matchedOption: filteredNaskahOptions.find((o) => o.value === result.item.id) || { value: result.item.id, label: result.item.title },
+        similarity: result.score,
+        reason: formatDuplicateReason(result, 'title'),
+      });
+      return true;
+    }
+    setNaskahDuplicateWarning(null);
+    return false;
+  };
+
+  const createNaskahFromTask = async (onSuccess: () => void) => {
+    const { title, penulis_id, copies } = naskahCreateForm;
+    if (!title.trim()) return;
+    if (!naskahDuplicateWarning && checkNaskahDuplicate(title)) return;
+    try {
+      const id = await addNaskah({
+        title: title.trim(),
+        penulis_id: penulis_id ? Number(penulis_id) : undefined,
+        copies: copies || 0,
+        book_size: '14x20',
+        legal_type: 'Tanpa ISBN',
+        order_type: 'Baru',
+        status: 'Belum Dimulai'
+      });
+      setNaskahId(String(id));
+      if (penulis_id) setSelectedCustomerId(penulis_id);
+      setNaskahDuplicateWarning(null);
+      onSuccess();
+    } catch (err) {
+      console.error('Gagal membuat naskah:', err);
+    }
+  };
 
   // Otomatis set pelanggan jika naskah dipilih
   useEffect(() => {
@@ -156,7 +203,8 @@ const TaskFormPage: React.FC = () => {
             copies: 0,
             book_size: '14x20',
             legal_type: 'Tanpa ISBN',
-            order_type: 'Baru'
+            order_type: 'Baru',
+            status: 'Belum Dimulai'
           });
           if (newNaskahId) {
             finalNaskahId = String(newNaskahId);
@@ -293,14 +341,16 @@ const TaskFormPage: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.2fr', gap: '24px', alignItems: 'start' }}>
                 {/* Kolom Kiri: Identitas Pelanggan dan Naskah/Pesanan */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <SearchableSelect
+                  <SmartRelationField
                     label="Pelanggan / Penulis (Relasi CRM)"
                     options={penulisOptions}
                     value={selectedCustomerId}
-                    onChange={setSelectedCustomerId}
+                    onChange={(val) => setSelectedCustomerId(val)}
                     placeholder="Cari pelanggan..."
                     emptyMessage="Tidak ada pelanggan yang cocok"
+                    entityLabel="Penulis"
                     fullWidth
+                    allowCreate={false}
                   />
 
                   {!isEdit && (
@@ -356,14 +406,50 @@ const TaskFormPage: React.FC = () => {
                   {(isEdit || inputMode === 'naskah') ? (
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', width: '100%' }}>
                       <div style={{ flex: 1 }}>
-                        <SearchableSelect
+                        <SmartRelationField
                           label="Pilih Naskah"
                           options={filteredNaskahOptions}
                           value={naskahId}
-                          onChange={setNaskahId}
+                          onChange={(val) => setNaskahId(val)}
                           placeholder="Cari judul naskah..."
-                          emptyMessage="Tidak ada naskah yang cocok"
+                          emptyMessage="Belum ada naskah. Klik '+ Naskah Baru'."
+                          entityLabel="Naskah"
                           fullWidth
+                          renderCreateForm={({ onSave, onCancel }) => (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              <input
+                                type="text"
+                                placeholder="Judul naskah"
+                                value={naskahCreateForm.title}
+                                onChange={(e) => setNaskahCreateForm((prev) => ({ ...prev, title: e.target.value }))}
+                                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                              />
+                              <Select
+                                label="Penulis"
+                                options={[{ value: '', label: '-- Pilih Penulis --' }, ...penulisOptions]}
+                                value={naskahCreateForm.penulis_id}
+                                onChange={(e) => setNaskahCreateForm((prev) => ({ ...prev, penulis_id: e.target.value }))}
+                                fullWidth
+                              />
+                              <input
+                                type="number"
+                                placeholder="Jumlah cetak"
+                                value={naskahCreateForm.copies || ''}
+                                onChange={(e) => setNaskahCreateForm((prev) => ({ ...prev, copies: Number(e.target.value) || 0 }))}
+                                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                              />
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                                <button className="btn-primary" type="button" onClick={() => createNaskahFromTask(onSave)}>Simpan</button>
+                              </div>
+                            </div>
+                          )}
+                          duplicateWarning={naskahDuplicateWarning}
+                          onSelectExisting={(val) => {
+                            setNaskahId(val);
+                            setNaskahDuplicateWarning(null);
+                          }}
+                          onConfirmCreateAnyway={() => createNaskahFromTask(() => {})}
                         />
                       </div>
                     </div>
@@ -466,20 +552,24 @@ const TaskFormPage: React.FC = () => {
 
               {/* Baris Bawah: Penanggung Jawab dan Deadline */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Select
+                <SmartRelationField
                   label="Penanggung Jawab (PJ)"
                   options={timOptions}
                   value={assignedTeamId}
-                  onChange={(e) => {
-                    setAssignedTeamId(e.target.value);
-                    const selected = tim.find(t => t.id === Number(e.target.value));
+                  onChange={(val) => {
+                    setAssignedTeamId(val);
+                    const selected = tim.find(t => t.id === Number(val));
                     if (selected) {
                       setPicName(selected.name);
                     } else {
                       setPicName('');
                     }
                   }}
+                  placeholder="Cari anggota tim..."
+                  emptyMessage="Tidak ada tim yang cocok"
+                  entityLabel="Tim"
                   fullWidth
+                  allowCreate={false}
                 />
                 <DatePicker 
                   label="Deadline" 

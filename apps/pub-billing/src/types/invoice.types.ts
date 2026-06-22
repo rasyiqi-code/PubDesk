@@ -37,6 +37,12 @@ export interface Invoice {
   file_path?: string;
   sync_status?: string;
   cloud_file_url?: string;
+  customer_snapshot?: string;
+  payment_status?: string;
+  naskah_id?: number;
+  paid_amount?: number;
+  remaining_amount?: number;
+  payment_notes?: string;
 }
 
 export interface InvoiceProfile {

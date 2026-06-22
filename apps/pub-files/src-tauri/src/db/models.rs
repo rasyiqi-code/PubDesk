@@ -146,6 +146,7 @@ pub struct Invoice {
     pub remaining_amount: f64,
     pub payment_notes: Option<String>,
     pub updated_at: Option<String>,
+    pub customer_snapshot: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -178,6 +179,7 @@ impl Default for Invoice {
             remaining_amount: 0.0,
             payment_notes: None,
             updated_at: None,
+            customer_snapshot: None,
         }
     }
 }

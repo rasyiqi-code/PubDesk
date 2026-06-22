@@ -492,25 +492,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     let metadata: any = { invoiceNo: '', invoiceDate: '', invoiceHal: '', invoiceLampiran: '', paymentStatus: 'LUNAS', spesifikasiFasilitas: '', customerName: '', customerWa: '', customerAddress: '' };
     try { if (invoice.file_path) metadata = JSON.parse(invoice.file_path); } catch {}
 
-    let items: any[] = [];
-    try { items = JSON.parse(invoice.items_json); } catch {}
-
-    const overrideInvoice = {
-      customerName: metadata.customerName || '',
-      waNumber: metadata.customerWa || '',
-      address: metadata.customerAddress || '',
-      items,
-      shippingCost: invoice.shipping_cost,
-      adminFee: invoice.admin_fee,
-      invoiceType: invoice.export_format || '',
-      invoiceNo: metadata.invoiceNo || '',
-      invoiceHal: metadata.invoiceHal || '',
-      invoiceLampiran: metadata.invoiceLampiran || '',
-      invoiceDate: metadata.invoiceDate || '',
-      paymentStatus: metadata.paymentStatus || 'LUNAS',
-      spesifikasiFasilitas: metadata.spesifikasiFasilitas || ''
-    };
-
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: 'var(--bg-panel)' }}>
         {/* Header Tab Switcher */}
@@ -551,22 +532,20 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
             </button>
           </div>
 
-          {/* Action Button */}
-          {activeTab === 'preview' && (
-            <button
-              className="btn-primary compact-btn"
-              onClick={() => { loadInvoiceToForm(invoice); setActiveModule('invoice'); }}
-              style={{ height: '30px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '0 12px' }}
-            >
-              <span>📝</span> Edit
-            </button>
-          )}
         </div>
 
         {/* Tab Content */}
         <div style={{ flex: 1, overflow: 'auto', padding: activeTab === 'inspector' ? '20px 24px' : '0' }}>
           {activeTab === 'preview' ? (
-            <InvoicePreview overrideInvoice={overrideInvoice} />
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700 }}>{metadata.invoiceNo || 'Invoice'}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Pelanggan: {metadata.customerName || '-'}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Total: Rp {formatPrice(invoice.total)}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Status: {metadata.paymentStatus || 'LUNAS'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                Pratinjau invoice tersedia di aplikasi PubBilling.
+              </div>
+            </div>
           ) : (
             <>
               {/* Header Info Berkas */}

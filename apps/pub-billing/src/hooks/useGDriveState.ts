@@ -154,66 +154,76 @@ export function useGDriveState({ showToast, fileCategory }: UseGDriveStateProps)
     }
   };
 
-  const refreshPromiseRef = useRef<Promise<string | null> | null>(null);
+  const refreshPromisesRef = useRef<Record<string, Promise<string | null>>>({});
 
   const refreshAccountToken = async (email: string): Promise<string | null> => {
-    const currentAccounts = gdriveAccountsRef.current;
-    const account = currentAccounts.find(acc => acc.email === email);
-    if (!account) return null;
-
-    try {
-      const res = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          client_id: account.clientId,
-          client_secret: account.clientSecret,
-          refresh_token: account.refreshToken,
-          grant_type: 'refresh_token'
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const newAccessToken = data.access_token;
-        
-        const updatedAccounts = currentAccounts.map(acc => {
-          if (acc.email === email) {
-            return { ...acc, token: newAccessToken };
-          }
-          return acc;
-        });
-        setGdriveAccounts(updatedAccounts);
-
-        const defaultToken = localStorage.getItem('gdrive_token');
-        const defaultEmail = connectedUser?.email;
-        if (defaultEmail === email || !defaultToken) {
-          localStorage.setItem('gdrive_token', newAccessToken);
-          setConnectedUser({ name: account.name, email: account.email });
-        }
-        
-        return newAccessToken;
-      }
-    } catch (e) {
-      console.error(`Gagal refresh token untuk ${email}:`, e);
+    if (refreshPromisesRef.current[email]) {
+      return refreshPromisesRef.current[email];
     }
-    return null;
+
+    const runRefresh = async (): Promise<string | null> => {
+      const currentAccounts = gdriveAccountsRef.current;
+      const account = currentAccounts.find(acc => acc.email === email);
+      if (!account) return null;
+
+      try {
+        const res = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            client_id: account.clientId,
+            client_secret: account.clientSecret,
+            refresh_token: account.refreshToken,
+            grant_type: 'refresh_token'
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const newAccessToken = data.access_token;
+          
+          const updatedAccounts = gdriveAccountsRef.current.map(acc => {
+            if (acc.email === email) {
+              return { ...acc, token: newAccessToken };
+            }
+            return acc;
+          });
+          setGdriveAccounts(updatedAccounts);
+
+          const defaultToken = localStorage.getItem('gdrive_token');
+          const defaultEmail = connectedUser?.email;
+          if (defaultEmail === email || !defaultToken) {
+            localStorage.setItem('gdrive_token', newAccessToken);
+            setConnectedUser({ name: account.name, email: account.email });
+          }
+          
+          return newAccessToken;
+        }
+      } catch (e) {
+        console.error(`Gagal refresh token untuk ${email}:`, e);
+      }
+      return null;
+    };
+
+    const promise = runRefresh().finally(() => {
+      delete refreshPromisesRef.current[email];
+    });
+    refreshPromisesRef.current[email] = promise;
+    return promise;
   };
 
   const refreshAccessToken = async (): Promise<string | null> => {
-    if (refreshPromiseRef.current) {
-      return refreshPromiseRef.current;
-    }
-
     const defaultEmail = connectedUser?.email;
     const currentAccounts = gdriveAccountsRef.current;
     if (defaultEmail && currentAccounts.some(acc => acc.email === defaultEmail)) {
-      refreshPromiseRef.current = refreshAccountToken(defaultEmail);
-      const res = await refreshPromiseRef.current;
-      refreshPromiseRef.current = null;
-      return res;
+      return refreshAccountToken(defaultEmail);
+    }
+
+    const key = 'default_unregistered';
+    if (refreshPromisesRef.current[key]) {
+      return refreshPromisesRef.current[key];
     }
 
     const refreshToken = localStorage.getItem('gdrive_refresh_token');
@@ -253,13 +263,14 @@ export function useGDriveState({ showToast, fileCategory }: UseGDriveStateProps)
       } catch (err) {
         console.error('Gagal melakukan refresh token:', err);
         return null;
-      } finally {
-        refreshPromiseRef.current = null;
       }
     };
 
-    refreshPromiseRef.current = runRefresh();
-    return refreshPromiseRef.current;
+    const promise = runRefresh().finally(() => {
+      delete refreshPromisesRef.current[key];
+    });
+    refreshPromisesRef.current[key] = promise;
+    return promise;
   };
 
   useEffect(() => {

@@ -285,12 +285,16 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
       }
       
+      let snapshot: any = null;
+      if (invoice.customer_snapshot) {
+        try { snapshot = JSON.parse(invoice.customer_snapshot); } catch {}
+      }
       setCustomer({
-        name: metadata.customerName || '',
-        wa_number: metadata.customerWa || '',
-        email: (metadata as any).customerEmail || '',
-        address: metadata.customerAddress || '',
-        isPenulis: (metadata as any).isPenulis || false
+        name: snapshot?.name ?? metadata.customerName ?? '',
+        wa_number: snapshot?.wa_number ?? metadata.customerWa ?? '',
+        email: snapshot?.email ?? (metadata as any).customerEmail ?? '',
+        address: snapshot?.address ?? metadata.customerAddress ?? '',
+        isPenulis: snapshot?.isPenulis ?? (metadata as any).isPenulis ?? false
       });
       
       let parsedItems = [];

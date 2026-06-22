@@ -22,8 +22,7 @@ export * from './molecules/SectionCard';
 export * from './molecules/SectionHeader';
 export * from './molecules/StatCard';
 export * from './molecules/TabBar';
+export * from './molecules/SmartRelationField';
 
 // Shared Components
-export * from './shared/Toast';
-export * from './shared/ConfirmDialog';
 export * from './shared/SyncConnectionPanel';

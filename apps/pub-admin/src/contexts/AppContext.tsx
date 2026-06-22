@@ -80,7 +80,7 @@ interface AppContextType {
   setSelectedBookId: (id: number | null) => void;
   selectedServiceId: number | null;
   setSelectedServiceId: (id: number | null) => void;
-  activeSettingsTab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'data-reset';
+  activeSettingsTab: 'invoice' | 'local-folders' | 'p2p-connection' | 'google-drive' | 'google-apps-script' | 'data-reset';
   setActiveSettingsTab: (tab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'data-reset') => void;
   confirmOptions: ConfirmOptions | null;
   showConfirm: (options: ConfirmOptions) => void;
@@ -172,7 +172,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [directAddNewModule, setDirectAddNewModule] = useState<string | null>(null);
   const [isDbInitialized, setIsDbInitialized] = useState(false);
   const [discoveredPeers, setDiscoveredPeers] = useState<DiscoveredPeer[]>([]);
-  const [p2pConnectionInfo, setP2pConnectionInfo] = useState<P2PConnectionInfo | null>(null);
+  const [p2pConnectionInfo] = useState<P2PConnectionInfo | null>(null);
 
 
   const booksState = useBookState({ showToast: ui.showToast });

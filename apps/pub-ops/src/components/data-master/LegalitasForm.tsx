@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Legalitas } from '../../types/data-master.types';
 import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useAppContext } from '../../contexts/AppContext';
 import { googleAppsScriptService } from '../../services/googleAppsScript';
 import { TextField } from '../../ui/atoms/TextField';
-import { SearchableSelect } from '../../ui/atoms/SearchableSelect';
+
 import { Select } from '../../ui/atoms/Select';
 import { Button } from '../../ui/atoms/Button';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 import { DatePicker } from '../../ui/atoms/DatePicker';
 import { TextArea } from '../../ui/atoms/TextArea';
+import { SmartRelationField, SmartRelationOption } from '@pubhub/shared-ui';
+import { findBestDuplicate, formatDuplicateReason } from '@pubhub/shared-utils';
 
 interface LegalitasFormProps {
   initialData?: Legalitas | null;
@@ -33,7 +35,7 @@ const STATUS_OPTIONS = [
 ];
 
 const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, onCancel }) => {
-  const { naskah, penulis } = useDataMasterContext();
+  const { naskah, penulis, addNaskah, addPenulis } = useDataMasterContext();
   const { showToast, setActiveModule } = useAppContext();
 
   const [naskahId, setNaskahId] = useState<number | undefined>(undefined);
@@ -49,13 +51,31 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
 
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
-  const naskahOptions = [
-    { value: '', label: '-- Pilih Naskah --' },
-    ...naskah.map((n) => {
+  const [penulisCreateForm, setPenulisCreateForm] = useState({ name: '', email: '', wa_number: '', address: '', email_valid: 0, wa_valid: 0 });
+  const [naskahCreateForm, setNaskahCreateForm] = useState<{ title: string; penulis_id: string; copies: number; cover_type: string }>({ title: '', penulis_id: '', copies: 0, cover_type: '' });
+
+  const [penulisDuplicateWarning, setPenulisDuplicateWarning] = useState<{
+    matchedOption: SmartRelationOption;
+    similarity: number;
+    reason: string;
+  } | null>(null);
+  const [naskahDuplicateWarning, setNaskahDuplicateWarning] = useState<{
+    matchedOption: SmartRelationOption;
+    similarity: number;
+    reason: string;
+  } | null>(null);
+  const [selectedRelationPenulisId, setSelectedRelationPenulisId] = useState('');
+
+  const naskahOptions: SmartRelationOption[] = useMemo(() =>
+    naskah.map((n) => {
       const penulisName = n.penulis_id ? (penulis.find(p => p.id === n.penulis_id)?.name || `#${n.penulis_id}`) : '-';
-      return { value: String(n.id), label: `${n.title} — ${penulisName}` };
+      return { value: String(n.id), label: `${n.title} — ${penulisName}`, meta: n };
     }),
-  ];
+  [naskah, penulis]);
+
+  const penulisOptions: SmartRelationOption[] = useMemo(() =>
+    penulis.map((p) => ({ value: String(p.id), label: `${p.name}${p.email ? ` — ${p.email}` : ''}`, meta: p })),
+  [penulis]);
 
   useEffect(() => {
     if (initialData) {
@@ -91,6 +111,75 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
         const penulisName = found.penulis_id ? (penulis.find(p => p.id === found.penulis_id)?.name || '') : '';
         if (penulisName) setNamaPenulis(penulisName);
       }
+    }
+  };
+
+  const createPenulisFromLegalitas = async (onSave?: (val: string) => void) => {
+    const name = penulisCreateForm.name.trim();
+    if (!name) { showToast('Nama penulis wajib diisi', 'error'); return; }
+    const dup = findBestDuplicate(
+      { ...penulisCreateForm, id: 0 },
+      penulis,
+      [
+        { key: 'name', weight: 0.7, threshold: 0.85 },
+        { key: 'wa_number', weight: 0.2, isPhone: true, threshold: 0.95 },
+        { key: 'email', weight: 0.1, threshold: 0.95 },
+      ]
+    );
+    if (dup && !penulisDuplicateWarning) {
+      setPenulisDuplicateWarning({
+        matchedOption: penulisOptions.find((o) => o.value === String(dup.item.id)) || { value: String(dup.item.id), label: dup.item.name },
+        similarity: dup.score,
+        reason: formatDuplicateReason(dup),
+      });
+      return;
+    }
+    try {
+      const id = await addPenulis(penulisCreateForm);
+      setNamaPenulis(name);
+      setPenulisCreateForm({ name: '', email: '', wa_number: '', address: '', email_valid: 0, wa_valid: 0 });
+      setPenulisDuplicateWarning(null);
+      onSave?.(String(id));
+      showToast('Penulis baru berhasil dibuat', 'success');
+    } catch (e) {
+      showToast('Gagal membuat penulis baru', 'error');
+    }
+  };
+
+  const createNaskahFromLegalitas = async (onSave?: (val: string) => void) => {
+    const title = naskahCreateForm.title.trim();
+    if (!title) { showToast('Judul naskah wajib diisi', 'error'); return; }
+    if (!naskahCreateForm.penulis_id) { showToast('Penulis wajib dipilih', 'error'); return; }
+    const dup = findBestDuplicate(
+      { id: 0, title, copies: naskahCreateForm.copies },
+      naskah,
+      [
+        { key: 'title', weight: 0.8, threshold: 0.85 },
+        { key: 'copies', weight: 0.2, threshold: 0.95 },
+      ]
+    );
+    if (dup && !naskahDuplicateWarning) {
+      setNaskahDuplicateWarning({
+        matchedOption: naskahOptions.find((o) => o.value === String(dup.item.id)) || { value: String(dup.item.id), label: dup.item.title },
+        similarity: dup.score,
+        reason: formatDuplicateReason(dup, 'title'),
+      });
+      return;
+    }
+    try {
+      const id = await addNaskah({
+        ...naskahCreateForm,
+        penulis_id: Number(naskahCreateForm.penulis_id),
+        copies: Number(naskahCreateForm.copies) || 0,
+        status: 'Belum Dimulai'
+      });
+      handleNaskahSelect(String(id));
+      setNaskahCreateForm({ title: '', penulis_id: '', copies: 0, cover_type: '' });
+      setNaskahDuplicateWarning(null);
+      onSave?.(String(id));
+      showToast('Naskah baru berhasil dibuat', 'success');
+    } catch (e) {
+      showToast('Gagal membuat naskah baru', 'error');
     }
   };
 
@@ -201,14 +290,81 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
         <Accordion>
           <AccordionSection index={1} title="📄 Informasi Legalitas" expandedSection={expandedSection} onToggle={setExpandedSection}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <SearchableSelect
+              <SmartRelationField
                 label="Pilih dari Naskah yang Ada"
                 options={naskahOptions}
                 value={naskahId ? String(naskahId) : ''}
                 onChange={handleNaskahSelect}
                 placeholder="Ketik judul naskah..."
-                emptyMessage="Tidak ada naskah yang cocok"
+                emptyMessage="Belum ada naskah. Klik '+ Naskah Baru'."
+                entityLabel="Naskah"
                 fullWidth
+                renderCreateForm={({ onSave, onCancel }) => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <input
+                      type="text"
+                      placeholder="Judul naskah"
+                      value={naskahCreateForm.title}
+                      onChange={(e) => setNaskahCreateForm((prev) => ({ ...prev, title: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                    />
+                    <SmartRelationField
+                      label="Penulis"
+                      options={penulisOptions}
+                      value={naskahCreateForm.penulis_id}
+                      onChange={(val) => setNaskahCreateForm((prev) => ({ ...prev, penulis_id: val }))}
+                      placeholder="Pilih penulis..."
+                      emptyMessage="Belum ada penulis. Klik '+ Penulis Baru'."
+                      entityLabel="Penulis"
+                      fullWidth
+                      renderCreateForm={({ onSave: onSaveInnerPenulis, onCancel: onCancelInnerPenulis }) => (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <input
+                            type="text"
+                            placeholder="Nama penulis"
+                            value={penulisCreateForm.name}
+                            onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+                            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Email"
+                            value={penulisCreateForm.email}
+                            onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, email: e.target.value }))}
+                            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Telepon"
+                            value={penulisCreateForm.wa_number}
+                            onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, wa_number: e.target.value }))}
+                            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                          />
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button className="btn-secondary" type="button" onClick={onCancelInnerPenulis}>Batal</button>
+                            <button className="btn-primary" type="button" onClick={() => createPenulisFromLegalitas(onSaveInnerPenulis)}>Simpan</button>
+                          </div>
+                        </div>
+                      )}
+                      duplicateWarning={penulisDuplicateWarning}
+                      onSelectExisting={(val) => {
+                        setNaskahCreateForm((prev) => ({ ...prev, penulis_id: val }));
+                        setPenulisDuplicateWarning(null);
+                      }}
+                      onConfirmCreateAnyway={() => createPenulisFromLegalitas((id) => setNaskahCreateForm((prev) => ({ ...prev, penulis_id: id })))}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                      <button className="btn-primary" type="button" onClick={() => createNaskahFromLegalitas(onSave)}>Simpan</button>
+                    </div>
+                  </div>
+                )}
+                duplicateWarning={naskahDuplicateWarning}
+                onSelectExisting={(val) => {
+                  handleNaskahSelect(val);
+                  setNaskahDuplicateWarning(null);
+                }}
+                onConfirmCreateAnyway={() => createNaskahFromLegalitas(() => {})}
               />
 
               <TextField
@@ -221,22 +377,58 @@ const LegalitasForm: React.FC<LegalitasFormProps> = ({ initialData, onSubmit, on
                 autoFocus
               />
 
-              <SearchableSelect
+              <SmartRelationField
                 label="Cari Penulis dari Database"
-                options={[
-                  { value: '', label: '-- Pilih Penulis --' },
-                  ...penulis.map((p) => ({ value: String(p.id), label: p.name })),
-                ]}
-                value=""
+                options={penulisOptions}
+                value={selectedRelationPenulisId}
                 onChange={(val) => {
+                  setSelectedRelationPenulisId(val);
                   if (val) {
                     const p = penulis.find((x) => x.id === Number(val));
                     if (p) setNamaPenulis(p.name);
                   }
                 }}
                 placeholder="Ketik nama penulis..."
-                emptyMessage="Tidak ada penulis yang cocok"
+                emptyMessage="Belum ada penulis. Klik '+ Penulis Baru'."
+                entityLabel="Penulis"
                 fullWidth
+                renderCreateForm={({ onSave, onCancel }) => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <input
+                      type="text"
+                      placeholder="Nama penulis"
+                      value={penulisCreateForm.name}
+                      onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Email"
+                      value={penulisCreateForm.email}
+                      onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, email: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Telepon"
+                      value={penulisCreateForm.wa_number}
+                      onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, wa_number: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                      <button className="btn-primary" type="button" onClick={() => createPenulisFromLegalitas((id) => { setSelectedRelationPenulisId(id); onSave(id); })}>Simpan</button>
+                    </div>
+                  </div>
+                )}
+                duplicateWarning={penulisDuplicateWarning}
+                onSelectExisting={(val) => {
+                  setSelectedRelationPenulisId(val);
+                  const p = penulis.find((x) => x.id === Number(val));
+                  if (p) setNamaPenulis(p.name);
+                  setPenulisDuplicateWarning(null);
+                }}
+                onConfirmCreateAnyway={() => createPenulisFromLegalitas((id) => { setSelectedRelationPenulisId(id); })}
               />
 
               <TextField

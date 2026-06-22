@@ -80,10 +80,17 @@ pub async fn get_current_user(state: State<'_, AppState>) -> Result<Option<AppSe
         }
     };
 
-    if let Some(tim_id) = admin.id {
+    let session_opt = if let Some(tim_id) = admin.id {
         let session = db.login_session(tim_id, &admin.name, &admin.role).map_err(|e| e.to_string())?;
         let _ = db.log_activity_audit("session", None, "LOGIN", &format!("Karyawan '{}' auto-login (Admin Master)", admin.name), Some(tim_id), Some(&admin.name), None, None, Some("auth"));
-        drop(db_guard);
+        Some(session)
+    } else {
+        None
+    };
+
+    drop(db_guard);
+
+    if let Some(session) = session_opt {
         let mut active = state.active_session.lock().unwrap();
         *active = Some(session.clone());
         return Ok(Some(session));

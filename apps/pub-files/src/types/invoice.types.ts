@@ -37,6 +37,7 @@ export interface Invoice {
   file_path?: string;
   sync_status?: string;
   cloud_file_url?: string;
+  customer_snapshot?: string;
 }
 
 export interface InvoiceProfile {

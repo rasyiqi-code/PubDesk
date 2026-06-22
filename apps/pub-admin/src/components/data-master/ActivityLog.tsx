@@ -59,7 +59,7 @@ interface WorkSession {
 }
 
 export default function ActivityLog() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
   const [workSessions, setWorkSessions] = useState<WorkSession[]>([]);
   const [loading, setLoading] = useState(true);

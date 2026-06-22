@@ -14,7 +14,7 @@ const HomeDashboard: React.FC = () => {
   }, []);
 
   const quickActions = [
-    { id: 'tim', label: '👨‍💼 Tambah Anggota Tim', desc: 'Daftarkan staf pelaksana alur produksi baru', color: '#6b7280' },
+    { id: 'tim' as const, label: '👨‍💼 Tambah Anggota Tim', desc: 'Daftarkan staf pelaksana alur produksi baru', color: '#6b7280' },
   ];
 
   const greeting = useMemo(() => {

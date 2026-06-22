@@ -148,6 +148,7 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
     // Migrasi ad-hoc untuk kolom sinkronisasi invoice
     let _ = conn.execute("ALTER TABLE invoices ADD COLUMN sync_status TEXT DEFAULT 'pending'", []);
     let _ = conn.execute("ALTER TABLE invoices ADD COLUMN cloud_file_url TEXT", []);
+    let _ = conn.execute("ALTER TABLE invoices ADD COLUMN customer_snapshot TEXT", []);
 
     // Services table
     conn.execute(
@@ -360,7 +361,6 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
     let _ = conn.execute("ALTER TABLE naskah ADD COLUMN total_pages INTEGER", []);
     let _ = conn.execute("ALTER TABLE naskah ADD COLUMN synopsis TEXT", []);
     let _ = conn.execute("ALTER TABLE naskah ADD COLUMN assigned_team_ids TEXT", []);
-    let _ = conn.execute("ALTER TABLE naskah ADD COLUMN store_links TEXT", []);
 
     // Legalitas table
     conn.execute(
@@ -707,8 +707,9 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
     crate::sync::engine::init_sync_schema(conn)?;
     let _ = crate::sync::engine::ensure_device_id(conn);
 
-    // WAL mode for better concurrent access between sync and UI.
+    // WAL mode + busy timeout for concurrent access from multiple PubHub apps.
     let _ = conn.execute("PRAGMA journal_mode=WAL;", []);
+    let _ = conn.execute("PRAGMA busy_timeout = 5000;", []);
 
     // Dynamically create sync triggers for all tracked tables.
     crate::sync::engine::create_sync_triggers(conn)?;

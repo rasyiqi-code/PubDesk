@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Naskah } from '../../types/data-master.types';
 import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
-import { SearchableSelect } from '../../ui/atoms/SearchableSelect';
 import { Select } from '../../ui/atoms/Select';
 import { Button } from '../../ui/atoms/Button';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
+import { SmartRelationField, SmartRelationOption } from '@pubhub/shared-ui';
+import { findBestDuplicate, formatDuplicateReason } from '@pubhub/shared-utils';
 
 interface NaskahFormProps {
   initialData?: Naskah | null;
@@ -15,8 +16,22 @@ interface NaskahFormProps {
 }
 
 const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onCancel }) => {
-  const { penulis, penerbit, naskah } = useDataMasterContext();
+  const { penulis, penerbit, naskah, addPenulis, addPenerbit } = useDataMasterContext();
   const { showToast, setActiveModule } = useAppContext();
+
+  // Quick-create form state
+  const [penulisCreateForm, setPenulisCreateForm] = useState({ name: '', wa_number: '', email: '', city: '' });
+  const [penerbitCreateForm, setPenerbitCreateForm] = useState({ name: '', wa_number: '', email: '', city: '' });
+  const [penulisDuplicateWarning, setPenulisDuplicateWarning] = useState<{
+    matchedOption: SmartRelationOption;
+    similarity: number;
+    reason: string;
+  } | null>(null);
+  const [penerbitDuplicateWarning, setPenerbitDuplicateWarning] = useState<{
+    matchedOption: SmartRelationOption;
+    similarity: number;
+    reason: string;
+  } | null>(null);
 
   // Field identitas naskah
   const [naskahIdCode, setNaskahIdCode] = useState('');
@@ -105,15 +120,103 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
     });
   };
 
-  const penulisOptions = [
-    { value: '', label: '-- Pilih Penulis --' },
-    ...penulis.map((p) => ({ value: String(p.id), label: p.name }))
-  ];
+  const penulisOptions: SmartRelationOption[] = useMemo(
+    () => penulis.map((p) => ({ value: String(p.id), label: p.name, wa_number: p.wa_number, email: p.email, city: p.city })),
+    [penulis]
+  );
 
-  const penerbitOptions = [
-    { value: '', label: '-- Pilih Penerbit --' },
-    ...penerbit.map((pub) => ({ value: String(pub.id), label: pub.name }))
-  ];
+  const penerbitOptions: SmartRelationOption[] = useMemo(
+    () => penerbit.map((pub) => ({ value: String(pub.id), label: pub.name, wa_number: pub.wa_number, email: pub.email, city: pub.city })),
+    [penerbit]
+  );
+
+  const checkPenulisDuplicate = (name: string, wa_number?: string, email?: string) => {
+    const result = findBestDuplicate(
+      { id: undefined, name, wa_number, email },
+      penulis.map((p) => ({ id: String(p.id), name: p.name, wa_number: p.wa_number, email: p.email })),
+      [
+        { key: 'name', weight: 0.6, threshold: 0.85 },
+        { key: 'wa_number', weight: 0.25, isPhone: true, threshold: 0.95 },
+        { key: 'email', weight: 0.15, threshold: 0.95 },
+      ],
+      0.7
+    );
+    if (result) {
+      setPenulisDuplicateWarning({
+        matchedOption: penulisOptions.find((o) => o.value === result.item.id) || { value: result.item.id, label: result.item.name },
+        similarity: result.score,
+        reason: formatDuplicateReason(result),
+      });
+      return true;
+    }
+    setPenulisDuplicateWarning(null);
+    return false;
+  };
+
+  const checkPenerbitDuplicate = (name: string, wa_number?: string, email?: string) => {
+    const result = findBestDuplicate(
+      { id: undefined, name, wa_number, email },
+      penerbit.map((p) => ({ id: String(p.id), name: p.name, wa_number: p.wa_number, email: p.email })),
+      [
+        { key: 'name', weight: 0.7, threshold: 0.85 },
+        { key: 'wa_number', weight: 0.2, isPhone: true, threshold: 0.95 },
+        { key: 'email', weight: 0.1, threshold: 0.95 },
+      ],
+      0.7
+    );
+    if (result) {
+      setPenerbitDuplicateWarning({
+        matchedOption: penerbitOptions.find((o) => o.value === result.item.id) || { value: result.item.id, label: result.item.name },
+        similarity: result.score,
+        reason: formatDuplicateReason(result),
+      });
+      return true;
+    }
+    setPenerbitDuplicateWarning(null);
+    return false;
+  };
+
+  const createPenulis = async (onSuccess: () => void) => {
+    const { name, wa_number, email, city } = penulisCreateForm;
+    if (!name.trim()) return;
+    if (!penulisDuplicateWarning && checkPenulisDuplicate(name, wa_number, email)) return;
+    try {
+      const id = await addPenulis({
+        name: name.trim(),
+        wa_number: wa_number.trim(),
+        email: email.trim(),
+        city: city.trim(),
+        email_valid: 0,
+        wa_valid: 0,
+      });
+      setPenulisId(id);
+      setPenulisDuplicateWarning(null);
+      onSuccess();
+    } catch (err) {
+      console.error('Gagal membuat penulis:', err);
+    }
+  };
+
+  const createPenerbit = async (onSuccess: () => void) => {
+    const { name, wa_number, email, city } = penerbitCreateForm;
+    if (!name.trim()) return;
+    if (!penerbitDuplicateWarning && checkPenerbitDuplicate(name, wa_number, email)) return;
+    try {
+      const id = await addPenerbit({
+        name: name.trim(),
+        wa_number: wa_number.trim(),
+        email: email.trim(),
+        city: city.trim(),
+        email_valid: 0,
+        wa_valid: 0,
+      });
+      setPenerbitId(id);
+      setPenerbitDuplicateWarning(null);
+      onSuccess();
+    } catch (err) {
+      console.error('Gagal membuat penerbit:', err);
+    }
+  };
 
   const genreOptions = [
     { value: '', label: '-- Pilih Genre --' },
@@ -242,23 +345,109 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <SearchableSelect
+                <SmartRelationField
                   label="Penulis (Relasi CRM)"
                   options={penulisOptions}
                   value={penulisId ? String(penulisId) : ''}
                   onChange={(val) => setPenulisId(val ? Number(val) : undefined)}
                   placeholder="Ketik nama penulis..."
                   emptyMessage="Tidak ada penulis yang cocok"
+                  entityLabel="Penulis"
                   fullWidth
+                  renderCreateForm={({ onSave, onCancel }) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <input
+                        type="text"
+                        placeholder="Nama penulis"
+                        value={penulisCreateForm.name}
+                        onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nomor WhatsApp"
+                        value={penulisCreateForm.wa_number}
+                        onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, wa_number: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={penulisCreateForm.email}
+                        onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, email: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Kota"
+                        value={penulisCreateForm.city}
+                        onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, city: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                        <button className="btn-primary" type="button" onClick={() => createPenulis(onSave)}>Simpan</button>
+                      </div>
+                    </div>
+                  )}
+                  duplicateWarning={penulisDuplicateWarning}
+                  onSelectExisting={(val) => {
+                    setPenulisId(val ? Number(val) : undefined);
+                    setPenulisDuplicateWarning(null);
+                  }}
+                  onConfirmCreateAnyway={() => createPenulis(() => {})}
                 />
-                <SearchableSelect
+                <SmartRelationField
                   label="Penerbit Mitra (Relasi CRM)"
                   options={penerbitOptions}
                   value={penerbitId ? String(penerbitId) : ''}
                   onChange={(val) => setPenerbitId(val ? Number(val) : undefined)}
                   placeholder="Ketik nama penerbit..."
                   emptyMessage="Tidak ada penerbit yang cocok"
+                  entityLabel="Penerbit"
                   fullWidth
+                  renderCreateForm={({ onSave, onCancel }) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <input
+                        type="text"
+                        placeholder="Nama penerbit"
+                        value={penerbitCreateForm.name}
+                        onChange={(e) => setPenerbitCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nomor WhatsApp"
+                        value={penerbitCreateForm.wa_number}
+                        onChange={(e) => setPenerbitCreateForm((prev) => ({ ...prev, wa_number: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={penerbitCreateForm.email}
+                        onChange={(e) => setPenerbitCreateForm((prev) => ({ ...prev, email: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Kota"
+                        value={penerbitCreateForm.city}
+                        onChange={(e) => setPenerbitCreateForm((prev) => ({ ...prev, city: e.target.value }))}
+                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                        <button className="btn-primary" type="button" onClick={() => createPenerbit(onSave)}>Simpan</button>
+                      </div>
+                    </div>
+                  )}
+                  duplicateWarning={penerbitDuplicateWarning}
+                  onSelectExisting={(val) => {
+                    setPenerbitId(val ? Number(val) : undefined);
+                    setPenerbitDuplicateWarning(null);
+                  }}
+                  onConfirmCreateAnyway={() => createPenerbit(() => {})}
                 />
               </div>
 

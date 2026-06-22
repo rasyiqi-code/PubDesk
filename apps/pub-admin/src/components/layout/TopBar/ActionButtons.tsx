@@ -14,17 +14,11 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
   
   const { 
     importExportActions,
-    showToast,
   } = useAppContext();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const activeActions = activeModule ? importExportActions[activeModule] : undefined;
-
-  const handleRefresh = () => {
-    showToast('Menyegarkan data dari database...', 'info');
-    showToast('Seluruh data berhasil disegarkan!', 'success');
-  };
 
   useEffect(() => {
     if (!isDropdownOpen) return;

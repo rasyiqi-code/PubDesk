@@ -458,7 +458,7 @@ export const SyncConnectionPanel: React.FC<SyncConnectionPanelProps> = ({ isAdmi
 
         {status?.connected_peers && status.connected_peers.length > 0 && (
           <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {status.connected_peers.map((p, i) => (
+            {status.connected_peers.map((p) => (
               <div
                 key={p.peer_id}
                 style={{

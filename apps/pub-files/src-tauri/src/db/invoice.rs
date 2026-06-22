@@ -7,7 +7,7 @@ impl Database {
     pub fn add_invoice(&self, invoice: &Invoice) -> Result<i64, DbError> {
         let now = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "INSERT INTO invoices (created_at, customer_id, items_json, shipping_cost, admin_fee, total, export_format, file_path, sync_status, cloud_file_url, naskah_id, payment_status, paid_amount, remaining_amount, payment_notes, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+            "INSERT INTO invoices (created_at, customer_id, items_json, shipping_cost, admin_fee, total, export_format, file_path, sync_status, cloud_file_url, naskah_id, payment_status, paid_amount, remaining_amount, payment_notes, updated_at, customer_snapshot) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
             params![
                 invoice.created_at,
                 invoice.customer_id,
@@ -24,7 +24,8 @@ impl Database {
                 invoice.paid_amount,
                 invoice.remaining_amount,
                 invoice.payment_notes,
-                now
+                now,
+                invoice.customer_snapshot
             ]
         )?;
         let id = self.conn.last_insert_rowid();
@@ -33,7 +34,7 @@ impl Database {
     }
 
     pub fn get_invoices(&self) -> Result<Vec<Invoice>, DbError> {
-        let mut stmt = self.conn.prepare("SELECT id, created_at, customer_id, items_json, shipping_cost, admin_fee, total, export_format, file_path, sync_status, cloud_file_url, naskah_id, payment_status, paid_amount, remaining_amount, payment_notes, updated_at FROM invoices ORDER BY created_at DESC")?;
+        let mut stmt = self.conn.prepare("SELECT id, created_at, customer_id, items_json, shipping_cost, admin_fee, total, export_format, file_path, sync_status, cloud_file_url, naskah_id, payment_status, paid_amount, remaining_amount, payment_notes, updated_at, customer_snapshot FROM invoices ORDER BY created_at DESC")?;
         let invoices = stmt.query_map([], |row| {
             Ok(Invoice {
                 id: row.get(0)?,
@@ -53,6 +54,7 @@ impl Database {
                 remaining_amount: row.get(14)?,
                 payment_notes: row.get(15)?,
                 updated_at: row.get(16)?,
+                customer_snapshot: row.get(17)?,
             })
         })?;
 
@@ -117,7 +119,7 @@ impl Database {
     pub fn update_invoice(&self, invoice: &Invoice) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "UPDATE invoices SET customer_id = ?1, items_json = ?2, shipping_cost = ?3, admin_fee = ?4, total = ?5, export_format = ?6, file_path = ?7, sync_status = ?8, cloud_file_url = ?9, naskah_id = ?10, payment_status = ?11, paid_amount = ?12, remaining_amount = ?13, payment_notes = ?14, updated_at = ?15 WHERE id = ?16",
+            "UPDATE invoices SET customer_id = ?1, items_json = ?2, shipping_cost = ?3, admin_fee = ?4, total = ?5, export_format = ?6, file_path = ?7, sync_status = ?8, cloud_file_url = ?9, naskah_id = ?10, payment_status = ?11, paid_amount = ?12, remaining_amount = ?13, payment_notes = ?14, updated_at = ?15, customer_snapshot = ?16 WHERE id = ?17",
             params![
                 invoice.customer_id,
                 invoice.items_json,
@@ -134,6 +136,7 @@ impl Database {
                 invoice.remaining_amount,
                 invoice.payment_notes,
                 now,
+                invoice.customer_snapshot,
                 invoice.id
             ]
         )?;

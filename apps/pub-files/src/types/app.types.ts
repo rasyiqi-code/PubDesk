@@ -6,6 +6,7 @@ export type AppModule =
   | 'home'
   | 'files'
   | 'files-parent'
+  | 'invoice'
   | 'activity-log'
   | 'settings-local-folders'
   | 'settings-gdrive'
