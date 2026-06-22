@@ -1,0 +1,9 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "apps/pub-admin/src-tauri/Cargo.toml",
+    "apps/pub-billing/src-tauri/Cargo.toml",
+    "apps/pub-files/src-tauri/Cargo.toml",
+    "apps/pub-ops/src-tauri/Cargo.toml",
+    "packages/shared-db-rust/Cargo.toml"
+  ]
+}
