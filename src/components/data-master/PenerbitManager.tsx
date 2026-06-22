@@ -44,7 +44,7 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
 
   // State filter
   const [filterType, setFilterType] = useState<'status'>('status');
-  const [coopFilter, setCoopFilter] = useState<'all' | 'Aktif' | 'Negosiasi' | 'Pasif' | 'Berhenti' | 'Sendiri'>('all');
+  const [coopFilter, setCoopFilter] = useState<'all' | 'Aktif' | 'Negosiasi' | 'Pasif' | 'Berhenti' | 'Internal'>('all');
 
   // Filter data penerbit
   const filteredPenerbit = useMemo(() => {
@@ -395,7 +395,7 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
               <FilterChip label={`Negosiasi (${penerbit.filter(p => p.cooperation_status === 'Negosiasi').length})`} active={coopFilter === 'Negosiasi'} onClick={() => setCoopFilter('Negosiasi')} />
               <FilterChip label={`Pasif (${penerbit.filter(p => p.cooperation_status === 'Pasif').length})`} active={coopFilter === 'Pasif'} onClick={() => setCoopFilter('Pasif')} />
               <FilterChip label={`Berhenti (${penerbit.filter(p => p.cooperation_status === 'Berhenti').length})`} active={coopFilter === 'Berhenti'} onClick={() => setCoopFilter('Berhenti')} />
-              <FilterChip label={`Sendiri (${penerbit.filter(p => p.cooperation_status === 'Sendiri').length})`} active={coopFilter === 'Sendiri'} onClick={() => setCoopFilter('Sendiri')} />
+              <FilterChip label={`Internal (${penerbit.filter(p => p.cooperation_status === 'Internal').length})`} active={coopFilter === 'Internal'} onClick={() => setCoopFilter('Internal')} />
             </FilterGroup>
           </>
         )}

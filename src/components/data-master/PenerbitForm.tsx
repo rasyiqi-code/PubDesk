@@ -103,7 +103,7 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
     { value: 'Negosiasi', label: 'Dalam Negosiasi' },
     { value: 'Pasif', label: 'Pasif' },
     { value: 'Berhenti', label: 'Berhenti' },
-    { value: 'Sendiri', label: 'Penerbit Sendiri' }
+    { value: 'Internal', label: 'Penerbit Internal' }
   ];
 
   return (
