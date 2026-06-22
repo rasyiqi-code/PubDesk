@@ -28,7 +28,6 @@ const P2PConnectionTab: React.FC = () => {
   const [status, setStatus] = useState<P2PStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const [statusError, setStatusError] = useState<string | null>(null);
 
   // Load config & status saat pertama kali render
   useEffect(() => {
@@ -37,7 +36,7 @@ const P2PConnectionTab: React.FC = () => {
 
   // Poll status setiap 3 detik jika enabled
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (config.enabled) {
       loadStatus();
       interval = setInterval(() => {
@@ -67,10 +66,8 @@ const P2PConnectionTab: React.FC = () => {
     try {
       const res = await invoke<P2PStatus>('get_p2p_status_command');
       setStatus(res);
-      setStatusError(null);
     } catch (err: any) {
       // Abaikan log error jika manager dinonaktifkan
-      setStatusError(err.toString());
     }
   };
 
