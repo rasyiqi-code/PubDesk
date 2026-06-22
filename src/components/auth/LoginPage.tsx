@@ -39,6 +39,7 @@ const LoginPage: React.FC = () => {
   const [pinError, setPinError] = useState<string | null>(null);
 
   const [appName, setAppName] = useState('PubDesk');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const savedLogo = localStorage.getItem('splash_logo');
@@ -72,6 +73,16 @@ const LoginPage: React.FC = () => {
     };
     load();
   }, []);
+
+  const filteredMembers = members.filter(member => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      member.name.toLowerCase().includes(query) ||
+      member.role.toLowerCase().includes(query) ||
+      (member.department && member.department.toLowerCase().includes(query))
+    );
+  });
 
   const handleLogin = async (member: TimMember) => {
     if (!member.id) return;
@@ -183,6 +194,51 @@ const LoginPage: React.FC = () => {
           </span>
         </div>
 
+        {/* Search Bar */}
+        {!isLoading && members.length > 0 && (
+          <div style={{
+            padding: '8px 16px',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--bg-panel)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Cari nama, peran, atau divisi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                outline: 'none',
+                padding: '6px 0',
+              }}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  padding: '2px 6px',
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
             Memuat daftar tim...
@@ -197,14 +253,39 @@ const LoginPage: React.FC = () => {
               Tambahkan anggota tim melalui menu Master Data → Anggota Tim terlebih dahulu.
             </p>
           </div>
+        ) : filteredMembers.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
+            <p style={{ color: 'var(--text-secondary)', margin: '0 0 8px 0', fontSize: '14px' }}>
+              Tidak ada anggota tim yang cocok dengan pencarian "{searchQuery}".
+            </p>
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                padding: '4px 12px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                marginTop: '8px',
+              }}
+            >
+              Reset Pencarian
+            </button>
+          </div>
         ) : (
           <div style={{
             display: 'flex',
             flexWrap: 'wrap',
             background: 'var(--bg-card)',
             borderBottom: '1px solid var(--border)',
+            maxHeight: '380px',
+            overflowY: 'auto',
           }}>
-            {members.map((member, idx) => {
+            {filteredMembers.map((member, idx) => {
               const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
               const isLoggingIn = loggingIn === member.id;
               return (
