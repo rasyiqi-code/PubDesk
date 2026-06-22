@@ -5,7 +5,6 @@ import { PanelKanan } from './PanelKanan';
 import { Toast } from '../../components/shared/Toast';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { useAppContext } from '../../contexts/AppContext';
-import Settings from '../settings/Settings';
 import { SyncConnectionPanel } from '@pubhub/shared-ui/src/shared/SyncConnectionPanel';
 // Modul CRM & Manajemen Kontak Pelanggan
 import PenulisManager from '../data-master/PenulisManager';
@@ -139,8 +138,6 @@ const MainLayout = () => {
         return <LegalitasManager searchQuery={fileSearchQuery} />;
       case 'activity-log':
         return <ActivityLog />;
-      case 'settings':
-        return <Settings />;
       case 'settings-p2p':
         return renderSettingsModule('Koneksi Jaringan', '🔗', <SyncConnectionPanel />);
       case 'tambah-tugas':

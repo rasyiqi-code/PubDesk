@@ -26,7 +26,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
 
   const bottomItems = [
     { id: 'settings-p2p' as const, label: 'Koneksi Jaringan', icon: '🔗' },
-    { id: 'settings' as const, label: 'Setelan Aplikasi', icon: '⚙️' },
     { id: 'activity-log' as const, label: 'Activity Log', icon: '📋' },
   ];
 
