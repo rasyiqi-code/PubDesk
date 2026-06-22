@@ -11,6 +11,7 @@ export type AppModule =
   | 'files'
   | 'ledger'
   | 'settings'
+  | 'settings-invoice'
   | 'books'
   | 'services'
   | 'kontak'

@@ -194,6 +194,9 @@ const PanelKanan: React.FC = () => {
           return <SettingsHelpPanel tab={activeSettingsTab} />;
       }
 
+    case 'settings-invoice':
+      return <InvoicePreview previewProfile={tempPreviewProfile || activeProfile} />;
+
     // Generator invoice — preview langsung dari context form
     case 'invoice':
       return <InvoicePreview />;
