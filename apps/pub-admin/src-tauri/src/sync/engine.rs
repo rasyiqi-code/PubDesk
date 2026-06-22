@@ -435,6 +435,9 @@ pub fn build_sync_status(
     connected_peers: Vec<PeerInfo>,
     last_sync_at: Option<String>,
     error: Option<String>,
+    offline_peers: Vec<PeerInfo>,
+    lan_enabled: bool,
+    wan_enabled: bool,
 ) -> Result<SyncStatus, rusqlite::Error> {
     Ok(SyncStatus {
         enabled,
@@ -444,6 +447,9 @@ pub fn build_sync_status(
         pending_outbox_count: pending_outbox_count(conn)?,
         last_sync_at,
         error,
+        offline_peers,
+        lan_enabled,
+        wan_enabled,
     })
 }
 

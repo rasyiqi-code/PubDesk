@@ -24,6 +24,8 @@ pub struct SyncState {
     pub error: Option<String>,
     /// Token untuk membatalkan semua background loop sync aktif.
     pub cancel_token: Option<CancellationToken>,
+    pub lan_enabled: bool,
+    pub wan_enabled: bool,
 }
 
 impl Default for SyncState {
@@ -36,6 +38,8 @@ impl Default for SyncState {
             last_sync_at: None,
             error: None,
             cancel_token: None,
+            lan_enabled: true,
+            wan_enabled: true,
         }
     }
 }
@@ -72,6 +76,23 @@ async fn init_database(
             let mut s = state.sync.lock().unwrap();
             s.enabled = cfg.enabled;
             s.workspace_id = cfg.workspace_id;
+
+            let lan_enabled: String = conn
+                .query_row(
+                    "SELECT value FROM p2p_config WHERE key = 'sync_lan_enabled'",
+                    [],
+                    |row| row.get(0),
+                )
+                .unwrap_or_else(|_| "true".to_string());
+            let wan_enabled: String = conn
+                .query_row(
+                    "SELECT value FROM p2p_config WHERE key = 'sync_wan_enabled'",
+                    [],
+                    |row| row.get(0),
+                )
+                .unwrap_or_else(|_| "true".to_string());
+            s.lan_enabled = lan_enabled == "true";
+            s.wan_enabled = wan_enabled == "true";
         }
     }
 
@@ -218,6 +239,68 @@ async fn get_sync_rendezvous_url(app_handle: tauri::AppHandle) -> Result<String,
 }
 
 #[tauri::command]
+async fn set_sync_lan_enabled(
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+    enabled: bool,
+) -> Result<(), String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('sync_lan_enabled', ?1)",
+        [if enabled { "true" } else { "false" }],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let network = {
+        let mut s = state.sync.lock().unwrap();
+        s.lan_enabled = enabled;
+        s.network.clone()
+    };
+
+    if let Some(net) = network {
+        let wan = {
+            let s = state.sync.lock().unwrap();
+            s.wan_enabled
+        };
+        net.update_settings(enabled, wan).await;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn set_sync_wan_enabled(
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+    enabled: bool,
+) -> Result<(), String> {
+    let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT OR REPLACE INTO p2p_config (key, value) VALUES ('sync_wan_enabled', ?1)",
+        [if enabled { "true" } else { "false" }],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let network = {
+        let mut s = state.sync.lock().unwrap();
+        s.wan_enabled = enabled;
+        s.network.clone()
+    };
+
+    if let Some(net) = network {
+        let lan = {
+            let s = state.sync.lock().unwrap();
+            s.lan_enabled
+        };
+        net.update_settings(lan, enabled).await;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 async fn set_sync_rendezvous_url(
     app_handle: tauri::AppHandle,
     url: String,
@@ -246,7 +329,7 @@ async fn get_sync_status(
     let db_path = get_db_path(&app_handle).map_err(|e| e.to_string())?;
     let conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
 
-    let (enabled, workspace_id, local_peer_id, last_sync_at, error) = {
+    let (enabled, workspace_id, local_peer_id, last_sync_at, error, lan_enabled, wan_enabled) = {
         let s = state.sync.lock().unwrap();
         let peer_id = s
             .network
@@ -259,19 +342,22 @@ async fn get_sync_status(
             peer_id,
             s.last_sync_at.clone(),
             s.error.clone(),
+            s.lan_enabled,
+            s.wan_enabled,
         )
     };
 
-    // Fetch connected peers asynchronously.
-    let connected_peers = {
+    // Fetch connected & offline peers asynchronously.
+    let (connected_peers, offline_peers) = {
         let net = {
             let s = state.sync.lock().unwrap();
             s.network.clone()
         };
         if let Some(net) = net {
-            net.status().await.connected_peers
+            let status = net.status().await;
+            (status.connected_peers, status.offline_peers)
         } else {
-            Vec::new()
+            (Vec::new(), Vec::new())
         }
     };
 
@@ -283,6 +369,9 @@ async fn get_sync_status(
         connected_peers,
         last_sync_at,
         error,
+        offline_peers,
+        lan_enabled,
+        wan_enabled,
     )
     .map_err(|e| e.to_string())
 }
@@ -343,6 +432,13 @@ async fn start_sync_network_if_ready(
         .map_err(|e| format!("Gagal membuat sync network: {}", e))?;
     let network = Arc::new(network);
     let _ = network.start_listening(0).await;
+
+    // Send initial settings
+    let (lan, wan) = {
+        let s = state.sync.lock().unwrap();
+        (s.lan_enabled, s.wan_enabled)
+    };
+    network.update_settings(lan, wan).await;
 
     // Buat CancellationToken baru untuk siklus sync ini
     let cancel_token = CancellationToken::new();
@@ -674,6 +770,8 @@ pub fn run() {
             get_sync_status,
             get_sync_rendezvous_url,
             set_sync_rendezvous_url,
+            set_sync_lan_enabled,
+            set_sync_wan_enabled,
             // Book commands
             commands::book::get_books,
             commands::book::add_book,

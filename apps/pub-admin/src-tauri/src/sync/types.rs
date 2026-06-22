@@ -54,6 +54,9 @@ pub struct SyncStatus {
     pub pending_outbox_count: i64,
     pub last_sync_at: Option<String>,
     pub error: Option<String>,
+    pub offline_peers: Vec<PeerInfo>,
+    pub lan_enabled: bool,
+    pub wan_enabled: bool,
 }
 
 /// Configuration stored in p2p_config / local DB.

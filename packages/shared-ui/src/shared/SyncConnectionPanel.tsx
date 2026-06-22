@@ -22,6 +22,9 @@ interface SyncStatus {
   pending_outbox_count: number;
   last_sync_at: string | null;
   error: string | null;
+  offline_peers: PeerInfo[];
+  lan_enabled: boolean;
+  wan_enabled: boolean;
 }
 
 interface SyncConnectionPanelProps {
@@ -224,6 +227,28 @@ export const SyncConnectionPanel: React.FC<SyncConnectionPanelProps> = ({ isAdmi
     }
   };
 
+  const handleToggleLan = async () => {
+    if (!status) return;
+    try {
+      const nextVal = !status.lan_enabled;
+      await invoke('set_sync_lan_enabled', { enabled: nextVal });
+      loadStatus();
+    } catch (err: any) {
+      showMessage(`Gagal: ${err}`);
+    }
+  };
+
+  const handleToggleWan = async () => {
+    if (!status) return;
+    try {
+      const nextVal = !status.wan_enabled;
+      await invoke('set_sync_wan_enabled', { enabled: nextVal });
+      loadStatus();
+    } catch (err: any) {
+      showMessage(`Gagal: ${err}`);
+    }
+  };
+
   const handleSyncNow = async () => {
     setSyncingNow(true);
     try {
@@ -352,157 +377,246 @@ export const SyncConnectionPanel: React.FC<SyncConnectionPanelProps> = ({ isAdmi
     </div>
   );
 
-  const renderActive = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px',
-          background: 'var(--bg-panel)',
-          border: '1px solid var(--border)',
-          borderLeft: `4px solid ${status?.enabled ? '#10b981' : '#ef4444'}`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: status?.enabled
-                ? peerCount > 0 ? '#10b981' : '#f59e0b'
-                : '#ef4444',
-              flexShrink: 0,
-              boxShadow: status?.enabled
-                ? `0 0 6px ${peerCount > 0 ? '#10b981' : '#f59e0b'}`
-                : 'none',
-            }}
-            title={
-              !status?.enabled ? 'Nonaktif'
-                : peerCount > 0 ? 'Peer terhubung'
-                : 'Aktif, menunggu peer'
-            }
-          />
-          <div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Status Sync</div>
-            <div style={{ fontSize: '15px', fontWeight: 700 }}>
-              {!status?.enabled ? 'Nonaktif'
-                : peerCount > 0 ? 'Terhubung'
-                : 'Menunggu Peer'}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handleSyncNow} disabled={syncingNow} style={btnSecondaryStyle}>
-            {syncingNow ? '...' : 'Sync Now'}
-          </button>
-          <button onClick={handleToggleEnabled} style={btnSecondaryStyle}>
-            {status?.enabled ? 'Matikan' : 'Aktifkan'}
-          </button>
-        </div>
-      </div>
+  const filterPeers = (peers: PeerInfo[] | undefined, isLan: boolean) => {
+    if (!peers) return [];
+    return peers.filter((p) => {
+      const isPeerLan = p.source === 'LAN / mDNS';
+      return isLan ? isPeerLan : !isPeerLan;
+    });
+  };
 
-      <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <span><strong>Workspace:</strong> {status?.workspace_id || '-'}</span>
-          <button onClick={handleRefresh} disabled={refreshing} style={{
-            ...btnSecondaryStyle,
-            padding: '4px 10px',
+  const renderToggle = (label: string, enabled: boolean, onToggle: () => void) => {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 600 }}>{label}</span>
+        {isAdmin ? (
+          <div
+            onClick={onToggle}
+            style={toggleContainerStyle(enabled, false)}
+          >
+            <div style={toggleCircleStyle(enabled)} />
+          </div>
+        ) : (
+          <span style={{
             fontSize: '11px',
+            padding: '3px 8px',
+            borderRadius: '4px',
+            fontWeight: 600,
+            background: enabled ? 'rgba(16,185,129,0.1)' : 'rgba(107,114,128,0.1)',
+            color: enabled ? '#10b981' : '#9ca3af',
+            border: `1px solid ${enabled ? 'rgba(16,185,129,0.2)' : 'rgba(107,114,128,0.2)'}`
           }}>
-            {refreshing ? '...' : '↻ Refresh'}
-          </button>
-        </div>
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '10px 12px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-        }}>
-          <span
-            style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: status?.enabled
-                ? peerCount > 0 ? '#10b981' : '#f59e0b'
-                : '#6b7280',
-              flexShrink: 0,
-            }}
-          />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Koneksi P2P</div>
-            <div style={{ fontSize: '13px', fontWeight: 600 }}>
-              {peerCount > 0
-                ? `${peerCount} peer terhubung`
-                : status?.enabled
-                  ? 'Menunggu koneksi peer...'
-                  : 'Nonaktif'}
-            </div>
-          </div>
-          {status?.local_peer_id && (
-            <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-secondary)' }}>
-              {status.local_peer_id.slice(0, 8)}...
-            </span>
-          )}
-        </div>
-
-        {status?.connected_peers && status.connected_peers.length > 0 && (
-          <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {status.connected_peers.map((p) => (
-              <div
-                key={p.peer_id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 10px',
-                  fontSize: '12px',
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <span
-                  style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: '#10b981',
-                    flexShrink: 0,
-                    boxShadow: '0 0 4px #10b981',
-                  }}
-                  title="Terhubung"
-                />
-                <span style={{ fontFamily: 'monospace', fontSize: '11px', flex: 1 }}>
-                  {p.peer_id.slice(0, 12)}...
-                </span>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
-                  {p.source}
-                </span>
-              </div>
-            ))}
-          </div>
+            {enabled ? 'Aktif' : 'Nonaktif'}
+          </span>
         )}
+      </div>
+    );
+  };
 
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '120px', padding: '8px 12px', background: hasOutbox ? 'rgba(245,158,11,0.08)' : 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Antrian Kirim</div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: hasOutbox ? '#f59e0b' : 'var(--text-primary)' }}>
-              {status?.pending_outbox_count || 0}
+  const renderPeerList = (onlinePeers: PeerInfo[], offlinePeers: PeerInfo[]) => {
+    if (onlinePeers.length === 0 && offlinePeers.length === 0) {
+      return (
+        <div style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+          Tidak ada peer terdeteksi.
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '4px' }}>
+        {onlinePeers.map((p) => (
+          <div
+            key={p.peer_id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              background: 'rgba(16,185,129,0.04)',
+              border: '1px solid rgba(16,185,129,0.15)',
+            }}
+          >
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#10b981',
+                flexShrink: 0,
+                boxShadow: '0 0 6px #10b981',
+              }}
+              title="Online"
+            />
+            <span style={{ fontFamily: 'monospace', fontSize: '11px', flex: 1, color: 'var(--text-primary)' }}>
+              {p.peer_id.slice(0, 12)}...
+            </span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
+              {p.source}
+            </span>
+          </div>
+        ))}
+        {offlinePeers.map((p) => (
+          <div
+            key={p.peer_id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 10px',
+              fontSize: '12px',
+              background: 'rgba(107,114,128,0.02)',
+              border: '1px solid rgba(107,114,128,0.1)',
+              opacity: 0.7,
+            }}
+          >
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#6b7280',
+                flexShrink: 0,
+                boxShadow: '0 0 4px #6b7280',
+              }}
+              title="Offline"
+            />
+            <span style={{ fontFamily: 'monospace', fontSize: '11px', flex: 1, color: 'var(--text-secondary)' }}>
+              {p.peer_id.slice(0, 12)}...
+            </span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
+              Offline
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderActive = () => {
+    const lanOnline = filterPeers(status?.connected_peers, true);
+    const lanOffline = filterPeers(status?.offline_peers, true);
+    const wanOnline = filterPeers(status?.connected_peers, false);
+    const wanOffline = filterPeers(status?.offline_peers, false);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px',
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--border)',
+            borderLeft: `4px solid ${status?.enabled ? '#10b981' : '#ef4444'}`,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span
+              style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                background: status?.enabled
+                  ? peerCount > 0 ? '#10b981' : '#f59e0b'
+                  : '#ef4444',
+                flexShrink: 0,
+                boxShadow: status?.enabled
+                  ? `0 0 6px ${peerCount > 0 ? '#10b981' : '#f59e0b'}`
+                  : 'none',
+              }}
+              title={
+                !status?.enabled ? 'Nonaktif'
+                  : peerCount > 0 ? 'Peer terhubung'
+                  : 'Aktif, menunggu peer'
+              }
+            />
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Status Sync</div>
+              <div style={{ fontSize: '15px', fontWeight: 700 }}>
+                {!status?.enabled ? 'Nonaktif'
+                  : peerCount > 0 ? 'Terhubung'
+                  : 'Menunggu Peer'}
+              </div>
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: '120px', padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Sync Terakhir</div>
-            <div style={{ fontSize: '13px', fontWeight: 600 }}>{timeAgo(status?.last_sync_at ?? null)}</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={handleSyncNow} disabled={syncingNow} style={btnSecondaryStyle}>
+              {syncingNow ? '...' : 'Sync Now'}
+            </button>
+            <button onClick={handleToggleEnabled} style={btnSecondaryStyle}>
+              {status?.enabled ? 'Matikan' : 'Aktifkan'}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <span><strong>Workspace:</strong> {status?.workspace_id || '-'}</span>
+            <button onClick={handleRefresh} disabled={refreshing} style={{
+              ...btnSecondaryStyle,
+              padding: '4px 10px',
+              fontSize: '11px',
+            }}>
+              {refreshing ? '...' : '↻ Refresh'}
+            </button>
+          </div>
+
+          {/* Jaringan Lokal / LAN */}
+          <div style={{
+            padding: '12px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}>
+            {renderToggle('Koneksi Jaringan Lokal (LAN / mDNS)', status?.lan_enabled ?? true, handleToggleLan)}
+            {status?.lan_enabled && (
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  Peer Terdeteksi (LAN):
+                </div>
+                {renderPeerList(lanOnline, lanOffline)}
+              </div>
+            )}
+          </div>
+
+          {/* Jaringan Awan / WAN */}
+          <div style={{
+            padding: '12px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}>
+            {renderToggle('Koneksi Jaringan Awan (Rendezvous / Internet)', status?.wan_enabled ?? true, handleToggleWan)}
+            {status?.wan_enabled && (
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                  Peer Terdeteksi (Awan):
+                </div>
+                {renderPeerList(wanOnline, wanOffline)}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '120px', padding: '8px 12px', background: hasOutbox ? 'rgba(245,158,11,0.08)' : 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Antrian Kirim</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: hasOutbox ? '#f59e0b' : 'var(--text-primary)' }}>
+                {status?.pending_outbox_count || 0}
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: '120px', padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Sync Terakhir</div>
+              <div style={{ fontSize: '13px', fontWeight: 600 }}>{timeAgo(status?.last_sync_at ?? null)}</div>
+            </div>
           </div>
         </div>
 
@@ -707,3 +821,26 @@ const btnSecondaryStyle: React.CSSProperties = {
   fontSize: '12px',
   cursor: 'pointer',
 };
+
+const toggleContainerStyle = (enabled: boolean, disabled: boolean): React.CSSProperties => ({
+  position: 'relative',
+  width: '36px',
+  height: '20px',
+  backgroundColor: enabled ? '#10b981' : '#4b5563',
+  borderRadius: '999px',
+  cursor: disabled ? 'default' : 'pointer',
+  transition: 'background-color 0.2s',
+  opacity: disabled ? 0.7 : 1,
+});
+
+const toggleCircleStyle = (enabled: boolean): React.CSSProperties => ({
+  position: 'absolute',
+  top: '2px',
+  left: enabled ? '18px' : '2px',
+  width: '16px',
+  height: '16px',
+  backgroundColor: 'white',
+  borderRadius: '50%',
+  transition: 'left 0.2s',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+});

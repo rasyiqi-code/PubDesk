@@ -11,7 +11,6 @@ use super::types::{PeerInfo, SyncAction, SyncConfig, SyncOperation, SyncStatus};
 
 pub const VAULT_KEY_MASTER: &str = "master_key_sealed";
 
-/// Initialize sync-related tables and settings.
 pub fn init_sync_schema(conn: &Connection) -> Result<(), rusqlite::Error> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS sync_outbox (
@@ -293,6 +292,12 @@ pub fn apply_operation(
     op: &SyncOperation,
     source_peer_id: &str,
 ) -> Result<(), String> {
+    // Validasi tabel: hanya izinkan tabel yang ada di SYNC_TABLES
+    // untuk mencegah SQL injection dari peer jahat.
+    if !SYNC_TABLES.contains(&op.table.as_str()) {
+        return Err(format!("Tabel sync tidak diizinkan: '{}'", op.table));
+    }
+
     // Idempotency check.
     if is_op_applied(conn, &op.op_id).map_err(|e| e.to_string())? {
         return Ok(());
@@ -309,8 +314,13 @@ pub fn apply_operation(
         match op.action {
             SyncAction::Insert | SyncAction::Update => {
                 if let Some(cols) = op.data.as_object() {
+                    // Validasi nama kolom: hanya huruf, angka, underscore
+                    // untuk mencegah injection via nama kolom.
                     let column_names: Vec<&String> = cols.keys()
-                        .filter(|k| *k != "id" && *k != "uuid")
+                        .filter(|k| {
+                            *k != "id" && *k != "uuid"
+                                && k.chars().all(|c| c.is_alphanumeric() || c == '_')
+                        })
                         .collect();
                     if column_names.is_empty() {
                         return Ok(());
@@ -425,6 +435,9 @@ pub fn build_sync_status(
     connected_peers: Vec<PeerInfo>,
     last_sync_at: Option<String>,
     error: Option<String>,
+    offline_peers: Vec<PeerInfo>,
+    lan_enabled: bool,
+    wan_enabled: bool,
 ) -> Result<SyncStatus, rusqlite::Error> {
     Ok(SyncStatus {
         enabled,
@@ -434,15 +447,21 @@ pub fn build_sync_status(
         pending_outbox_count: pending_outbox_count(conn)?,
         last_sync_at,
         error,
+        offline_peers,
+        lan_enabled,
+        wan_enabled,
     })
 }
 
+/// Tables that should sync across devices.
 const SYNC_TABLES: &[&str] = &[
     "contacts", "naskah", "tasks", "tim", "legalitas", "books",
     "invoices", "projects", "penerbit", "workflow_events",
     "cetak_distribusi", "naskah_files",
 ];
 
+/// Dynamically create INSERT/UPDATE/DELETE triggers for SYNC_TABLES.
+/// Uses PRAGMA table_info to discover columns so it stays in sync with schema.
 pub fn create_sync_triggers(conn: &Connection) -> Result<(), rusqlite::Error> {
     for table in SYNC_TABLES {
         if !table_exists(conn, table) {
@@ -460,24 +479,40 @@ pub fn create_sync_triggers(conn: &Connection) -> Result<(), rusqlite::Error> {
         }
 
         if !columns.contains(&"uuid".to_string()) {
-            let _ = conn.execute(
-                &format!("ALTER TABLE {} ADD COLUMN uuid TEXT DEFAULT (lower(hex(randomblob(16))))", table),
-                [],
-            );
             conn.execute(
-                &format!("UPDATE {} SET uuid = lower(hex(randomblob(16))) WHERE uuid IS NULL", table),
+                &format!("ALTER TABLE {} ADD COLUMN uuid TEXT DEFAULT ''", table),
+                [],
+            )?;
+            conn.execute(
+                &format!("UPDATE {} SET uuid = lower(hex(randomblob(16))) WHERE uuid = ''", table),
                 [],
             )?;
         }
+        // Drop index lama (non-partial) jika ada, lalu buat partial index baru
+        // Partial index (WHERE uuid != '') memungkinkan INSERT dengan uuid kosong tanpa conflict
+        let _ = conn.execute(&format!("DROP INDEX IF EXISTS idx_{}_uuid", table), []);
         let _ = conn.execute(
-            &format!("CREATE UNIQUE INDEX IF NOT EXISTS idx_{}_uuid ON {}(uuid)", table, table),
+            &format!("CREATE UNIQUE INDEX IF NOT EXISTS idx_{}_uuid ON {}(uuid) WHERE uuid != ''", table, table),
             [],
         );
 
-        for action in &["insert", "update", "delete"] {
+        // Hapus trigger lama (insert/update/delete dan uuid_init)
+        for action in &["insert", "update", "delete", "uuid_init"] {
             let trigger = format!("trg_{}_{}", table, action);
             conn.execute(&format!("DROP TRIGGER IF EXISTS {}", trigger), [])?;
         }
+
+        // AFTER INSERT trigger: isi uuid otomatis setelah row dibuat jika masih kosong
+        // Partial unique index (WHERE uuid != '') memastikan row baru dengan uuid '' tidak conflict
+        let uuid_fill_sql = format!(
+            "CREATE TRIGGER IF NOT EXISTS trg_{table}_uuid_init AFTER INSERT ON {table}
+             WHEN NEW.uuid IS NULL OR NEW.uuid = ''
+             BEGIN
+               UPDATE {table} SET uuid = lower(hex(randomblob(16))) WHERE id = NEW.id;
+             END",
+            table = table
+        );
+        conn.execute(&uuid_fill_sql, [])?;
 
         let json_parts: Vec<String> = columns
             .iter()
@@ -491,7 +526,9 @@ pub fn create_sync_triggers(conn: &Connection) -> Result<(), rusqlite::Error> {
                 "CREATE TRIGGER IF NOT EXISTS trg_{table}_{act} AFTER {action} ON {table}
                  BEGIN
                    INSERT INTO sync_outbox(op_id, table_name, row_id, action, payload_json, created_at, device_id)
-                   SELECT lower(hex(randomblob(16))), '{table}', NEW.uuid, '{action}',
+                   SELECT lower(hex(randomblob(16))), '{table}',
+                          CASE WHEN NEW.uuid = '' THEN lower(hex(randomblob(16))) ELSE NEW.uuid END,
+                          '{action}',
                           {json_expr},
                           datetime('now'), (SELECT value FROM sync_meta WHERE key='device_id')
                    WHERE NOT EXISTS (SELECT 1 FROM sync_pause WHERE paused = 1);
@@ -507,7 +544,9 @@ pub fn create_sync_triggers(conn: &Connection) -> Result<(), rusqlite::Error> {
             "CREATE TRIGGER IF NOT EXISTS trg_{table}_delete AFTER DELETE ON {table}
              BEGIN
                INSERT INTO sync_outbox(op_id, table_name, row_id, action, payload_json, created_at, device_id)
-               SELECT lower(hex(randomblob(16))), '{table}', OLD.uuid, 'DELETE', json_object(),
+               SELECT lower(hex(randomblob(16))), '{table}',
+                      CASE WHEN OLD.uuid = '' THEN lower(hex(randomblob(16))) ELSE OLD.uuid END,
+                      'DELETE', json_object(),
                       datetime('now'), (SELECT value FROM sync_meta WHERE key='device_id')
                WHERE NOT EXISTS (SELECT 1 FROM sync_pause WHERE paused = 1);
              END",

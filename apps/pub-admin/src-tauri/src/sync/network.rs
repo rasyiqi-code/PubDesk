@@ -63,6 +63,10 @@ pub enum NetworkCommand {
     GetStatus {
         sender: oneshot::Sender<NetworkStatus>,
     },
+    UpdateSettings {
+        lan_enabled: bool,
+        wan_enabled: bool,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,6 +75,9 @@ pub struct NetworkStatus {
     pub local_addresses: Vec<String>,
     pub connected_peers: Vec<PeerInfo>,
     pub subscribed_topics: Vec<String>,
+    pub offline_peers: Vec<PeerInfo>,
+    pub lan_enabled: bool,
+    pub wan_enabled: bool,
 }
 
 #[derive(NetworkBehaviour)]
@@ -140,6 +147,13 @@ impl SyncNetwork {
         rx.await.map_err(|_| "Network task closed".to_string())?
     }
 
+    pub async fn update_settings(&self, lan_enabled: bool, wan_enabled: bool) {
+        let _ = self
+            .cmd_tx
+            .send(NetworkCommand::UpdateSettings { lan_enabled, wan_enabled })
+            .await;
+    }
+
     pub async fn status(&self) -> NetworkStatus {
         let (tx, rx) = oneshot::channel();
         let _ = self.cmd_tx.send(NetworkCommand::GetStatus { sender: tx }).await;
@@ -148,6 +162,9 @@ impl SyncNetwork {
             local_addresses: vec![],
             connected_peers: vec![],
             subscribed_topics: vec![],
+            offline_peers: vec![],
+            lan_enabled: true,
+            wan_enabled: true,
         })
     }
 }
@@ -224,6 +241,9 @@ async fn run_network_loop(
 
     let mut local_addresses: Vec<Multiaddr> = Vec::new();
     let mut connected_peers: Vec<PeerInfo> = Vec::new();
+    let mut offline_peers: Vec<PeerInfo> = Vec::new();
+    let mut lan_enabled = true;
+    let mut wan_enabled = true;
 
     loop {
         tokio::select! {
@@ -254,6 +274,15 @@ async fn run_network_loop(
                         }
                     }
                     Some(NetworkCommand::Dial { addr, source, sender }) => {
+                        let is_allowed = match source.as_str() {
+                            SOURCE_CLOUDFLARE | SOURCE_RELAY => wan_enabled,
+                            SOURCE_LAN => lan_enabled,
+                            _ => true,
+                        };
+                        if !is_allowed {
+                            let _ = sender.send(Err("Disabled by configuration".to_string()));
+                            continue;
+                        }
                         if let Some(pid) = addr.iter().find_map(|p| match p {
                             libp2p::multiaddr::Protocol::P2p(p) => Some(p),
                             _ => None,
@@ -265,12 +294,19 @@ async fn run_network_loop(
                             Err(e) => { let _ = sender.send(Err(format!("{:?}", e))); }
                         }
                     }
+                    Some(NetworkCommand::UpdateSettings { lan_enabled: lan, wan_enabled: wan }) => {
+                        lan_enabled = lan;
+                        wan_enabled = wan;
+                    }
                     Some(NetworkCommand::GetStatus { sender }) => {
                         let status = NetworkStatus {
                             peer_id: peer_id.to_string(),
                             local_addresses: local_addresses.iter().map(|a| a.to_string()).collect(),
                             connected_peers: connected_peers.clone(),
                             subscribed_topics: vec![workspace_id.clone()],
+                            offline_peers: offline_peers.clone(),
+                            lan_enabled,
+                            wan_enabled,
                         };
                         let _ = sender.send(status);
                     }
@@ -298,18 +334,25 @@ async fn run_network_loop(
                             source,
                         };
                         connected_peers.push(info.clone());
+                        offline_peers.retain(|p| p.peer_id != pid.to_string());
                         let _ = event_tx.try_send(NetworkEvent::PeerConnected(info));
                     }
                     SwarmEvent::ConnectionClosed { peer_id: pid, .. } => {
-                        connected_peers.retain(|p| p.peer_id != pid.to_string());
+                        if let Some(pos) = connected_peers.iter().position(|p| p.peer_id == pid.to_string()) {
+                            let peer_info = connected_peers.remove(pos);
+                            offline_peers.retain(|p| p.peer_id != pid.to_string());
+                            offline_peers.push(peer_info);
+                        }
                         let _ = event_tx.try_send(NetworkEvent::PeerDisconnected(pid.to_string()));
                     }
                     SwarmEvent::Behaviour(SyncBehaviourEvent::Mdns(mdns::Event::Discovered(list))) => {
-                        for (pid, addr) in list {
-                            if pid == peer_id { continue; }
-                            pending_peer_sources.insert(pid, SOURCE_LAN.to_string());
-                            let full_addr = addr.with(libp2p::multiaddr::Protocol::P2p(pid));
-                            let _ = swarm.dial(full_addr);
+                        if lan_enabled {
+                            for (pid, addr) in list {
+                                if pid == peer_id { continue; }
+                                pending_peer_sources.insert(pid, SOURCE_LAN.to_string());
+                                let full_addr = addr.with(libp2p::multiaddr::Protocol::P2p(pid));
+                                let _ = swarm.dial(full_addr);
+                            }
                         }
                     }
                     SwarmEvent::Behaviour(SyncBehaviourEvent::Mdns(mdns::Event::Expired(list))) => {
