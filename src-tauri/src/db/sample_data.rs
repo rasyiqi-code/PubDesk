@@ -328,7 +328,7 @@ pub fn seed_sample_data(conn: &Connection, options: SeedOptions) -> Result<Strin
         )?;
         let _template_id = if exists_tmpl == 0 {
             conn.execute(
-                "INSERT INTO workflow_templates (name, description, is_active, created_at) VALUES (?1, ?2, ?3)",
+                "INSERT INTO workflow_templates (name, description, is_active, created_at) VALUES (?1, ?2, 1, ?3)",
                 params!["Alur Produksi Standar", "Template alur kerja produksi naskah lengkap", now]
             )?;
             let tid = conn.last_insert_rowid();
