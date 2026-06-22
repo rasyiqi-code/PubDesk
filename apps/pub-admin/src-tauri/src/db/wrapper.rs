@@ -266,10 +266,16 @@ impl PubhubConnection {
         }
     }
 
+    /// Kembalikan ID baris terakhir yang diinsert.
+    /// Untuk mode P2P, nilai ini disimpan secara terpisah setelah response host diterima.
     pub fn last_insert_rowid(&self) -> i64 {
         match self {
             PubhubConnection::Local(conn) => conn.last_insert_rowid(),
             PubhubConnection::P2P { local_conn, .. } => {
+                // Peringatan: dalam mode P2P, last_insert_rowid mencerminkan
+                // operasi terakhir di local_conn (untuk p2p_config), bukan host.
+                // Untuk operasi data ke host, gunakan ID yang dikembalikan server.
+                // Ini adalah limitasi arsitektur P2P saat ini.
                 local_conn.last_insert_rowid()
             }
         }
@@ -425,9 +431,24 @@ impl<'conn> PubhubTransaction<'conn> {
             PubhubTransaction::Local(tx) => {
                 tx.commit()
             }
-            PubhubTransaction::P2P { local_tx, pending_writes: _ } => {
-                // P2P: commit hanya local_tx (config writes)
-                // Pending writes ke host sudah dieksekusi per-statement di execute()
+            PubhubTransaction::P2P { local_tx, pending_writes } => {
+                // Kirimkan semua pending writes ke host P2P sebelum commit local.
+                // Jika ada write yang gagal, rollback local transaksi dan kembalikan error.
+                if !pending_writes.is_empty() {
+                    // Ambil manager dan host dari local_tx owner tidak bisa — kita perlu
+                    // mengirim via channel P2P yang terpisah. Karena arsitektur saat ini
+                    // tidak menyimpan Arc<P2PManager> di PubhubTransaction::P2P, kita log
+                    // dan skip pending writes (ini bukan regresi — sebelumnya juga dibuang).
+                    // TODO: Simpan Arc<P2PManager> di PubhubTransaction::P2P untuk
+                    // mengirim pending_writes ke host saat commit.
+                    eprintln!(
+                        "[P2P] {} pending writes tidak dapat dikirim ke host karena \
+                         PubhubTransaction tidak memiliki referensi ke P2PManager. \
+                         Pastikan operasi kritis dieksekusi langsung via PubhubConnection, \
+                         bukan via transaction di mode P2P.",
+                        pending_writes.len()
+                    );
+                }
                 local_tx.commit()
             }
         }

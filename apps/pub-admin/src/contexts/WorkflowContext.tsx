@@ -26,7 +26,7 @@ interface WorkflowContextType {
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined);
 
-export const WorkflowProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const WorkflowProvider: React.FC<{ children: ReactNode; isDbInitialized: boolean }> = ({ children, isDbInitialized }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskHistories, setTaskHistories] = useState<TaskHistory[]>([]);
   const [taskBlockers, setTaskBlockers] = useState<TaskBlocker[]>([]);
@@ -167,9 +167,13 @@ export const WorkflowProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  // Muat tasks hanya setelah DB benar-benar siap untuk menghindari
+  // pemanggilan invoke sebelum database terinisialisasi.
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (isDbInitialized) {
+      loadTasks();
+    }
+  }, [isDbInitialized]);
 
   return (
     <WorkflowContext.Provider value={{

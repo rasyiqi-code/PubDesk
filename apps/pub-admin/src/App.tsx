@@ -6,6 +6,20 @@ import { WorkflowProvider } from './contexts/WorkflowContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { MainLayoutInner } from './components/layout/MainLayout';
 import SplashScreen from './components/layout/SplashScreen';
+import { useAppContext } from './contexts/AppContext';
+
+/**
+ * WorkflowWrapper membaca isDbInitialized dari AppContext dan meneruskannya
+ * ke WorkflowProvider agar tasks tidak dimuat sebelum DB siap.
+ */
+function WorkflowWrapper({ children }: { children: React.ReactNode }) {
+  const { isDbInitialized } = useAppContext();
+  return (
+    <WorkflowProvider isDbInitialized={isDbInitialized}>
+      {children}
+    </WorkflowProvider>
+  );
+}
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -21,11 +35,11 @@ function App() {
     <AppProvider>
       <AuthProvider>
         <DataMasterProvider>
-          <WorkflowProvider>
+          <WorkflowWrapper>
             <InvoiceProvider>
               {showSplash ? <SplashScreen /> : <MainLayoutInner />}
             </InvoiceProvider>
-          </WorkflowProvider>
+          </WorkflowWrapper>
         </DataMasterProvider>
       </AuthProvider>
     </AppProvider>

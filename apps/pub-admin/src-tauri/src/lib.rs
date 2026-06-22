@@ -13,6 +13,7 @@ use tauri::{Emitter, Manager, State};
 use std::net::TcpListener;
 use std::io::{Read, Write};
 use std::time::Duration;
+use tokio_util::sync::CancellationToken;
 
 pub struct SyncState {
     pub enabled: bool,
@@ -21,6 +22,8 @@ pub struct SyncState {
     pub master_key: Option<[u8; 32]>,
     pub last_sync_at: Option<String>,
     pub error: Option<String>,
+    /// Token untuk membatalkan semua background loop sync aktif.
+    pub cancel_token: Option<CancellationToken>,
 }
 
 impl Default for SyncState {
@@ -32,6 +35,7 @@ impl Default for SyncState {
             master_key: None,
             last_sync_at: None,
             error: None,
+            cancel_token: None,
         }
     }
 }
@@ -115,11 +119,15 @@ async fn set_sync_enabled(
     )
     .map_err(|e| e.to_string())?;
 
-    state.sync.lock().unwrap().enabled = enabled;
-
+    // Ambil satu lock dan selesaikan semua perubahan state sekaligus
+    // untuk menghindari race condition antar dua lock terpisah.
+    let mut s = state.sync.lock().unwrap();
+    s.enabled = enabled;
     if !enabled {
-        // Stop network if running.
-        let mut s = state.sync.lock().unwrap();
+        // Batalkan semua background loop aktif
+        if let Some(token) = s.cancel_token.take() {
+            token.cancel();
+        }
         s.network = None;
         s.master_key = None;
     }
@@ -193,6 +201,10 @@ async fn unlock_sync(
 #[tauri::command]
 async fn lock_sync(state: State<'_, AppState>) -> Result<(), String> {
     let mut s = state.sync.lock().unwrap();
+    // Batalkan background loop aktif saat lock
+    if let Some(token) = s.cancel_token.take() {
+        token.cancel();
+    }
     s.master_key = None;
     s.network = None;
     Ok(())
@@ -289,6 +301,14 @@ async fn start_sync_network_if_ready(
         )
     };
 
+    // Batalkan loop lama jika ada sebelum memulai yang baru
+    {
+        let mut s = state.sync.lock().unwrap();
+        if let Some(token) = s.cancel_token.take() {
+            token.cancel();
+        }
+    }
+
     if !should_start {
         return Ok(());
     }
@@ -324,92 +344,111 @@ async fn start_sync_network_if_ready(
     let network = Arc::new(network);
     let _ = network.start_listening(0).await;
 
+    // Buat CancellationToken baru untuk siklus sync ini
+    let cancel_token = CancellationToken::new();
+
     {
         let mut s = state.sync.lock().unwrap();
         s.network = Some(network.clone());
+        s.cancel_token = Some(cancel_token.clone());
     }
 
     let db_path_for_events = db_path.clone();
     let handle_for_events = app_handle.clone();
+    let cancel_for_events = cancel_token.clone();
     tokio::spawn(async move {
-        while let Some(event) = event_rx.recv().await {
-            let state = handle_for_events.state::<AppState>();
-            match event {
-                sync::NetworkEvent::EnvelopeReceived { peer_id, envelope } => {
-                    let maybe_master = {
-                        let s = state.sync.lock().unwrap();
-                        s.master_key
-                    };
-                    if let Some(key) = maybe_master {
-                        match base64::Engine::decode(
-                            &base64::prelude::BASE64_STANDARD,
-                            &envelope.payload_b64,
-                        ) {
-                            Ok(encrypted) => {
-                                match sync::crypto::decrypt_sync_message(&key, &encrypted) {
-                                    Ok(plain) => {
-                                        if let Ok(op) =
-                                            serde_json::from_slice::<sync::types::SyncOperation>(&plain)
-                                        {
-                                            let mut conn = match rusqlite::Connection::open(
-                                                &db_path_for_events,
-                                            ) {
-                                                Ok(c) => c,
-                                                Err(_) => continue,
-                                            };
-                                            if let Err(e) = sync::engine::apply_operation(
-                                                &mut conn,
-                                                &op,
-                                                &peer_id,
-                                            ) {
-                                                eprintln!("Gagal apply op {}: {}", op.op_id, e);
-                                            } else {
-                                                let _ = handle_for_events.emit(
-                                                    "sync-applied",
-                                                    serde_json::json!({
-                                                        "table": op.table,
-                                                        "row_id": op.row_id,
-                                                        "action": format!("{:?}", op.action),
-                                                        "peer_id": peer_id,
-                                                    }),
-                                                );
+        loop {
+            tokio::select! {
+                _ = cancel_for_events.cancelled() => {
+                    break;
+                }
+                event = event_rx.recv() => {
+                    let Some(event) = event else { break };
+                    let state = handle_for_events.state::<AppState>();
+                    match event {
+                        sync::NetworkEvent::EnvelopeReceived { peer_id, envelope } => {
+                            let maybe_master = {
+                                let s = state.sync.lock().unwrap();
+                                s.master_key
+                            };
+                            if let Some(key) = maybe_master {
+                                match base64::Engine::decode(
+                                    &base64::prelude::BASE64_STANDARD,
+                                    &envelope.payload_b64,
+                                ) {
+                                    Ok(encrypted) => {
+                                        match sync::crypto::decrypt_sync_message(&key, &encrypted) {
+                                            Ok(plain) => {
+                                                if let Ok(op) =
+                                                    serde_json::from_slice::<sync::types::SyncOperation>(&plain)
+                                                {
+                                                    let mut conn = match rusqlite::Connection::open(
+                                                        &db_path_for_events,
+                                                    ) {
+                                                        Ok(c) => c,
+                                                        Err(_) => continue,
+                                                    };
+                                                    if let Err(e) = sync::engine::apply_operation(
+                                                        &mut conn,
+                                                        &op,
+                                                        &peer_id,
+                                                    ) {
+                                                        eprintln!("Gagal apply op {}: {}", op.op_id, e);
+                                                    } else {
+                                                        let _ = handle_for_events.emit(
+                                                            "sync-applied",
+                                                            serde_json::json!({
+                                                                "table": op.table,
+                                                                "row_id": op.row_id,
+                                                                "action": format!("{:?}", op.action),
+                                                                "peer_id": peer_id,
+                                                            }),
+                                                        );
+                                                    }
+                                                }
                                             }
+                                            Err(e) => eprintln!("Decrypt error: {}", e),
                                         }
                                     }
-                                    Err(e) => eprintln!("Decrypt error: {}", e),
+                                    Err(e) => eprintln!("Base64 decode error: {}", e),
                                 }
                             }
-                            Err(e) => eprintln!("Base64 decode error: {}", e),
+                        }
+                        sync::NetworkEvent::PeerConnected(info) => {
+                            let _ = handle_for_events.emit(
+                                "sync-peer-connected",
+                                serde_json::json!({
+                                    "peer_id": info.peer_id,
+                                    "source": info.source,
+                                }),
+                            );
+                        }
+                        sync::NetworkEvent::PeerDisconnected(pid) => {
+                            let _ = handle_for_events.emit(
+                                "sync-peer-disconnected",
+                                serde_json::json!({ "peer_id": pid }),
+                            );
                         }
                     }
-                }
-                sync::NetworkEvent::PeerConnected(info) => {
-                    let _ = handle_for_events.emit(
-                        "sync-peer-connected",
-                        serde_json::json!({
-                            "peer_id": info.peer_id,
-                            "source": info.source,
-                        }),
-                    );
-                }
-                sync::NetworkEvent::PeerDisconnected(pid) => {
-                    let _ = handle_for_events.emit(
-                        "sync-peer-disconnected",
-                        serde_json::json!({ "peer_id": pid }),
-                    );
                 }
             }
         }
     });
 
-    // Background loop: read outbox and publish.
+    // Background loop: baca outbox dan publikasikan ke peer.
     let handle_for_loop = app_handle.clone();
     let db_path_for_loop = db_path.clone();
     let workspace_id_for_loop = workspace_id.clone();
+    let cancel_for_loop = cancel_token.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(std::time::Duration::from_secs(2));
         loop {
-            interval.tick().await;
+            tokio::select! {
+                _ = cancel_for_loop.cancelled() => {
+                    break;
+                }
+                _ = interval.tick() => {}
+            }
 
             let state = handle_for_loop.state::<AppState>();
             let (should_run, network, key) = {
@@ -473,14 +512,20 @@ async fn start_sync_network_if_ready(
         }
     });
 
-    // Rendezvous loop: register ourselves and discover peers via Cloudflare Worker.
+    // Rendezvous loop: daftarkan diri dan temukan peer via Cloudflare Worker.
     let handle_for_rendezvous = app_handle.clone();
     let db_path_for_rendezvous = db_path.clone();
+    let cancel_for_rendezvous = cancel_token.clone();
     tokio::spawn(async move {
         let client = reqwest::Client::new();
         let mut interval = tokio::time::interval(Duration::from_secs(60));
         loop {
-            interval.tick().await;
+            tokio::select! {
+                _ = cancel_for_rendezvous.cancelled() => {
+                    break;
+                }
+                _ = interval.tick() => {}
+            }
 
             let state = handle_for_rendezvous.state::<AppState>();
             let (should_run, net, ws_id) = {
@@ -521,11 +566,11 @@ async fn start_sync_network_if_ready(
                     if peer.peer_id == status.peer_id {
                         continue;
                     }
-                        for addr in peer.addresses {
-                            if let Ok(ma) = addr.parse::<libp2p::Multiaddr>() {
-                                let _ = net.dial(ma, sync::network::SOURCE_CLOUDFLARE.to_string()).await;
-                            }
+                    for addr in peer.addresses {
+                        if let Ok(ma) = addr.parse::<libp2p::Multiaddr>() {
+                            let _ = net.dial(ma, sync::network::SOURCE_CLOUDFLARE.to_string()).await;
                         }
+                    }
                 }
             }
         }

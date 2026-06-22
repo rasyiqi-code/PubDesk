@@ -292,6 +292,12 @@ pub fn apply_operation(
     op: &SyncOperation,
     source_peer_id: &str,
 ) -> Result<(), String> {
+    // Validasi tabel: hanya izinkan tabel yang ada di SYNC_TABLES
+    // untuk mencegah SQL injection dari peer jahat.
+    if !SYNC_TABLES.contains(&op.table.as_str()) {
+        return Err(format!("Tabel sync tidak diizinkan: '{}'", op.table));
+    }
+
     // Idempotency check.
     if is_op_applied(conn, &op.op_id).map_err(|e| e.to_string())? {
         return Ok(());
@@ -308,8 +314,13 @@ pub fn apply_operation(
         match op.action {
             SyncAction::Insert | SyncAction::Update => {
                 if let Some(cols) = op.data.as_object() {
+                    // Validasi nama kolom: hanya huruf, angka, underscore
+                    // untuk mencegah injection via nama kolom.
                     let column_names: Vec<&String> = cols.keys()
-                        .filter(|k| *k != "id" && *k != "uuid")
+                        .filter(|k| {
+                            *k != "id" && *k != "uuid"
+                                && k.chars().all(|c| c.is_alphanumeric() || c == '_')
+                        })
                         .collect();
                     if column_names.is_empty() {
                         return Ok(());
