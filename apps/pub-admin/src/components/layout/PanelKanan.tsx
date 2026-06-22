@@ -191,9 +191,7 @@ const PanelKanan: React.FC = () => {
     case 'settings-data-reset':
       return <SettingsHelpPanel tab="data-reset" />;
 
-    // Generator invoice — preview langsung dari context form
-    case 'invoice':
-      return <InvoicePreview />;
+
 
     // Manajemen berkas dan manajemen invoice — panel preview berkas
     case 'files':

@@ -190,9 +190,7 @@ const PanelKanan: React.FC = () => {
     case 'settings-gdrive':
       return <SettingsHelpPanel tab="google-drive" />;
 
-    // Generator invoice — preview langsung dari context form
-    case 'invoice':
-      return <InvoicePreview />;
+
 
     // Manajemen berkas dan manajemen invoice — panel preview berkas
     case 'files':
