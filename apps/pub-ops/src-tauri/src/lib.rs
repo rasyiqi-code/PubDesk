@@ -46,7 +46,7 @@ pub fn setup_p2p_instance(
         Err(_) => {
             let keypair = libp2p::identity::Keypair::generate_ed25519();
             let encoded = keypair.to_protobuf_encoding().unwrap();
-            let b64 = base64::encode(&encoded);
+            let b64 = base64::Engine::encode(&base64::prelude::BASE64_STANDARD, &encoded);
             local_conn.execute(
                 "INSERT INTO p2p_config (key, value) VALUES ('keypair', ?1)",
                 [&b64]
@@ -54,7 +54,7 @@ pub fn setup_p2p_instance(
             b64
         }
     };
-    let keypair_bytes = base64::decode(&keypair_b64).map_err(|e| e.to_string())?;
+    let keypair_bytes = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, &keypair_b64).map_err(|e| e.to_string())?;
 
     // 3. Baca/generate auth_token
     let _auth_token: String = match local_conn.query_row(
@@ -214,7 +214,7 @@ async fn get_p2p_config(
                 |row| row.get(0)
             );
             if let Ok(k_b64) = keypair_b64 {
-                if let Ok(bytes) = base64::decode(&k_b64) {
+                if let Ok(bytes) = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, &k_b64) {
                     if let Ok(id_keys) = libp2p::identity::Keypair::from_protobuf_encoding(&bytes) {
                         id_keys.public().to_peer_id().to_string()
                     } else {

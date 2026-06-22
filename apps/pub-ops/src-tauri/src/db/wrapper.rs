@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use rusqlite::types::{FromSql, ToSql, Value, ValueRef, ToSqlOutput};
+use rusqlite::types::{FromSql, Value, ValueRef, ToSqlOutput};
 use rusqlite::Error as RusqliteError;
 use crate::p2p::{P2PManager, P2PResponse};
 use libp2p::PeerId;
@@ -307,7 +307,7 @@ impl<'conn> PubhubTransaction<'conn> {
                             serde_json::Value::String(s.to_string())
                         }
                         ValueRef::Blob(b) => {
-                            serde_json::Value::String(base64::encode(b))
+                            serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b))
                         }
                     };
                     row_vals.push(val);
@@ -333,6 +333,7 @@ impl<'conn> PubhubTransaction<'conn> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn rollback(self) -> Result<(), RusqliteError> {
         match self {
             PubhubTransaction::Local(tx) => tx.rollback(),
@@ -353,6 +354,7 @@ pub enum PubhubStatement<'a> {
 }
 
 impl<'a> PubhubStatement<'a> {
+    #[allow(dead_code)]
     pub fn column_count(&self) -> usize {
         match self {
             PubhubStatement::Local(stmt) => stmt.column_count(),
@@ -360,6 +362,7 @@ impl<'a> PubhubStatement<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn column_name(&self, idx: usize) -> Result<&str, RusqliteError> {
         match self {
             PubhubStatement::Local(stmt) => stmt.column_name(idx),
@@ -393,7 +396,7 @@ impl<'a> PubhubStatement<'a> {
                                 serde_json::Value::String(s.to_string())
                             }
                             ValueRef::Blob(b) => {
-                                serde_json::Value::String(base64::encode(b))
+                                serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b))
                             }
                         };
                         row_vals.push(val);
@@ -529,7 +532,7 @@ impl PubhubRow {
             }
             serde_json::Value::String(s) => {
                 // Jika itu adalah Blob yang ter-encode sebagai base64 string, kita decode kembali
-                if let Ok(decoded) = base64::decode(s) {
+                if let Ok(decoded) = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, s) {
                     let mut cache = self.blob_cache.borrow_mut();
                     cache.push(decoded.into_boxed_slice());
                     let box_ref = cache.last().unwrap();
@@ -593,14 +596,14 @@ fn params_to_json(params: &[&dyn rusqlite::ToSql]) -> String {
                     let s = std::str::from_utf8(t).unwrap_or("");
                     serde_json::Value::String(s.to_string())
                 }
-                ValueRef::Blob(b) => serde_json::Value::String(base64::encode(b)),
+                ValueRef::Blob(b) => serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b)),
             },
             ToSqlOutput::Owned(val) => match val {
                 Value::Null => serde_json::Value::Null,
                 Value::Integer(i) => serde_json::Value::Number(i.into()),
                 Value::Real(r) => serde_json::Value::Number(serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0))),
                 Value::Text(s) => serde_json::Value::String(s),
-                Value::Blob(b) => serde_json::Value::String(base64::encode(b)),
+                Value::Blob(b) => serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b)),
             },
             _ => serde_json::Value::Null,
         };

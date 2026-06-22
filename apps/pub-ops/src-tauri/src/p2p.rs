@@ -1,10 +1,8 @@
 use std::error::Error;
-use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use futures::{prelude::*, select};
 use libp2p::{
-    core::upgrade,
     identity,
     noise,
     request_response,
@@ -13,7 +11,6 @@ use libp2p::{
     yamux,
     Multiaddr,
     PeerId,
-    Swarm,
     SwarmBuilder,
 };
 use serde::{Deserialize, Serialize};
@@ -422,7 +419,7 @@ fn handle_incoming_request(
                             serde_json::Value::String(text.to_string())
                         }
                         rusqlite::types::ValueRef::Blob(b) => {
-                            serde_json::Value::String(base64::encode(b)) // fallback blob ke base64 string
+                            serde_json::Value::String(base64::Engine::encode(&base64::prelude::BASE64_STANDARD, b)) // fallback blob ke base64 string
                         }
                     };
                     row_values.push(json_value);
