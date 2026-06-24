@@ -36,7 +36,8 @@ export const evaluateItemFormula = (formulaStr: string, item: InvoiceItem): any 
       let val = (item as any)[key];
       if (val === undefined || val === null) val = 0;
       if (typeof val === 'string' && isNaN(Number(val))) containsString = true;
-      processed = processed.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val));
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      processed = processed.replace(new RegExp(`\\{${escapedKey}\\}`, 'g'), String(val));
     });
     const mathOperators = /[\+\-\*\/\(\)]/;
     if (containsString || !mathOperators.test(processed)) return processed;

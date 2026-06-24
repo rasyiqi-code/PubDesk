@@ -35,7 +35,7 @@ export const InvoiceFooter: React.FC<InvoiceFooterProps> = ({
   };
 
   const getSignatureNameLabel = () => {
-    return profile?.signatureName || 'MOHAMMAD IMAM JUNAIDI, M.H.';
+    return profile?.signatureName || '';
   };
 
   return (

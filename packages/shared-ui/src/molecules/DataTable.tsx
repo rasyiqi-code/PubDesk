@@ -170,7 +170,7 @@ export const HoverRow: React.FC<HoverRowProps> = ({ children, onClick, style }) 
     style={{ ...tableStyles.row, ...style }}
     onClick={onClick}
     onMouseEnter={(e) => {
-      e.currentTarget.style.background = 'rgba(0,0,0,0.02)';
+      e.currentTarget.style.background = 'var(--bg-panel)';
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.background = 'transparent';

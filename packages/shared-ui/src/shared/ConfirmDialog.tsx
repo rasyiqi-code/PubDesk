@@ -1,9 +1,21 @@
 import React from 'react';
-import { useAppContext } from '../../contexts/AppContext';
 
-export const ConfirmDialog: React.FC = () => {
-  const { confirmOptions, hideConfirm } = useAppContext();
+interface ConfirmOptions {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'primary' | 'danger' | 'warning';
+  onConfirm: () => void | Promise<void>;
+  onCancel?: () => void;
+}
 
+interface ConfirmDialogProps {
+  confirmOptions: ConfirmOptions | null;
+  hideConfirm: () => void;
+}
+
+export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ confirmOptions, hideConfirm }) => {
   if (!confirmOptions) return null;
 
   const {
@@ -31,7 +43,6 @@ export const ConfirmDialog: React.FC = () => {
     }
   };
 
-  // Tentukan class tombol konfirmasi berdasarkan tipe
   const getConfirmButtonClass = () => {
     switch (type) {
       case 'danger':
@@ -48,7 +59,7 @@ export const ConfirmDialog: React.FC = () => {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 9999, // Sangat tinggi agar di atas modal lain
+        zIndex: 9999,
         background: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(5px)',
         display: 'flex',

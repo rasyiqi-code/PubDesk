@@ -14,42 +14,68 @@ export async function generateInvoicePDFBytes(elementId: string): Promise<Uint8A
     throw new Error(`Elemen pratinjau dengan ID "${elementId}" tidak ditemukan di DOM.`);
   }
 
-  // Buat container off-screen
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.top = '0';
-  container.style.left = '-9999px';
-  container.style.width = '595px';
-  container.style.height = '842px';
-  container.style.overflow = 'hidden';
-  container.style.background = '#ffffff';
-  document.body.appendChild(container);
+  // Pastikan font Google sudah termuat di dokumen utama sebelum kloning
+  if (document.fonts) {
+    await document.fonts.ready;
+  }
 
   try {
-    // Kloning elemen asli beserta isinya
-    const clonedElement = originalElement.cloneNode(true) as HTMLDivElement;
-
-    // Bersihkan style transform dan pemosisian absolut agar ukurannya kembali normal (1:1)
-    clonedElement.style.transform = 'none';
-    clonedElement.style.top = '0';
-    clonedElement.style.left = '0';
-    clonedElement.style.position = 'static';
-    clonedElement.style.margin = '0';
-    clonedElement.style.boxShadow = 'none';
-    clonedElement.style.borderRadius = '0';
-
-    container.appendChild(clonedElement);
-
-    // Tunggu sesaat agar font dan resource di-render penuh
-    await new Promise((resolve) => setTimeout(resolve, 150));
-
-    // Ambil tangkapan layar elemen dengan resolusi tinggi (scale: 2.5)
-    const canvas = await html2canvas(clonedElement, {
+    // Ambil tangkapan layar menggunakan html2canvas dengan memodifikasi kloningannya lewat callback onclone
+    const canvas = await html2canvas(originalElement, {
       scale: 2.5,
       useCORS: true,
-      allowTaint: true,
-      logging: false,
+      allowTaint: false,
+      logging: true,
       backgroundColor: '#ffffff',
+      onclone: async (clonedDoc: Document) => {
+        const clonedElement = clonedDoc.getElementById(elementId);
+        if (clonedElement) {
+          // 1. Reset transform dan visual zoom di kloningan agar berskala A4 1:1 penuh
+          clonedElement.style.transform = 'none';
+          clonedElement.style.transformOrigin = '50% 50%';
+          clonedElement.style.boxShadow = 'none';
+          clonedElement.style.borderRadius = '0';
+          clonedElement.style.position = 'static';
+          clonedElement.style.margin = '0';
+
+          // 2. Hapus referensi filter SVG yang mengandung feDropShadow dari elemen grafis
+          // agar shadow tidak merusak graphics pipeline WebKit (Tauri/Linux).
+          // Penting: jangan hapus <feDropShadow> itu sendiri karena filter kosong
+          // menyebabkan browser skip rendering grup <g> (header/footer jadi hilang).
+          const dropShadowSelectors = [
+            '[filter*="drop-shadow"]',
+          ];
+          clonedElement.querySelectorAll(dropShadowSelectors.join(',')).forEach((el) => {
+            el.removeAttribute('filter');
+          });
+          // Hapus juga defs filter yang sudah tidak dipakai agar html2canvas tidak bingung
+          clonedElement.querySelectorAll('defs filter[id*="drop-shadow"]').forEach((el) => {
+            el.parentNode?.removeChild(el);
+          });
+
+          // 3. Deteksi dan hilangkan background inline SVG pattern pada watermark stempel
+          // karena html2canvas di WebKit sering crash saat me-render raw inline SVG di background CSS
+          const allDivs = clonedElement.querySelectorAll('div');
+          allDivs.forEach((div) => {
+            if (div.style.backgroundImage && div.style.backgroundImage.includes('data:image/svg+xml')) {
+              div.style.backgroundImage = 'none';
+            }
+          });
+        }
+
+        // 4. Pastikan font Google termuat di dokumen kloning agar rendering PDF sesuai preview
+        // html2canvas mengkloning <link> dari <head> dokumen asli, tetapi font mungkin belum siap
+        const fontsUrl = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Playball&family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap';
+        if (!clonedDoc.querySelector(`link[href="${fontsUrl}"]`)) {
+          const link = clonedDoc.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = fontsUrl;
+          clonedDoc.head.appendChild(link);
+        }
+        if (clonedDoc.fonts) {
+          await clonedDoc.fonts.ready;
+        }
+      }
     });
 
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -67,8 +93,8 @@ export async function generateInvoicePDFBytes(elementId: string): Promise<Uint8A
     // Kembalikan ArrayBuffer sebagai Uint8Array
     const arrayBuffer = pdf.output('arraybuffer');
     return new Uint8Array(arrayBuffer);
-  } finally {
-    // Bersihkan container off-screen setelah selesai
-    document.body.removeChild(container);
+  } catch (err) {
+    console.error('[PDF Gen] Gagal memproses html2canvas:', err);
+    throw err;
   }
 }

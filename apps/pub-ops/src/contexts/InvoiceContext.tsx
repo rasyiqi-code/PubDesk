@@ -17,16 +17,16 @@ const defaultProfiles: InvoiceProfile[] = invoiceTemplates.map(t => {
     ...t.profile,
     id: t.templateId,
     name: t.profile.name || t.label,
-    invoiceNoFormat: (t.profile as any).invoiceNoFormat || 'KBM/{year}/{month}/{day}/{seq}',
-    companyWebsite: (t.profile as any).companyWebsite || (isKBMTmpl ? 'penerbitkbm.com | penerbitbukumurah.com' : ''),
-    companyEmail: (t.profile as any).companyEmail || (isKBMTmpl ? 'naskah@penerbitkbm.com' : ''),
-    companyYoutube: (t.profile as any).companyYoutube || (isKBMTmpl ? 'Penerbit KBM Sastrabook' : ''),
-    companyInstagram: (t.profile as any).companyInstagram || (isKBMTmpl ? '@penerbit.sastrabook / @penerbit.kbmindonesia' : ''),
-    companyPhone: (t.profile as any).companyPhone || (isKBMTmpl ? '0813 5751 7526' : ''),
-    showCompanyContact: (t.profile as any).showCompanyContact !== undefined ? (t.profile as any).showCompanyContact : isKBMTmpl,
-    footerBgColor: (t.profile as any).footerBgColor || t.profile.headerBgColor || '#222933',
-    footerPrimaryColor: (t.profile as any).footerPrimaryColor || t.profile.headerPrimaryColor || t.profile.accentColor || '#c01c1c',
-    footerSecondaryColor: (t.profile as any).footerSecondaryColor || t.profile.headerSecondaryColor || t.profile.accentColor || '#c01c1c'
+    invoiceNoFormat: t.profile.invoiceNoFormat || 'KBM/{year}/{month}/{day}/{seq}',
+    companyWebsite: t.profile.companyWebsite || (isKBMTmpl ? 'penerbitkbm.com | penerbitbukumurah.com' : ''),
+    companyEmail: t.profile.companyEmail || (isKBMTmpl ? 'naskah@penerbitkbm.com' : ''),
+    companyYoutube: t.profile.companyYoutube || (isKBMTmpl ? 'Penerbit KBM Sastrabook' : ''),
+    companyInstagram: t.profile.companyInstagram || (isKBMTmpl ? '@penerbit.sastrabook / @penerbit.kbmindonesia' : ''),
+    companyPhone: t.profile.companyPhone || (isKBMTmpl ? '0813 5751 7526' : ''),
+    showCompanyContact: t.profile.showCompanyContact !== undefined ? t.profile.showCompanyContact : isKBMTmpl,
+    footerBgColor: t.profile.footerBgColor || t.profile.headerBgColor || '#222933',
+    footerPrimaryColor: t.profile.footerPrimaryColor || t.profile.headerPrimaryColor || t.profile.accentColor || '#c01c1c',
+    footerSecondaryColor: t.profile.footerSecondaryColor || t.profile.headerSecondaryColor || t.profile.accentColor || '#c01c1c'
   };
 }) as InvoiceProfile[];
 
@@ -265,7 +265,19 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const loadInvoiceToForm = (invoice: any) => {
     try {
-      let metadata = {
+      let metadata: {
+        invoiceNo: string;
+        invoiceDate: string;
+        invoiceHal: string;
+        invoiceLampiran: string;
+        paymentStatus: string;
+        spesifikasiFasilitas: string;
+        customerName: string;
+        customerWa: string;
+        customerEmail?: string;
+        customerAddress: string;
+        isPenulis?: boolean;
+      } = {
         invoiceNo: '',
         invoiceDate: '',
         invoiceHal: '',
@@ -288,9 +300,9 @@ export const InvoiceProvider: React.FC<{ children: ReactNode }> = ({ children })
       setCustomer({
         name: metadata.customerName || '',
         wa_number: metadata.customerWa || '',
-        email: (metadata as any).customerEmail || '',
+        email: metadata.customerEmail || '',
         address: metadata.customerAddress || '',
-        isPenulis: (metadata as any).isPenulis || false
+        isPenulis: metadata.isPenulis || false
       });
       
       let parsedItems = [];

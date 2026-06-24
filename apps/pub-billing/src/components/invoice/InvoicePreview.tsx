@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { InvoiceProfile, InvoiceItem } from '../../types/invoice.types';
 
@@ -10,6 +10,7 @@ import { InvoiceFooter } from './sections/InvoiceFooter';
 import { Watermark } from './sections/Watermark';
 
 interface InvoicePreviewProps {
+  id?: string;
   previewProfile?: InvoiceProfile;
   overrideInvoice?: {
     customerName: string;
@@ -29,7 +30,7 @@ interface InvoicePreviewProps {
   };
 }
 
-const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrideInvoice }) => {
+const InvoicePreview: React.FC<InvoicePreviewProps> = ({ id, previewProfile, overrideInvoice }) => {
   const contextData = useInvoiceContext();
   
   const customer = overrideInvoice 
@@ -58,6 +59,40 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
   const handleZoomReset = () => setZoom(1.0);
+
+  const [downloading, setDownloading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const handleDownloadPDF = useCallback(async () => {
+    setDownloading(true);
+    setPdfError(null);
+    try {
+      const { generateInvoicePDFBytes } = await import('../../utils/pdfGenerator');
+      const bytes = await generateInvoicePDFBytes('invoice-preview-export');
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice-${invoiceNo ? invoiceNo.replace(/\//g, '_') : 'DRAF'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('Gagal generate PDF:', msg);
+      setPdfError(msg);
+    } finally {
+      setDownloading(false);
+    }
+  }, [invoiceNo]);
+
+  // Auto-clear error after 5s
+  useEffect(() => {
+    if (!pdfError) return;
+    const t = setTimeout(() => setPdfError(null), 5000);
+    return () => clearTimeout(t);
+  }, [pdfError]);
+
   const a4Width = 595;
   const a4Height = 842;
 
@@ -105,11 +140,9 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
         padding: '20px'
       }}
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Playball&display=swap');
-      `}</style>
 
-      {/* Floating Zoom Controls */}
+
+      {/* Floating Zoom Controls + Download */}
       <div style={{
         position: 'absolute',
         top: '12px',
@@ -150,10 +183,40 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ previewProfile, overrid
         >
           🔄
         </button>
+        <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 2px' }} />
+        <button
+          onClick={handleDownloadPDF}
+          disabled={downloading}
+          type="button"
+          style={{
+            width: '32px', height: '24px', borderRadius: '4px', border: 'none',
+            background: downloading ? 'var(--bg-panel)' : 'var(--accent)',
+            color: downloading ? 'var(--text-secondary)' : '#fff',
+            cursor: downloading ? 'not-allowed' : 'pointer',
+            fontWeight: '600', fontSize: '13px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.15s ease'
+          }}
+          title={downloading ? 'Memproses...' : 'Download PDF'}
+        >
+          {downloading ? '⏳' : '⬇'}
+        </button>
       </div>
 
+      {pdfError && (
+        <div style={{
+          position: 'absolute', top: '52px', left: '50%', transform: 'translateX(-50%)',
+          background: '#fef2f2', border: '1px solid #fca5a5', color: '#b91c1c',
+          fontSize: '11px', fontWeight: '600', padding: '6px 14px', zIndex: 100,
+          borderRadius: '6px', whiteSpace: 'nowrap', maxWidth: '90%', overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
+          ⚙️ Gagal download PDF: {pdfError}
+        </div>
+      )}
+
       <div 
-        id="invoice-preview-content"
+        id={id || "invoice-preview-content"}
         style={{
           transform: `scale(${scale * zoom})`,
           transformOrigin: 'center center',

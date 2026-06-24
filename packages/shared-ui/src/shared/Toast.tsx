@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAppContext } from '../../contexts/AppContext';
 
-// Warna dan ikon per tipe notifikasi
 const TOAST_CONFIG = {
   success: {
     bg: 'linear-gradient(135deg, #0f9960 0%, #0d8a56 100%)',
@@ -42,8 +40,16 @@ const TOAST_CONFIG = {
 
 const DURATION_MS = 3500;
 
-export const Toast: React.FC = () => {
-  const { toast } = useAppContext();
+interface ToastData {
+  message: string;
+  type?: 'success' | 'error' | 'info';
+}
+
+interface ToastProps {
+  toast: ToastData | null;
+}
+
+export const Toast: React.FC<ToastProps> = ({ toast }) => {
   const [progress, setProgress] = useState(100);
   const [visible, setVisible] = useState(false);
 
@@ -55,7 +61,6 @@ export const Toast: React.FC = () => {
     setProgress(100);
     setVisible(true);
 
-    // Animasi progress bar
     const start = Date.now();
     const interval = setInterval(() => {
       const elapsed = Date.now() - start;
@@ -106,20 +111,16 @@ export const Toast: React.FC = () => {
           pointerEvents: 'none',
         }}
       >
-        {/* Konten utama */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' }}>
-          {/* Ikon */}
           <span style={{ color: '#ffffff', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             {config.icon}
           </span>
 
-          {/* Pesan */}
           <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '600', lineHeight: '1.4', flex: 1 }}>
             {toast.message}
           </span>
         </div>
 
-        {/* Progress bar auto-dismiss */}
         <div style={{ height: '3px', background: 'rgba(255,255,255,0.15)', position: 'relative' }}>
           <div
             style={{

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
-import { useFileState } from '../../contexts/FileContext';
 import { useInvoiceContext } from '../../contexts/InvoiceContext';
 import { useDataMasterContext } from '../../contexts/DataMasterContext';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
@@ -8,11 +7,11 @@ import { MetadataSection } from './generator-sections/MetadataSection';
 import { CustomerSection } from './generator-sections/CustomerSection';
 import { ItemsSection } from './generator-sections/ItemsSection';
 import { GlobalCostsSection } from './generator-sections/GlobalCostsSection';
+import InvoicePreview from './InvoicePreview';
 
 const InvoiceGenerator: React.FC = () => {
   const { addInvoice, updateInvoice, showToast, rightPanelVisible, invoices, contacts, addContact, updateContact, setActiveModule } = useAppContext();
-  const { addFile, updateFile, files } = useFileState();
-  const { penulis, addPenulis, updatePenulis } = useDataMasterContext();
+  const { loadPenulis } = useDataMasterContext();
   const {
     customer,
     items,
@@ -68,11 +67,50 @@ const InvoiceGenerator: React.FC = () => {
     let contactId: number | undefined = undefined;
     const customerNameTrimmed = customer.name.trim();
 
-    if (isPenulis) {
-      // Auto-save/update ke tabel Penulis (CRM)
-      const existingPenulis = penulis.find(p => p.name.toLowerCase() === customerNameTrimmed.toLowerCase());
-      if (!existingPenulis) {
+    // Cari kontak secara global berdasarkan nama (tanpa menyaring berdasarkan tipe)
+    const existingContact = contacts.find(c => c.name.toLowerCase() === customerNameTrimmed.toLowerCase());
+
+    if (existingContact) {
+      contactId = existingContact.id;
+      
+      // Tentukan tipe baru jika peran bertambah
+      let newType = existingContact.type;
+      if (isPenulis) {
+        if (existingContact.type === 'customer') {
+          newType = 'both';
+        }
+      } else {
+        if (existingContact.type === 'penulis') {
+          newType = 'both';
+        }
+      }
+
+      const hasWaChanged = (customer.wa_number?.trim() || '') !== (existingContact.wa_number || '');
+      const hasEmailChanged = (customer.email?.trim() || '') !== (existingContact.email || '');
+      const hasAddressChanged = (customer.address?.trim() || '') !== (existingContact.address || '');
+      const hasTypeChanged = newType !== existingContact.type;
+
+      if (hasWaChanged || hasEmailChanged || hasAddressChanged || hasTypeChanged) {
         try {
+          await updateContact({
+            ...existingContact,
+            wa_number: customer.wa_number?.trim() || existingContact.wa_number,
+            email: customer.email?.trim() || existingContact.email,
+            address: customer.address?.trim() || existingContact.address,
+            type: newType
+          });
+          // Refresh data master penulis jika tipenya berubah menjadi penulis/both
+          if (newType === 'both' || newType === 'penulis') {
+            await loadPenulis();
+          }
+        } catch (err) {
+          console.error('Gagal memperbarui data kontak secara otomatis:', err);
+        }
+      }
+    } else {
+      // Jika tidak ditemukan, buat kontak baru
+      try {
+        if (isPenulis) {
           contactId = await addPenulis({
             name: customerNameTrimmed,
             wa_number: customer.wa_number?.trim() || '',
@@ -82,34 +120,7 @@ const InvoiceGenerator: React.FC = () => {
             email_valid: 0,
             wa_valid: 0
           });
-        } catch (err) {
-          console.error('Gagal menyimpan penulis baru secara otomatis:', err);
-        }
-      } else {
-        contactId = existingPenulis.id;
-        const hasWaChanged = (customer.wa_number?.trim() || '') !== (existingPenulis.wa_number || '');
-        const hasEmailChanged = (customer.email?.trim() || '') !== (existingPenulis.email || '');
-        const hasAddressChanged = (customer.address?.trim() || '') !== (existingPenulis.address || '');
-        if (hasWaChanged || hasEmailChanged || hasAddressChanged) {
-          try {
-            await updatePenulis({
-              ...existingPenulis,
-              wa_number: customer.wa_number?.trim() || existingPenulis.wa_number,
-              email: customer.email?.trim() || existingPenulis.email,
-              address: customer.address?.trim() || existingPenulis.address
-            });
-          } catch (err) {
-            console.error('Gagal memperbarui data penulis secara otomatis:', err);
-          }
-        }
-      }
-    } else {
-      // Auto-save/update pelanggan ke database SQLite tabel contacts saat invoice disimpan
-      const existingContact = contacts.find(c => c.type === 'customer' && c.name.toLowerCase() === customerNameTrimmed.toLowerCase());
-      contactId = existingContact?.id;
-
-      if (!existingContact) {
-        try {
+        } else {
           contactId = await addContact({
             name: customerNameTrimmed,
             wa_number: customer.wa_number?.trim() || undefined,
@@ -119,25 +130,9 @@ const InvoiceGenerator: React.FC = () => {
             needs_review: 1,
             created_at: new Date().toISOString()
           });
-        } catch (err) {
-          console.error('Gagal menyimpan pelanggan baru secara otomatis:', err);
         }
-      } else {
-        const hasWaChanged = (customer.wa_number?.trim() || '') !== (existingContact.wa_number || '');
-        const hasEmailChanged = (customer.email?.trim() || '') !== (existingContact.email || '');
-        const hasAddressChanged = (customer.address?.trim() || '') !== (existingContact.address || '');
-        if (hasWaChanged || hasEmailChanged || hasAddressChanged) {
-          try {
-            await updateContact({
-              ...existingContact,
-              wa_number: customer.wa_number?.trim() || existingContact.wa_number,
-              email: customer.email?.trim() || existingContact.email,
-              address: customer.address?.trim() || existingContact.address
-            });
-          } catch (err) {
-            console.error('Gagal memperbarui data kontak secara otomatis:', err);
-          }
-        }
+      } catch (err) {
+        console.error('Gagal menyimpan pelanggan baru secara otomatis:', err);
       }
     }
 
@@ -193,62 +188,7 @@ const InvoiceGenerator: React.FC = () => {
         invoiceId = await addInvoice(invoiceData as any);
       }
 
-      const filename = `Invoice-${invoiceNo ? invoiceNo.replace(/\//g, '_') : 'DRAF'}-${Date.now()}.pdf`;
-
-      // Generate PDF biner dari pratinjau invoice yang sedang aktif di panel kanan
-      const { generateInvoicePDFBytes } = await import('../../utils/pdfGenerator');
-      let pdfBytes: number[] = [];
-      try {
-        const bytes = await generateInvoicePDFBytes('invoice-preview-content');
-        pdfBytes = Array.from(bytes);
-      } catch (err) {
-        console.error('Gagal menghasilkan visual PDF:', err);
-      }
-
-      // Buat/Perbarui file fisik di folder data aplikasi
-      const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
-      let physicalPath = '';
-      
-      const existingFile = editingInvoiceId ? files.find(f => f.type === 'invoice' && f.version_label === String(editingInvoiceId)) : null;
-
-      if (existingFile) {
-        // Gunakan nama file lama untuk overwrite
-        const existingFilename = existingFile.path.split('/').pop() || filename;
-        physicalPath = await tauriInvoke<string>('create_physical_file', { 
-          filename: existingFilename,
-          bytes: pdfBytes,
-          folder: 'invoices'
-        });
-
-        // Update entri berkas di Smart Folders
-        await updateFile({
-          ...existingFile,
-          filename: `Invoice-${invoiceNo || 'DRAF'}.pdf`,
-          last_modified: new Date().toISOString()
-        });
-      } else {
-        physicalPath = await tauriInvoke<string>('create_physical_file', { 
-          filename,
-          bytes: pdfBytes,
-          folder: 'invoices'
-        });
-
-        // Simpan berkas ke tabel files untuk modul Smart Folders
-        const fileData = {
-          filename: `Invoice-${invoiceNo || 'DRAF'}.pdf`,
-          path: physicalPath,
-          type: 'invoice',
-          project_id: undefined,
-          version_label: String(invoiceId),
-          status: 'Tersimpan',
-          last_modified: new Date().toISOString(),
-          is_readonly: false
-        };
-
-        await addFile(fileData);
-      }
-
-      // Coba kirim data ke Google Apps Script (Cloud Sheets & Google Drive)
+      // Coba kirim data ke Google Apps Script (Cloud Sheets)
       const { googleAppsScriptService } = await import('../../services/googleAppsScript');
       if (googleAppsScriptService.isConfigured()) {
         try {
@@ -260,7 +200,7 @@ const InvoiceGenerator: React.FC = () => {
 
           const gasPayload = {
             invoice_no: invoiceNo || undefined,
-            id_invoice: invoiceId, // opsional: sertakan id dari database lokal
+            id_invoice: invoiceId,
             tanggal: invoiceDate || new Date().toISOString().split('T')[0],
             pelanggan: customer.name || '',
             whatsapp: customer.wa_number || '',
@@ -272,14 +212,11 @@ const InvoiceGenerator: React.FC = () => {
           };
 
           showToast('Menyinkronkan data ke Cloud Google Sheets...', 'info');
-          const cloudResult = await googleAppsScriptService.sendInvoiceToCloud(
-            gasPayload,
-            pdfBytes,
-            filename
-          );
+          const cloudResult = await googleAppsScriptService.sendInvoiceToCloud(gasPayload, []);
 
           if (cloudResult.success) {
             try {
+              const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
               await tauriInvoke('update_invoice_sync_status', {
                 id: invoiceId,
                 syncStatus: 'synced',
@@ -371,6 +308,16 @@ const InvoiceGenerator: React.FC = () => {
         <button className="btn-secondary" style={{ flex: 1 }} onClick={() => resetInvoice()}>
           🔄 Reset
         </button>
+      </div>
+
+      {/* Container pratinjau tersembunyi untuk kepentingan ekspor PDF (terhindar dari issue panel kanan tertutup) */}
+      {/*
+        Ukuran container 635x882 mengakomodasi padding 20px dari panelRef InvoicePreview
+        sehingga A4 div (595x842) pas muat tanpa overflow/negative offset,
+        mencegah clipping 20px kiri/atas oleh html2canvas.
+      */}
+      <div style={{ position: 'fixed', top: '-9999px', left: 0, width: '635px', height: '882px', overflow: 'hidden', pointerEvents: 'none', zIndex: -9999 }}>
+        <InvoicePreview id="invoice-preview-export" />
       </div>
     </div>
   );

@@ -5,8 +5,6 @@ import { Contact } from '../types/contact.types';
 import { Invoice } from '../types/invoice.types';
 import { File } from '../types/file.types';
 import { Service } from '../types/service.types';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 
 // Import hooks
 import { useUIState, ConfirmOptions, ImportExportActions } from '../hooks/useUIState';
@@ -17,6 +15,7 @@ import { useServiceState } from '../hooks/useServiceState';
 import { useFileState } from '../hooks/useFileState';
 import { useGDriveState, GDriveAccount } from '../hooks/useGDriveState';
 import { useSyncState } from '../hooks/useSyncState';
+import { googleAppsScriptService } from '../services/googleAppsScript';
 
 export type { ConfirmOptions, ImportExportActions, GDriveAccount };
 
@@ -144,6 +143,8 @@ interface AppContextType {
   directAddNewModule: string | null;
   setDirectAddNewModule: (module: string | null) => void;
   isDbInitialized: boolean;
+  initError: string | null;
+  retryInit: () => void;
 }
 
 
@@ -154,6 +155,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [fileCategory, setFileCategory] = useState<'all' | 'invoice' | 'service' | 'other' | 'gdrive' | 'pdf' | 'spreadsheet' | 'text' | 'image' | 'presentation'>('all');
   const [directAddNewModule, setDirectAddNewModule] = useState<string | null>(null);
   const [isDbInitialized, setIsDbInitialized] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
 
   const booksState = useBookState({ showToast: ui.showToast });
@@ -186,27 +188,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     loadInvoices: invoicesState.loadInvoices
   });
 
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    let unlistenLocal: (() => void) | undefined;
-    const init = async () => {
-      try {
+  const isTauriEnv = React.useRef<boolean | null>(null);
+  const checkIsTauri = (): boolean => {
+    if (isTauriEnv.current !== null) return isTauriEnv.current;
+    isTauriEnv.current = typeof window !== 'undefined' && (
+      !!(window as any).__TAURI_INTERNALS__ || !!(window as any).__TAURI__
+    );
+    return isTauriEnv.current;
+  };
+
+  const init = React.useCallback(async () => {
+    setInitError(null);
+    const inTauri = checkIsTauri();
+    try {
+      if (inTauri) {
+        const { invoke } = await import('@tauri-apps/api/core');
         await invoke('init_database');
-        setIsDbInitialized(true);
+      }
+      await googleAppsScriptService.initSettings();
+      googleAppsScriptService.syncConfigFromCloud().catch((err) => {
+        console.warn('[GAS] Gagal sinkronisasi konfigurasi cloud saat startup:', err);
+      });
+      setIsDbInitialized(true);
+      if (inTauri) {
         await booksState.loadBooks();
         await contactsState.loadContacts();
         await invoicesState.loadInvoices();
         await filesState.loadFiles();
         await servicesState.loadServices();
         await filesState.loadWatchFolders();
-      } catch (error) {
-        console.error('Failed to initialize app:', error);
       }
-    };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Failed to initialize app:', msg);
+      setInitError(msg);
+    }
+  }, []);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let unlistenLocal: (() => void) | undefined;
+
     init();
 
     const setupListener = async () => {
+      if (!checkIsTauri()) return;
       try {
+        const { listen } = await import('@tauri-apps/api/event');
         unlisten = await listen<string>('gdrive-oauth-code', async (event) => {
           const code = event.payload;
           if (code) {
@@ -226,7 +254,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (unlisten) unlisten();
       if (unlistenLocal) unlistenLocal();
     };
-  }, []);
+  }, [init]);
 
   return (
     <AppContext.Provider value={{
@@ -331,6 +359,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       directAddNewModule,
       setDirectAddNewModule,
       isDbInitialized,
+      initError,
+      retryInit: init,
     }}>
       {children}
     </AppContext.Provider>

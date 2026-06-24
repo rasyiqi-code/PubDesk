@@ -296,7 +296,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             onFocus={(e) => {
               e.target.style.borderColor = 'var(--accent)';
               e.target.style.boxShadow =
-                '0 0 0 3px rgba(192, 28, 28, 0.15)';
+                '0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent)';
             }}
             placeholder={placeholder}
             style={{
