@@ -43,10 +43,19 @@ jobs:
       - name: Install Monorepo Dependencies
         run: bun install
 
+      - name: Setup Windows Certificate (Windows only)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WINDOWS_PFX_BASE64 }}")
+          [System.IO.File]::WriteAllBytes("cert.pfx", $pfx_cert_byte)
+        shell: powershell
+
       - name: Build Tauri App & Publish Release
         uses: tauri-apps/tauri-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WIN_CERT_PATH: 'cert.pfx'
+          WIN_CERT_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
         with:
           tagName: app-v__VERSION__ # Diganti otomatis dengan versi dari tauri.conf.json
           releaseName: 'PubAdmin v__VERSION__'
