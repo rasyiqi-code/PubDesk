@@ -234,7 +234,7 @@ impl Database {
         Ok(histories)
     }
 
-    pub fn update_task_status(&self, task_id: i64, new_status: &str, notes: Option<&str>, proof_path_or_link: Option<&str>) -> Result<(), DbError> {
+    pub fn update_task_status(&self, task_id: i64, new_status: &str, notes: Option<&str>, proof_path_or_link: Option<&str>, changed_by: &str) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
         
         // Dapatkan task lama terlebih dahulu
@@ -278,7 +278,7 @@ impl Database {
             if old != new_status {
                 self.conn.execute(
                     "INSERT INTO task_history (task_id, old_status, new_status, changed_by, changed_at, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                    params![task_id, old, new_status, "User", now, notes]
+                    params![task_id, old, new_status, changed_by, now, notes]
                 )?;
             }
         }
@@ -316,7 +316,7 @@ impl Database {
             // Simple insert into tasks
             tx.execute(
                 "INSERT INTO tasks (naskah_id, step_name, status, start_date, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                params![naskah_id, "Produksi", p.status, p.tanggal, now, now]
+                params![naskah_id, p.step_name, p.status, p.tanggal, now, now]
             )?;
             count += 1;
         }

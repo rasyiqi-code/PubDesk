@@ -240,13 +240,11 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
               )}
             </div>
 
-            {/* Lokasi */}
+            {/* Alamat */}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Lokasi Wilayah</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Alamat Kantor</span>
               <strong style={{ color: 'var(--text-primary)' }}>
-                {penerbitData.city || penerbitData.province ? (
-                  `${penerbitData.city || ''}${penerbitData.city && penerbitData.province ? ', ' : ''}${penerbitData.province || ''}`
-                ) : (penerbitData.address || '-')}
+                {penerbitData.address || '-'}
               </strong>
             </div>
 

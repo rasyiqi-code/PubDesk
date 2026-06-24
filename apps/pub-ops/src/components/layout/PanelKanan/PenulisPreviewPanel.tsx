@@ -28,8 +28,6 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
           email: c.email || '',
           wa_number: c.wa_number || '',
           address: c.address || '',
-          province: '',
-          city: '',
           job: 'Pelanggan',
           institution: '',
           data_source: 'Database Pelanggan',
@@ -115,8 +113,6 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
           if (penulisData.institution) addressParts.push(penulisData.institution);
           if (penulisData.address) {
             addressParts.push(penulisData.address);
-          } else if (penulisData.city || penulisData.province) {
-            addressParts.push(`${penulisData.city || ''}, ${penulisData.province || ''}`.trim().replace(/^,\s*|,\s*$/, ''));
           }
           const fullAddress = addressParts.join('\n');
 
@@ -287,18 +283,7 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
               )}
             </div>
 
-            {/* Lokasi */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Lokasi Wilayah</span>
-              <strong 
-                style={{ color: 'var(--text-primary)', textAlign: 'right', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} 
-                title={penulisData.address || (penulisData.city || penulisData.province ? `${penulisData.city || ''}, ${penulisData.province || ''}` : '')}
-              >
-                {penulisData.city || penulisData.province ? (
-                  `${penulisData.city || ''}${penulisData.city && penulisData.province ? ', ' : ''}${penulisData.province || ''}`
-                ) : (penulisData.address || '-')}
-              </strong>
-            </div>
+
 
           </div>
         </div>

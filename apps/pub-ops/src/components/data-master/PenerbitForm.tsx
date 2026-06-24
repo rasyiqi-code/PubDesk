@@ -18,8 +18,6 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
   const { showToast, setActiveModule } = useAppContext();
 
   const [name, setName] = useState('');
-  const [city, setCity] = useState('');
-  const [province, setProvince] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [email, setEmail] = useState('');
@@ -38,8 +36,6 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
-      setCity(initialData.city || '');
-      setProvince(initialData.province || '');
       setAddress(initialData.address || '');
       setNotes(initialData.notes || '');
       setEmail(initialData.email || '');
@@ -54,8 +50,6 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
       setCooperationStatus(initialData.cooperation_status || 'Aktif');
     } else {
       setName('');
-      setCity('');
-      setProvince('');
       setAddress('');
       setNotes('');
       setEmail('');
@@ -81,8 +75,6 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
     onSubmit({
       id: initialData?.id,
       name: name.trim(),
-      city: city.trim() || undefined,
-      province: province.trim() || undefined,
       address: address.trim() || undefined,
       notes: notes.trim() || undefined,
       email: email.trim() || undefined,
@@ -156,23 +148,7 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
                 autoFocus
               />
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                <TextField
-                  label="Kota Asal Penerbit"
-                  placeholder="Contoh: Yogyakarta"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  fullWidth
-                />
-
-                <TextField
-                  label="Provinsi"
-                  placeholder="Contoh: DIY"
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  fullWidth
-                />
-
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                 <Select
                   label="Status Kerja Sama"
                   options={statusOptions}

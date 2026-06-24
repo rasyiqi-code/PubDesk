@@ -7,7 +7,7 @@ impl Database {
     pub fn add_tim(&self, l: &Tim) -> Result<i64, DbError> {
         let now = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "INSERT INTO tim (name, role, department, is_active, weekly_target, notes, pin, wa_number, email, address, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            "INSERT INTO tim (name, role, department, is_active, weekly_target, notes, pin, wa_number, email, address, app, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 l.name,
                 l.role,
@@ -19,6 +19,7 @@ impl Database {
                 l.wa_number,
                 l.email,
                 l.address,
+                l.app,
                 l.created_at,
                 now
             ]
@@ -29,27 +30,53 @@ impl Database {
     }
 
     pub fn get_all_tim(&self) -> Result<Vec<Tim>, DbError> {
-        let mut stmt = self.conn.prepare("SELECT id, name, role, department, is_active, weekly_target, notes, pin, created_at, updated_at, wa_number, email, address FROM tim ORDER BY name ASC")?;
-        let rows = stmt.query_map([], |row| {
-            Ok(Tim {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                role: row.get(2)?,
-                department: row.get(3)?,
-                is_active: row.get(4)?,
-                weekly_target: row.get(5)?,
-                notes: row.get(6)?,
-                pin: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-                wa_number: row.get(10)?,
-                email: row.get(11)?,
-                address: row.get(12)?,
-            })
-        })?;
         let mut res = Vec::new();
-        for r in rows {
-            res.push(r?);
+        if self.app_name == "admin" {
+            let mut stmt = self.conn.prepare("SELECT id, name, role, department, is_active, weekly_target, notes, pin, created_at, updated_at, wa_number, email, address, app FROM tim ORDER BY name ASC")?;
+            let rows = stmt.query_map([], |row| {
+                Ok(Tim {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    role: row.get(2)?,
+                    department: row.get(3)?,
+                    is_active: row.get(4)?,
+                    weekly_target: row.get(5)?,
+                    notes: row.get(6)?,
+                    pin: row.get(7)?,
+                    created_at: row.get(8)?,
+                    updated_at: row.get(9)?,
+                    wa_number: row.get(10)?,
+                    email: row.get(11)?,
+                    address: row.get(12)?,
+                    app: row.get(13)?,
+                })
+            })?;
+            for r in rows {
+                res.push(r?);
+            }
+        } else {
+            let mut stmt = self.conn.prepare("SELECT id, name, role, department, is_active, weekly_target, notes, pin, created_at, updated_at, wa_number, email, address, app FROM tim WHERE app = ?1 OR app IS NULL OR app = '' ORDER BY name ASC")?;
+            let rows = stmt.query_map(params![self.app_name], |row| {
+                Ok(Tim {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    role: row.get(2)?,
+                    department: row.get(3)?,
+                    is_active: row.get(4)?,
+                    weekly_target: row.get(5)?,
+                    notes: row.get(6)?,
+                    pin: row.get(7)?,
+                    created_at: row.get(8)?,
+                    updated_at: row.get(9)?,
+                    wa_number: row.get(10)?,
+                    email: row.get(11)?,
+                    address: row.get(12)?,
+                    app: row.get(13)?,
+                })
+            })?;
+            for r in rows {
+                res.push(r?);
+            }
         }
         Ok(res)
     }
@@ -57,7 +84,7 @@ impl Database {
     pub fn update_tim(&self, l: &Tim) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "UPDATE tim SET name = ?1, role = ?2, department = ?3, is_active = ?4, weekly_target = ?5, notes = ?6, pin = ?7, wa_number = ?8, email = ?9, address = ?10, updated_at = ?11 WHERE id = ?12",
+            "UPDATE tim SET name = ?1, role = ?2, department = ?3, is_active = ?4, weekly_target = ?5, notes = ?6, pin = ?7, wa_number = ?8, email = ?9, address = ?10, app = ?11, updated_at = ?12 WHERE id = ?13",
             params![
                 l.name,
                 l.role,
@@ -69,6 +96,7 @@ impl Database {
                 l.wa_number,
                 l.email,
                 l.address,
+                l.app,
                 now,
                 l.id
             ]
@@ -348,15 +376,15 @@ impl Database {
     // Auth session management — login/logout karyawan lokal
     pub fn login_session(&self, tim_id: i64, tim_name: &str, tim_role: &str) -> Result<AppSession, DbError> {
         let now = chrono::Local::now().to_rfc3339();
-        // Nonaktifkan sesi sebelumnya
+        // Nonaktifkan sesi sebelumnya untuk aplikasi ini
         self.conn.execute(
-            "UPDATE app_sessions SET is_active = 0, logout_at = ?1 WHERE is_active = 1",
-            params![now],
+            "UPDATE app_sessions SET is_active = 0, logout_at = ?1 WHERE is_active = 1 AND app = ?2",
+            params![now, self.app_name],
         )?;
         // Buat sesi baru
         self.conn.execute(
-            "INSERT INTO app_sessions (tim_id, tim_name, tim_role, login_at, is_active) VALUES (?1, ?2, ?3, ?4, 1)",
-            params![tim_id, tim_name, tim_role, now],
+            "INSERT INTO app_sessions (tim_id, tim_name, tim_role, login_at, is_active, app) VALUES (?1, ?2, ?3, ?4, 1, ?5)",
+            params![tim_id, tim_name, tim_role, now, self.app_name],
         )?;
         let id = self.conn.last_insert_rowid();
         Ok(AppSession {
@@ -367,23 +395,24 @@ impl Database {
             login_at: now,
             logout_at: None,
             is_active: 1,
+            app: Some(self.app_name.clone()),
         })
     }
 
     pub fn logout_session(&self) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "UPDATE app_sessions SET is_active = 0, logout_at = ?1 WHERE is_active = 1",
-            params![now],
+            "UPDATE app_sessions SET is_active = 0, logout_at = ?1 WHERE is_active = 1 AND app = ?2",
+            params![now, self.app_name],
         )?;
         Ok(())
     }
 
     pub fn get_active_session(&self) -> Result<Option<AppSession>, DbError> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, tim_id, tim_name, tim_role, login_at, logout_at, is_active FROM app_sessions WHERE is_active = 1 ORDER BY login_at DESC LIMIT 1"
+            "SELECT id, tim_id, tim_name, tim_role, login_at, logout_at, is_active, app FROM app_sessions WHERE is_active = 1 AND app = ?1 ORDER BY login_at DESC LIMIT 1"
         )?;
-        let mut rows = stmt.query_map([], |row| {
+        let mut rows = stmt.query_map(params![self.app_name], |row| {
             Ok(AppSession {
                 id: row.get(0)?,
                 tim_id: row.get(1)?,
@@ -392,6 +421,7 @@ impl Database {
                 login_at: row.get(4)?,
                 logout_at: row.get(5)?,
                 is_active: row.get(6)?,
+                app: row.get(7)?,
             })
         })?;
         if let Some(row) = rows.next() {

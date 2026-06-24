@@ -22,6 +22,8 @@ pub use wrapper::PubhubRow as Row;
 use std::path::PathBuf;
 use tauri::Manager;
 
+pub const APP_NAME: &str = "ops";
+
 /// Returns the shared PubHub database path used by all apps in the monorepo.
 /// Uses the OS local data directory (e.g. %LOCALAPPDATA% / ~/.local/share)
 /// so that pub-billing, pub-ops, pub-admin and pub-files open the same file.
@@ -50,32 +52,18 @@ pub fn init_db(db_path: &PathBuf) -> Result<(), DbError> {
 
 pub struct Database {
     pub(crate) conn: Connection,
+    pub(crate) app_name: String,
 }
 
 impl Database {
-    pub fn new(db_path: &PathBuf) -> Result<Self, DbError> {
+    pub fn new(db_path: &PathBuf, app_name: &str) -> Result<Self, DbError> {
         let conn = rusqlite::Connection::open(db_path)?;
         let _ = conn.execute("PRAGMA journal_mode=WAL;", []);
         let _ = conn.execute("PRAGMA busy_timeout = 5000;", []);
+        let _ = conn.execute("CREATE TABLE IF NOT EXISTS _sync_skip (val INTEGER)", []);
         Ok(Self {
-            conn: Connection::Local(conn)
-        })
-    }
-
-    pub fn new_p2p(
-        local_db_path: &PathBuf,
-        manager: std::sync::Arc<crate::p2p::P2PManager>,
-        host_peer_id: libp2p::PeerId,
-    ) -> Result<Self, DbError> {
-        let local_conn = rusqlite::Connection::open(local_db_path)?;
-        let _ = local_conn.execute("PRAGMA journal_mode=WAL;", []);
-        let _ = local_conn.execute("PRAGMA busy_timeout = 5000;", []);
-        Ok(Self {
-            conn: Connection::P2P {
-                manager,
-                host_peer_id,
-                local_conn,
-            }
+            conn: Connection::from(conn),
+            app_name: app_name.to_string(),
         })
     }
 }

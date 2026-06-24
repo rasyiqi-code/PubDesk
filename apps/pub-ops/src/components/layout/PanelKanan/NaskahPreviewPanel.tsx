@@ -178,7 +178,7 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
                 </div>
               </div>
               {penulisData.institution && <InfoRow label="Institusi" value={penulisData.institution} />}
-              {(penulisData.city || penulisData.province) && <InfoRow label="Lokasi" value={[penulisData.city, penulisData.province].filter(Boolean).join(', ')} />}
+              {penulisData.address && <InfoRow label="Alamat" value={penulisData.address} />}
               {penulisData.wa_number && (
                 <InfoRow label="WhatsApp" value={
                   <span style={{ color: '#4ade80' }}>
@@ -221,7 +221,7 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
                   {penerbitData.cooperation_status && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '1px' }}>{penerbitData.cooperation_status}</div>}
                 </div>
               </div>
-              {(penerbitData.city || penerbitData.province) && <InfoRow label="Lokasi" value={[penerbitData.city, penerbitData.province].filter(Boolean).join(', ')} />}
+              {penerbitData.address && <InfoRow label="Alamat" value={penerbitData.address} />}
               {penerbitData.wa_number && (
                 <InfoRow label="WhatsApp" value={
                   <span style={{ color: '#4ade80' }}>

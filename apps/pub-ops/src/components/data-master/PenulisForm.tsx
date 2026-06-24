@@ -75,8 +75,6 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
       email: email.trim() || undefined,
       wa_number: waNumber.trim() ? formatWhatsAppNumber(waNumber.trim()) : undefined,
       address: address.trim() || undefined,
-      province: initialData?.province, // tetapkan data lama jika ada
-      city: initialData?.city,
       job: job.trim() || undefined,
       institution: institution.trim() || undefined,
       data_source: dataSource.trim() || undefined,
@@ -191,6 +189,8 @@ const PenulisForm: React.FC<PenulisFormProps> = ({ initialData, onSubmit, onCanc
                 style={{ height: '80px' }}
                 fullWidth
               />
+
+
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <TextField

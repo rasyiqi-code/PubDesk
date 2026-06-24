@@ -3,8 +3,6 @@ export interface Penulis {
   name: string;
   email?: string;
   wa_number?: string;
-  province?: string;
-  city?: string;
   address?: string;
   job?: string;
   institution?: string;
@@ -22,8 +20,6 @@ export interface Penulis {
 export interface Penerbit {
   id?: number;
   name: string;
-  city?: string;
-  province?: string;
   address?: string;
   notes?: string;
   instagram?: string;
@@ -77,6 +73,7 @@ export interface Tim {
   wa_number?: string;
   email?: string;
   address?: string;
+  app?: string;
   created_at: string;
   updated_at?: string;
 }

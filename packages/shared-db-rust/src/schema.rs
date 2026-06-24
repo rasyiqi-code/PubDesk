@@ -9,8 +9,6 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
             wa_number TEXT,
             email TEXT,
             address TEXT,
-            province TEXT,
-            city TEXT,
             job TEXT,
             institution TEXT,
             data_source TEXT,
@@ -30,8 +28,6 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
     let _ = conn.execute("ALTER TABLE contacts ADD COLUMN email TEXT", []);
     let _ = conn.execute("ALTER TABLE contacts ADD COLUMN updated_at TEXT", []);
     // Migrasi kolom penulis ke contacts
-    let _ = conn.execute("ALTER TABLE contacts ADD COLUMN province TEXT", []);
-    let _ = conn.execute("ALTER TABLE contacts ADD COLUMN city TEXT", []);
     let _ = conn.execute("ALTER TABLE contacts ADD COLUMN job TEXT", []);
     let _ = conn.execute("ALTER TABLE contacts ADD COLUMN institution TEXT", []);
     let _ = conn.execute("ALTER TABLE contacts ADD COLUMN data_source TEXT", []);
@@ -263,7 +259,6 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
         "CREATE TABLE IF NOT EXISTS penerbit (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            city TEXT,
             instagram TEXT,
             facebook TEXT,
             email TEXT,
@@ -285,7 +280,6 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
     // Migrasi ad-hoc untuk menambahkan kolom baru ke penerbit
     let _ = conn.execute("ALTER TABLE penerbit ADD COLUMN address TEXT", []);
     let _ = conn.execute("ALTER TABLE penerbit ADD COLUMN notes TEXT", []);
-    let _ = conn.execute("ALTER TABLE penerbit ADD COLUMN province TEXT", []);
 
     // Naskah Orders table
     conn.execute(
@@ -387,7 +381,7 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
     // Migrasi data: penulis → contacts (one-time)
     let sudah_dimigrasi = conn
         .query_row(
-            "SELECT COUNT(*) FROM contacts WHERE province IS NOT NULL",
+            "SELECT COUNT(*) FROM contacts WHERE address IS NOT NULL",
             [],
             |r| r.get::<_, i64>(0),
         )
@@ -436,17 +430,36 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
                         )
                         .ok();
 
+                    let mut full_address = addr.clone().unwrap_or_default();
+                    if let Some(ref c) = city {
+                        if !c.is_empty() {
+                            if !full_address.is_empty() {
+                                full_address.push_str(", ");
+                            }
+                            full_address.push_str(c);
+                        }
+                    }
+                    if let Some(ref p) = prov {
+                        if !p.is_empty() {
+                            if !full_address.is_empty() {
+                                full_address.push_str(", ");
+                            }
+                            full_address.push_str(p);
+                        }
+                    }
+                    let full_address_opt = if full_address.is_empty() { None } else { Some(full_address) };
+
                     let new_id = if let Some(cid) = existing {
                         conn.execute(
-                            "UPDATE contacts SET province = ?1, city = ?2, job = ?3, institution = ?4, data_source = ?5, email_valid = ?6, wa_valid = ?7, followup_status = ?8, notes = ?9, address = ?10, type = 'both' WHERE id = ?11",
-                            params![prov, city, job, inst, ds, ev, wv, fs, notes, addr, cid],
+                            "UPDATE contacts SET job = ?1, institution = ?2, data_source = ?3, email_valid = ?4, wa_valid = ?5, followup_status = ?6, notes = ?7, address = ?8, type = 'both' WHERE id = ?9",
+                            params![job, inst, ds, ev, wv, fs, notes, full_address_opt, cid],
                         )
                         .ok();
                         cid
                     } else {
                         conn.execute(
-                            "INSERT INTO contacts (name, email, wa_number, address, province, city, job, institution, data_source, email_valid, wa_valid, followup_status, notes, type, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,'penulis',?14,?15)",
-                            params![name, email, wa, addr, prov, city, job, inst, ds, ev, wv, fs, notes, ca, ca],
+                            "INSERT INTO contacts (name, email, wa_number, address, job, institution, data_source, email_valid, wa_valid, followup_status, notes, type, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,'penulis',?12,?13)",
+                            params![name, email, wa, full_address_opt, job, inst, ds, ev, wv, fs, notes, ca, ca],
                         )
                         .expect("insert new contact from penulis");
                         conn.last_insert_rowid()
@@ -666,7 +679,6 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
     let _ = conn.execute("ALTER TABLE legalitas ADD COLUMN cloud_file_url TEXT", []);
     let _ = conn.execute("ALTER TABLE tasks ADD COLUMN cloud_file_url TEXT", []);
 
-    // Tabel sesi login karyawan lokal
     conn.execute(
         "CREATE TABLE IF NOT EXISTS app_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -679,6 +691,8 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
         )",
         [],
     )?;
+
+    let _ = conn.execute("ALTER TABLE app_sessions ADD COLUMN app TEXT", []);
 
     // Migrasi kolom audit trail ke activity_log
     let _ = conn.execute("ALTER TABLE activity_log ADD COLUMN performed_by INTEGER REFERENCES tim(id)", []);
@@ -694,6 +708,73 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
     let _ = conn.execute("ALTER TABLE tim ADD COLUMN wa_number TEXT", []);
     let _ = conn.execute("ALTER TABLE tim ADD COLUMN email TEXT", []);
     let _ = conn.execute("ALTER TABLE tim ADD COLUMN address TEXT", []);
+    let _ = conn.execute("ALTER TABLE tim ADD COLUMN app TEXT", []);
+
+    // Migrasi kolom sync_outbox (jika tabel sudah ada dari versi sebelumnya)
+    let has_op_id = if let Ok(mut stmt) = conn.prepare("PRAGMA table_info(sync_outbox)") {
+        if let Ok(mut rows) = stmt.query([]) {
+            let mut found = false;
+            while let Ok(Some(row)) = rows.next() {
+                if let Ok(col_name) = row.get::<_, String>(1) {
+                    if col_name == "op_id" {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            found
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    if has_op_id {
+        let _ = conn.execute("ALTER TABLE sync_outbox RENAME TO sync_outbox_old", []);
+        let _ = conn.execute(
+            "CREATE TABLE sync_outbox (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                table_name TEXT NOT NULL,
+                row_id INTEGER NOT NULL,
+                action TEXT NOT NULL,
+                data_json TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                sent_at TEXT
+            )",
+            [],
+        );
+        let _ = conn.execute(
+            "INSERT INTO sync_outbox (id, table_name, row_id, action, data_json, created_at, sent_at)
+             SELECT id, table_name, CAST(row_id AS INTEGER), action, COALESCE(data_json, payload_json), created_at, sent_at
+             FROM sync_outbox_old",
+            [],
+        );
+        let _ = conn.execute("DROP TABLE sync_outbox_old", []);
+    } else {
+        let _ = conn.execute("ALTER TABLE sync_outbox ADD COLUMN row_id INTEGER", []);
+        let _ = conn.execute("ALTER TABLE sync_outbox ADD COLUMN data_json TEXT", []);
+        let _ = conn.execute("ALTER TABLE sync_outbox ADD COLUMN sent_at TEXT", []);
+    }
+
+    // Hapus trigger lama yang merujuk ke struktur outbox lama
+    let old_triggers = vec![
+        "contacts_insert", "contacts_update", "contacts_delete",
+        "naskah_insert", "naskah_update", "naskah_delete",
+        "tasks_insert", "tasks_update", "tasks_delete",
+        "tim_insert", "tim_update", "tim_delete",
+        "legalitas_insert", "legalitas_update", "legalitas_delete",
+        "books_insert", "books_update", "books_delete",
+        "invoices_insert", "invoices_update", "invoices_delete",
+        "projects_insert", "projects_update", "projects_delete",
+        "penerbit_insert", "penerbit_update", "penerbit_delete",
+        "workflow_events_insert", "workflow_events_update", "workflow_events_delete",
+        "cetak_distribusi_insert", "cetak_distribusi_update", "cetak_distribusi_delete",
+        "naskah_files_insert", "naskah_files_update", "naskah_files_delete"
+    ];
+    for t in old_triggers {
+        let _ = conn.execute(&format!("DROP TRIGGER IF EXISTS trg_{}", t), []);
+    }
 
     // Tabel konfigurasi P2P
     conn.execute(
@@ -703,6 +784,44 @@ pub fn build_schema(conn: &Connection) -> Result<()> {
         )",
         [],
     )?;
+
+    // Tabel outbox untuk real-time sync (Worker & GAS)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sync_outbox (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_name TEXT NOT NULL,
+            row_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            data_json TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            sent_at TEXT
+        )",
+        [],
+    )?;
+
+    // Flag table untuk skip sync trigger saat apply incoming data
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS _sync_skip (val INTEGER)",
+        [],
+    )?;
+    let _ = conn.execute("DELETE FROM _sync_skip", []);
+
+    // Sync triggers — auto-enqueue setiap perubahan ke sync_outbox
+    let tracked_tables = vec![
+        "contacts", "books", "services", "invoices", "files",
+        "penerbit", "penulis", "naskah", "tim", "legalitas", "tasks"
+    ];
+    for tbl in &tracked_tables {
+        for action in &["INSERT", "UPDATE", "DELETE"] {
+            let id_ref = if *action == "DELETE" { "OLD.id" } else { "NEW.id" };
+            let trigger_name = format!("trg_sync_{tbl}_{action_lower}", tbl = tbl, action_lower = action.to_lowercase());
+            let trigger_sql = format!(
+                "CREATE TRIGGER IF NOT EXISTS {name} AFTER {action} ON {tbl} WHEN NOT EXISTS (SELECT 1 FROM _sync_skip) BEGIN INSERT INTO sync_outbox (table_name, row_id, action, created_at) VALUES ('{tbl}', {id_ref}, '{action}', datetime('now')); END;",
+                name = trigger_name, action = action, tbl = tbl, id_ref = id_ref
+            );
+            let _ = conn.execute(&trigger_sql, []);
+        }
+    }
 
     Ok(())
 }

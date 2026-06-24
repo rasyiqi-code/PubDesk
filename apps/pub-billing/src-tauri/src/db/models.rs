@@ -9,8 +9,6 @@ pub struct Contact {
     pub wa_number: Option<String>,
     pub email: Option<String>,
     pub address: Option<String>,
-    pub province: Option<String>,
-    pub city: Option<String>,
     pub job: Option<String>,
     pub institution: Option<String>,
     pub data_source: Option<String>,
@@ -35,8 +33,6 @@ impl Default for Contact {
             wa_number: None,
             email: None,
             address: None,
-            province: None,
-            city: None,
             job: None,
             institution: None,
             data_source: None,
@@ -145,7 +141,9 @@ pub struct Invoice {
     pub cloud_file_url: Option<String>,
     pub naskah_id: Option<i64>,
     pub payment_status: Option<String>,
+    #[serde(default)]
     pub paid_amount: f64,
+    #[serde(default)]
     pub remaining_amount: f64,
     pub payment_notes: Option<String>,
     pub updated_at: Option<String>,
@@ -242,8 +240,6 @@ pub struct Penulis {
     pub name: String,
     pub email: Option<String>,
     pub wa_number: Option<String>,
-    pub province: Option<String>,
-    pub city: Option<String>,
     pub address: Option<String>,
     pub job: Option<String>,
     pub institution: Option<String>,
@@ -263,8 +259,6 @@ impl Default for Penulis {
             name: String::new(),
             email: None,
             wa_number: None,
-            province: None,
-            city: None,
             address: None,
             job: None,
             institution: None,
@@ -283,7 +277,6 @@ impl Default for Penulis {
 pub struct Penerbit {
     pub id: Option<i64>,
     pub name: String,
-    pub city: Option<String>,
     pub instagram: Option<String>,
     pub facebook: Option<String>,
     pub email: Option<String>,
@@ -297,7 +290,6 @@ pub struct Penerbit {
     pub created_at: String,
     pub address: Option<String>,
     pub notes: Option<String>,
-    pub province: Option<String>,
     pub updated_at: Option<String>,
 }
 
@@ -306,7 +298,6 @@ impl Default for Penerbit {
         Self {
             id: None,
             name: String::new(),
-            city: None,
             instagram: None,
             facebook: None,
             email: None,
@@ -320,7 +311,6 @@ impl Default for Penerbit {
             created_at: Local::now().to_rfc3339(),
             address: None,
             notes: None,
-            province: None,
             updated_at: None,
         }
     }
@@ -393,6 +383,7 @@ pub struct Tim {
     pub wa_number: Option<String>,
     pub email: Option<String>,
     pub address: Option<String>,
+    pub app: Option<String>,
     pub created_at: String,
     pub updated_at: Option<String>,
 }
@@ -411,6 +402,7 @@ impl Default for Tim {
             wa_number: None,
             email: None,
             address: None,
+            app: None,
             created_at: Local::now().to_rfc3339(),
             updated_at: None,
         }
@@ -515,6 +507,7 @@ pub struct AppSession {
     pub login_at: String,
     pub logout_at: Option<String>,
     pub is_active: i32,
+    pub app: Option<String>,
 }
 
 // ==========================================
@@ -660,6 +653,7 @@ pub struct ImportTaskPayload {
     pub pic: String,
     pub tanggal: String,
     pub status: String,
+    pub step_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

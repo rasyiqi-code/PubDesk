@@ -238,10 +238,9 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   // Filter state — badge multi-select untuk status
-  const [filterType, setFilterType] = useState<'status' | 'department' | 'app'>('status');
+  const [filterType, setFilterType] = useState<'status' | 'department'>('status');
   const [activeStatuses, setActiveStatuses] = useState<string[]>([]);
   const [departmentFilter, setDepartmentFilter] = useState('');
-  const [appFilter, setAppFilter] = useState('');
 
   // Daftar departemen unik dari data
   const departments = useMemo(() => {
@@ -269,10 +268,9 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
       const statusLabel = l.is_active === 1 ? 'Aktif' : 'Nonaktif';
       const matchStatus = activeStatuses.length === 0 || activeStatuses.includes(statusLabel);
       const matchDept = departmentFilter ? l.department === departmentFilter : true;
-      const matchApp = appFilter === '' ? true : (appFilter === 'global' ? (!l.app || l.app === '') : l.app === appFilter);
-      return matchSearch && matchStatus && matchDept && matchApp;
+      return matchSearch && matchStatus && matchDept;
     });
-  }, [tim, searchQuery, activeStatuses, departmentFilter, appFilter]);
+  }, [tim, searchQuery, activeStatuses, departmentFilter]);
 
   // Hitung statistik
   const totalAktif = tim.filter((l) => l.is_active === 1).length;
@@ -282,7 +280,6 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
     setCurrentMember(null);
     setActiveStatuses([]);
     setDepartmentFilter('');
-    setAppFilter('');
     setIsEditing(true);
   };
 
@@ -420,20 +417,15 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
           <FilterChip 
             label="Status" 
             active={filterType === 'status'} 
-            onClick={() => { setFilterType('status'); setDepartmentFilter(''); setAppFilter(''); }} 
+            onClick={() => { setFilterType('status'); setDepartmentFilter(''); }} 
           />
           {departments.length > 0 && (
             <FilterChip 
               label="Divisi" 
               active={filterType === 'department'} 
-              onClick={() => { setFilterType('department'); setActiveStatuses([]); setAppFilter(''); }} 
+              onClick={() => { setFilterType('department'); setActiveStatuses([]); }} 
             />
           )}
-          <FilterChip 
-            label="Aplikasi" 
-            active={filterType === 'app'} 
-            onClick={() => { setFilterType('app'); setActiveStatuses([]); setDepartmentFilter(''); }} 
-          />
         </FilterGroup>
 
         {filterType === 'status' && (
@@ -458,20 +450,6 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
             </FilterGroup>
           </>
         )}
-
-        {filterType === 'app' && (
-          <>
-            <FilterDivider />
-            <FilterGroup label="📱 APLIKASI:">
-              <FilterChip label="Semua" active={appFilter === ''} onClick={() => setAppFilter('')} />
-              <FilterChip label="Semua Aplikasi (Global)" active={appFilter === 'global'} onClick={() => setAppFilter('global')} />
-              <FilterChip label="PubAdmin" active={appFilter === 'admin'} onClick={() => setAppFilter('admin')} />
-              <FilterChip label="PubBilling" active={appFilter === 'billing'} onClick={() => setAppFilter('billing')} />
-              <FilterChip label="PubOps" active={appFilter === 'ops'} onClick={() => setAppFilter('ops')} />
-              <FilterChip label="PubFiles" active={appFilter === 'files'} onClick={() => setAppFilter('files')} />
-            </FilterGroup>
-          </>
-        )}
       </FilterBar>
 
       {/* Tabel */}
@@ -482,7 +460,6 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Nama Anggota</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Peran</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Divisi</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Aplikasi</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>WhatsApp</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Email</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Alamat</th>
@@ -495,7 +472,7 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
           <tbody>
             {filteredMembers.length === 0 ? (
               <TableEmptyState
-                colSpan={11}
+                colSpan={10}
                 icon="👥"
                 message="Tidak ada data anggota tim"
                 description={hasActiveFilter ? 'Tidak ada hasil untuk filter yang dipilih.' : 'Belum ada anggota tim terdaftar. Klik Tambah Anggota Tim untuk menambahkan.'}
@@ -544,40 +521,6 @@ const TimManager: React.FC<TimManagerProps> = ({ searchQuery = '' }) => {
                         {l.department}
                       </span>
                     ) : <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>-</span>}
-                  </td>
-                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
-                    {l.app ? (
-                      <span style={{
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        background: l.app === 'admin' ? 'rgba(59, 130, 246, 0.1)' : 
-                                    l.app === 'billing' ? 'rgba(16, 185, 129, 0.1)' :
-                                    l.app === 'ops' ? 'rgba(139, 92, 246, 0.1)' :
-                                    l.app === 'files' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(107, 114, 128, 0.1)',
-                        color: l.app === 'admin' ? '#2563eb' : 
-                               l.app === 'billing' ? '#059669' :
-                               l.app === 'ops' ? '#7c3aed' :
-                               l.app === 'files' ? '#ea580c' : '#4b5563'
-                      }}>
-                        {l.app === 'admin' ? 'PubAdmin' : 
-                         l.app === 'billing' ? 'PubBilling' :
-                         l.app === 'ops' ? 'PubOps' :
-                         l.app === 'files' ? 'PubFiles' : l.app}
-                      </span>
-                    ) : (
-                      <span style={{
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        background: 'rgba(107, 114, 128, 0.08)',
-                        color: 'var(--text-secondary)'
-                      }}>
-                        Semua Aplikasi
-                      </span>
-                    )}
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>
                     {l.wa_number ? (

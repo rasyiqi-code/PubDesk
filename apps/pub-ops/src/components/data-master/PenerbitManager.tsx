@@ -52,8 +52,7 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
     return penerbit.filter((p) => {
       const matchesSearch = searchQuery ? (
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.city && p.city.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.province && p.province.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.address && p.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (p.email && p.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (p.wa_number && p.wa_number.includes(searchQuery))
       ) : true;
@@ -181,7 +180,7 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
 
           const city = row.Kota || row.kota || row.City || row.city;
           const province = row.Provinsi || row.provinsi || row.Province || row.province;
-          const address = row.Alamat || row.alamat || row.Address || row.address || row["Alamat Kantor"];
+          const rawAddress = row.Alamat || row.alamat || row.Address || row.address || row["Alamat Kantor"];
           const notes = row.Catatan || row.catatan || row.Notes || row.notes || row["Catatan Kemitraan"];
           const email = row.Email || row.email || row.Mail || row.mail;
           const wa_number = row["No WA"] || row["No. WA"] || row.WhatsApp || row.whatsapp || row.wa || row.wa_number || row.Phone || row.phone;
@@ -192,12 +191,17 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
           const tiktok = row.TikTok || row.tiktok || row.Tiktok;
           const cooperation_status = row.Status || row.status || row["Status Kerja Sama"] || 'Aktif';
 
+          let address = rawAddress ? String(rawAddress).trim() : '';
+          const addressParts = [];
+          if (address) addressParts.push(address);
+          if (city) addressParts.push(String(city).trim());
+          if (province) addressParts.push(String(province).trim());
+          const finalAddress = addressParts.join(', ');
+
           try {
             await addPenerbit({
               name: String(name).trim(),
-              city: city ? String(city).trim() : undefined,
-              province: province ? String(province).trim() : undefined,
-              address: address ? String(address).trim() : undefined,
+              address: finalAddress || undefined,
               notes: notes ? String(notes).trim() : undefined,
               email: email ? String(email).trim() : undefined,
               wa_number: wa_number ? String(wa_number).trim() : undefined,
@@ -237,8 +241,6 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
       const exportData = penerbit.map((p, idx) => ({
         "No": idx + 1,
         "Nama Penerbit": p.name,
-        "Kota": p.city || '',
-        "Provinsi": p.province || '',
         "WhatsApp PIC": p.wa_number || '',
         "Email Resmi": p.email || '',
         "Instagram": p.instagram || '',
@@ -427,7 +429,6 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
               </th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Email Resmi</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Sosial Media</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Provinsi / Kota</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Alamat Lengkap</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Catatan Kemitraan</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Status</th>
@@ -437,7 +438,7 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
           <tbody>
             {filteredPenerbit.length === 0 ? (
               <TableEmptyState
-                colSpan={9}
+                colSpan={8}
                 icon="🏢"
                 message="Tidak ada data penerbit"
                 description={searchQuery ? `Tidak ada hasil untuk pencarian "${searchQuery}"` : "Belum ada mitra penerbit terdaftar. Klik tombol Tambah Penerbit untuk memulai kerja sama baru."}
@@ -548,11 +549,6 @@ const PenerbitManager: React.FC<PenerbitManagerProps> = ({ searchQuery = '' }) =
                       {p.tiktok && <span>🎵 TT: {p.tiktok}</span>}
                       {!p.instagram && !p.facebook && !p.linkedin && !p.tiktok && <span>-</span>}
                     </div>
-                  </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                    {p.city || p.province ? (
-                      `${p.city || ''}${p.city && p.province ? ', ' : ''}${p.province || ''}`
-                    ) : '-'}
                   </td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.address}>
                     {p.address || '-'}

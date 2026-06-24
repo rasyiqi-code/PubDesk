@@ -84,8 +84,6 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
           email: c.email || '',
           wa_number: c.wa_number || '',
           address: c.address || '',
-          province: '',
-          city: '',
           job: '',
           institution: '',
           data_source: 'Database Pelanggan',
@@ -206,7 +204,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
         "Nama Kontak": p.name,
         "WhatsApp": p.wa_number || '',
         "Email": p.email || '',
-        "Alamat": p.address || (p.city ? `${p.city}, ${p.province}` : p.province || ''),
+        "Alamat": p.address || '',
         "Pekerjaan": p.job || '',
         "Institusi": p.institution || '',
         "Sumber Data": p.data_source || '',
@@ -495,8 +493,6 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
           if (p.institution) addressParts.push(p.institution);
           if (p.address) {
             addressParts.push(p.address);
-          } else if (p.city || p.province) {
-            addressParts.push(`${p.city || ''}, ${p.province || ''}`.trim().replace(/^,\s*|,\s*$/, ''));
           }
           const fullAddress = addressParts.join('\n');
 
@@ -612,7 +608,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                 WhatsApp
               </th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Email</th>
-              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Lokasi / Alamat</th>
+              <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Alamat</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Sumber Data</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Catatan Tambahan</th>
               <th style={{ padding: '8px 12px', fontWeight: '600', userSelect: 'none', whiteSpace: 'nowrap' }}>Status</th>
@@ -730,14 +726,7 @@ const PenulisManager: React.FC<PenulisManagerProps> = ({ searchQuery = '' }) => 
                     ) : '-'}
                   </td>
                   <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
-                    {(() => {
-                      const parts: string[] = [];
-                      if (p.address) parts.push(p.address);
-                      if (p.city) parts.push(`Kota: ${p.city}`);
-                      if (p.province) parts.push(`Prov: ${p.province}`);
-                      const resolvedAddress = parts.join(' | ');
-                      return resolvedAddress ? <span style={{ whiteSpace: 'pre-line', fontSize: '12px' }}>{resolvedAddress}</span> : '-';
-                    })()}
+                    {p.address || '-'}
                   </td>
                   <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                     {p.data_source || '-'}

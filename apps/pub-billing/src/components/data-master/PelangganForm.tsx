@@ -4,6 +4,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import { TextField } from '../../ui/atoms/TextField';
 import { TextArea } from '../../ui/atoms/TextArea';
 import { Button } from '../../ui/atoms/Button';
+import { Checkbox } from '../../ui/atoms/Checkbox';
 import { Accordion, AccordionSection } from '../../ui/molecules/Accordion';
 import { formatWhatsAppNumber } from '../../utils/format';
 
@@ -20,6 +21,7 @@ const PelangganForm: React.FC<PelangganFormProps> = ({ initialData, onSubmit, on
   const [email, setEmail] = useState('');
   const [waNumber, setWaNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [isAuthor, setIsAuthor] = useState(false);
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
   useEffect(() => {
@@ -28,11 +30,13 @@ const PelangganForm: React.FC<PelangganFormProps> = ({ initialData, onSubmit, on
       setEmail(initialData.email || '');
       setWaNumber(initialData.wa_number || '');
       setAddress(initialData.address || '');
+      setIsAuthor(initialData.type === 'both' || initialData.type === 'penulis');
     } else {
       setName('');
       setEmail('');
       setWaNumber('');
       setAddress('');
+      setIsAuthor(false);
     }
   }, [initialData]);
 
@@ -51,7 +55,7 @@ const PelangganForm: React.FC<PelangganFormProps> = ({ initialData, onSubmit, on
       email: email.trim() || undefined,
       wa_number: waNumber.trim() ? formatWhatsAppNumber(waNumber.trim()) : undefined,
       address: address.trim() || undefined,
-      type: 'customer' // Selalu customer karena ini adalah manager pelanggan
+      type: isAuthor ? 'both' : 'customer'
     });
   };
 
@@ -85,13 +89,21 @@ const PelangganForm: React.FC<PelangganFormProps> = ({ initialData, onSubmit, on
                   fullWidth
                 />
 
-                <TextField
-                  label="Nomor WhatsApp"
-                  placeholder="Contoh: 08123456789"
-                  value={waNumber}
-                  onChange={(e) => setWaNumber(e.target.value)}
-                  fullWidth
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <TextField
+                    label="Nomor WhatsApp"
+                    placeholder="Contoh: 08123456789"
+                    value={waNumber}
+                    onChange={(e) => setWaNumber(e.target.value)}
+                    fullWidth
+                  />
+                  <Checkbox
+                    label="Juga merupakan Penulis Naskah"
+                    checked={isAuthor}
+                    onChange={(e) => setIsAuthor(e.target.checked)}
+                    style={{ marginTop: '4px' }}
+                  />
+                </div>
               </div>
 
               <TextArea
@@ -102,6 +114,8 @@ const PelangganForm: React.FC<PelangganFormProps> = ({ initialData, onSubmit, on
                 style={{ height: '80px' }}
                 fullWidth
               />
+
+
             </div>
           </AccordionSection>
         </Accordion>

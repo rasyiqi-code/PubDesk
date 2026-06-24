@@ -7,10 +7,9 @@ impl Database {
     pub fn add_penerbit(&self, p: &Penerbit) -> Result<i64, DbError> {
         let now = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "INSERT INTO penerbit (name, city, instagram, facebook, email, wa_number, linkedin, twitter, tiktok, wa_valid, email_valid, cooperation_status, created_at, address, notes, province, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+            "INSERT INTO penerbit (name, instagram, facebook, email, wa_number, linkedin, twitter, tiktok, wa_valid, email_valid, cooperation_status, created_at, address, notes, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 p.name,
-                p.city,
                 p.instagram,
                 p.facebook,
                 p.email,
@@ -24,7 +23,6 @@ impl Database {
                 p.created_at,
                 p.address,
                 p.notes,
-                p.province,
                 now
             ]
         )?;
@@ -34,27 +32,25 @@ impl Database {
     }
 
     pub fn get_penerbit(&self) -> Result<Vec<Penerbit>, DbError> {
-        let mut stmt = self.conn.prepare("SELECT id, name, city, instagram, facebook, email, wa_number, linkedin, twitter, tiktok, wa_valid, email_valid, cooperation_status, created_at, address, notes, province, updated_at FROM penerbit ORDER BY name ASC")?;
+        let mut stmt = self.conn.prepare("SELECT id, name, instagram, facebook, email, wa_number, linkedin, twitter, tiktok, wa_valid, email_valid, cooperation_status, created_at, address, notes, updated_at FROM penerbit ORDER BY name ASC")?;
         let rows = stmt.query_map([], |row| {
             Ok(Penerbit {
                 id: row.get(0)?,
                 name: row.get(1)?,
-                city: row.get(2)?,
-                instagram: row.get(3)?,
-                facebook: row.get(4)?,
-                email: row.get(5)?,
-                wa_number: row.get(6)?,
-                linkedin: row.get(7)?,
-                twitter: row.get(8)?,
-                tiktok: row.get(9)?,
-                wa_valid: row.get(10)?,
-                email_valid: row.get(11)?,
-                cooperation_status: row.get(12)?,
-                created_at: row.get(13)?,
-                address: row.get(14)?,
-                notes: row.get(15)?,
-                province: row.get(16)?,
-                updated_at: row.get(17)?,
+                instagram: row.get(2)?,
+                facebook: row.get(3)?,
+                email: row.get(4)?,
+                wa_number: row.get(5)?,
+                linkedin: row.get(6)?,
+                twitter: row.get(7)?,
+                tiktok: row.get(8)?,
+                wa_valid: row.get(9)?,
+                email_valid: row.get(10)?,
+                cooperation_status: row.get(11)?,
+                created_at: row.get(12)?,
+                address: row.get(13)?,
+                notes: row.get(14)?,
+                updated_at: row.get(15)?,
             })
         })?;
         let mut res = Vec::new();
@@ -67,10 +63,9 @@ impl Database {
     pub fn update_penerbit(&self, p: &Penerbit) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
         self.conn.execute(
-            "UPDATE penerbit SET name = ?1, city = ?2, instagram = ?3, facebook = ?4, email = ?5, wa_number = ?6, linkedin = ?7, twitter = ?8, tiktok = ?9, wa_valid = ?10, email_valid = ?11, cooperation_status = ?12, address = ?13, notes = ?14, province = ?15, updated_at = ?16 WHERE id = ?17",
+            "UPDATE penerbit SET name = ?1, instagram = ?2, facebook = ?3, email = ?4, wa_number = ?5, linkedin = ?6, twitter = ?7, tiktok = ?8, wa_valid = ?9, email_valid = ?10, cooperation_status = ?11, address = ?12, notes = ?13, updated_at = ?14 WHERE id = ?15",
             params![
                 p.name,
-                p.city,
                 p.instagram,
                 p.facebook,
                 p.email,
@@ -83,7 +78,6 @@ impl Database {
                 p.cooperation_status,
                 p.address,
                 p.notes,
-                p.province,
                 now,
                 p.id
             ]

@@ -12,7 +12,7 @@ export interface File {
   version_label?: string;
   last_modified: string;
   modified_by?: string;
-  is_readonly: boolean;
+  is_readonly: number;
   description?: string;
   responsible_parties?: string;
   created_at?: string;

@@ -8,8 +8,6 @@ export interface Contact {
   wa_number?: string;
   email?: string;
   address?: string;
-  province?: string;
-  city?: string;
   job?: string;
   institution?: string;
   data_source?: string;

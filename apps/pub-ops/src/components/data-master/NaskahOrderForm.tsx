@@ -20,8 +20,8 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
   const { showToast, setActiveModule } = useAppContext();
 
   // Quick-create form state
-  const [penulisCreateForm, setPenulisCreateForm] = useState({ name: '', wa_number: '', email: '', city: '' });
-  const [penerbitCreateForm, setPenerbitCreateForm] = useState({ name: '', wa_number: '', email: '', city: '' });
+  const [penulisCreateForm, setPenulisCreateForm] = useState({ name: '', wa_number: '', email: '', address: '' });
+  const [penerbitCreateForm, setPenerbitCreateForm] = useState({ name: '', wa_number: '', email: '', address: '' });
   const [penulisDuplicateWarning, setPenulisDuplicateWarning] = useState<{
     matchedOption: SmartRelationOption;
     similarity: number;
@@ -121,12 +121,12 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
   };
 
   const penulisOptions: SmartRelationOption[] = useMemo(
-    () => penulis.map((p) => ({ value: String(p.id), label: p.name, wa_number: p.wa_number, email: p.email, city: p.city })),
+    () => penulis.map((p) => ({ value: String(p.id), label: p.name, wa_number: p.wa_number, email: p.email, address: p.address })),
     [penulis]
   );
 
   const penerbitOptions: SmartRelationOption[] = useMemo(
-    () => penerbit.map((pub) => ({ value: String(pub.id), label: pub.name, wa_number: pub.wa_number, email: pub.email, city: pub.city })),
+    () => penerbit.map((pub) => ({ value: String(pub.id), label: pub.name, wa_number: pub.wa_number, email: pub.email, address: pub.address })),
     [penerbit]
   );
 
@@ -177,7 +177,7 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
   };
 
   const createPenulis = async (onSuccess: () => void) => {
-    const { name, wa_number, email, city } = penulisCreateForm;
+    const { name, wa_number, email, address } = penulisCreateForm;
     if (!name.trim()) return;
     if (!penulisDuplicateWarning && checkPenulisDuplicate(name, wa_number, email)) return;
     try {
@@ -185,7 +185,7 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
         name: name.trim(),
         wa_number: wa_number.trim(),
         email: email.trim(),
-        city: city.trim(),
+        address: address.trim(),
         email_valid: 0,
         wa_valid: 0,
       });
@@ -198,7 +198,7 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
   };
 
   const createPenerbit = async (onSuccess: () => void) => {
-    const { name, wa_number, email, city } = penerbitCreateForm;
+    const { name, wa_number, email, address } = penerbitCreateForm;
     if (!name.trim()) return;
     if (!penerbitDuplicateWarning && checkPenerbitDuplicate(name, wa_number, email)) return;
     try {
@@ -206,7 +206,7 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
         name: name.trim(),
         wa_number: wa_number.trim(),
         email: email.trim(),
-        city: city.trim(),
+        address: address.trim(),
         email_valid: 0,
         wa_valid: 0,
       });
@@ -379,15 +379,15 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
                       />
                       <input
                         type="text"
-                        placeholder="Kota"
-                        value={penulisCreateForm.city}
-                        onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, city: e.target.value }))}
+                        placeholder="Alamat"
+                        value={penulisCreateForm.address}
+                        onChange={(e) => setPenulisCreateForm((prev) => ({ ...prev, address: e.target.value }))}
                         style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
                       />
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
-                        <button className="btn-primary" type="button" onClick={() => createPenulis(onSave)}>Simpan</button>
-                      </div>
+                         <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                         <button className="btn-primary" type="button" onClick={() => createPenulis(() => onSave(penulisCreateForm))}>Simpan</button>
+                       </div>
                     </div>
                   )}
                   duplicateWarning={penulisDuplicateWarning}
@@ -431,15 +431,15 @@ const NaskahOrderForm: React.FC<NaskahFormProps> = ({ initialData, onSubmit, onC
                       />
                       <input
                         type="text"
-                        placeholder="Kota"
-                        value={penerbitCreateForm.city}
-                        onChange={(e) => setPenerbitCreateForm((prev) => ({ ...prev, city: e.target.value }))}
+                        placeholder="Alamat"
+                        value={penerbitCreateForm.address}
+                        onChange={(e) => setPenerbitCreateForm((prev) => ({ ...prev, address: e.target.value }))}
                         style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
                       />
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
-                        <button className="btn-primary" type="button" onClick={() => createPenerbit(onSave)}>Simpan</button>
-                      </div>
+                         <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                         <button className="btn-primary" type="button" onClick={() => createPenerbit(() => onSave(penerbitCreateForm))}>Simpan</button>
+                       </div>
                     </div>
                   )}
                   duplicateWarning={penerbitDuplicateWarning}
