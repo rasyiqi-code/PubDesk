@@ -34,8 +34,7 @@
     ],
     "windows": {
       "nsis": {
-        "installMode": "both",
-        "template": "installer.nsi"
+        "installMode": "both"
       }
     }
   }
