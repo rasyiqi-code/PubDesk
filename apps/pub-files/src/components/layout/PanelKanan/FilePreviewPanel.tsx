@@ -3,7 +3,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAppContext } from '../../../contexts/AppContext';
 import { useFileState } from '../../../contexts/FileContext';
 import { parseModifiedBy, formatBytes, getMimeLabel } from '../../../utils/gdrive';
-import { formatPrice } from '../../../utils/format';
 import { Tim } from '../../../types/data-master.types';
 
 interface FilePreviewPanelProps {
@@ -50,15 +49,10 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
   const [loadingMetadata, setLoadingMetadata] = useState(false);
   const [currentTags, setCurrentTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState('');
-  const [activeTab, setActiveTab] = useState<'preview' | 'inspector'>('preview');
   const [descriptionInput, setDescriptionInput] = useState('');
   const [selectedTimId, setSelectedTimId] = useState<number | ''>('');
 
   const currentFileSelected = files.find(f => f.id === selectedFileId);
-
-  useEffect(() => {
-    setActiveTab('preview');
-  }, [selectedFileId]);
 
   useEffect(() => {
     if (currentFileSelected) {
