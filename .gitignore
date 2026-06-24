@@ -30,3 +30,7 @@ dist-ssr
 
 # Cloudflared sidecar binary (bundled at build time)
 apps/pub-admin/src-tauri/binaries/*.exe
+
+# Temporary test files
+test.db
+test-results/

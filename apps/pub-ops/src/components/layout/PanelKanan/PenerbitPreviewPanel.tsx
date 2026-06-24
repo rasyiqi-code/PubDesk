@@ -3,6 +3,7 @@ import { useAppContext } from '../../../contexts/AppContext';
 import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge, getStatusVariant } from '../../../ui/atoms/Badge';
 import { getWhatsAppLink, formatPrice } from '../../../utils/format';
+import { TimelineTracker } from '@pubhub/shared-ui';
 
 interface PenerbitPreviewPanelProps {
   penerbitId: number | null;
@@ -31,28 +32,66 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
     );
   }, [relatedNaskah]);
 
+  // Coba ambil deposit awal dari catatan/notes penerbit (jika ada format "Deposit: [angka]")
+  const initialDeposit = useMemo(() => {
+    if (!penerbitData || !penerbitData.notes) return 10000000;
+    const match = penerbitData.notes.match(/Deposit:\s*(\d+)/i);
+    return match ? parseInt(match[1]) : 10000000;
+  }, [penerbitData]);
+
   // Simulasi Dinamis Sisa Deposit Mitra
-  // Nilai default: Rp 10.000.000 dipotong Rp 1.500.000 per naskah aktif
   const depositStats = useMemo(() => {
-    const initialDeposit = 10000000;
+    if (initialDeposit === 0) {
+      return { remaining: 0, percent: 0, isDisabled: true };
+    }
     const costPerNaskah = 1500000;
     const usage = relatedNaskah.length * costPerNaskah;
     const remaining = Math.max(initialDeposit - usage, 1000000);
     const percent = (remaining / initialDeposit) * 100;
-    return { remaining, percent };
-  }, [relatedNaskah]);
+    return { remaining, percent, isDisabled: false };
+  }, [relatedNaskah, initialDeposit]);
 
-  // Simulasi Royalti Terkumpul (estimasi Rp 750.000 per naskah aktif/selesai)
+  // Coba ambil persentase royalti dari notes penerbit (jika ada format "Royalti: [angka]")
+  const royaltyRate = useMemo(() => {
+    if (!penerbitData || !penerbitData.notes) return 10; // default 10%
+    const match = penerbitData.notes.match(/Royalti:\s*(\d+)/i);
+    return match ? parseInt(match[1]) : 10;
+  }, [penerbitData]);
+
+  const isRoyaltyDisabled = royaltyRate === 0;
+
+  // Hitung estimasi royalti berdasarkan persentase * jumlah cetak * rata-rata harga buku (Rp 75.000)
   const estimatedRoyalty = useMemo(() => {
-    return activeNaskah.length * 750000;
-  }, [activeNaskah]);
+    if (isRoyaltyDisabled) return 0;
+    const totalCopies = activeNaskah.reduce((acc, curr) => acc + (curr.copies || 0), 0);
+    // Jika jumlah cetak 0, berikan fallback minimal 1000 eks per naskah aktif untuk keperluan estimasi
+    const copiesEstimate = totalCopies > 0 ? totalCopies : activeNaskah.length * 1000;
+    const averageBookPrice = 75000;
+    return (royaltyRate / 100) * copiesEstimate * averageBookPrice;
+  }, [activeNaskah, royaltyRate, isRoyaltyDisabled]);
+
+  // Coba ambil durasi kontrak dari notes penerbit (jika ada format "Kontrak: [angka]")
+  const contractDurationYears = useMemo(() => {
+    if (!penerbitData || !penerbitData.notes) return 2;
+    const match = penerbitData.notes.match(/Kontrak:\s*(\d+)/i);
+    return match ? parseInt(match[1]) : 2;
+  }, [penerbitData]);
 
   // Hitung durasi/linimasa kontrak
   const contractTimeline = useMemo(() => {
     if (!penerbitData || !penerbitData.created_at) return null;
+    if (contractDurationYears === 0) {
+      return {
+        isDisabled: true,
+        startStr: '-',
+        endStr: '-',
+        isExpired: false,
+        percentTime: 0
+      };
+    }
     const start = new Date(penerbitData.created_at);
     const end = new Date(start.getTime());
-    end.setFullYear(start.getFullYear() + 2); // Durasi kontrak 2 tahun
+    end.setFullYear(start.getFullYear() + contractDurationYears);
 
     const now = new Date();
     const isExpired = now > end;
@@ -61,11 +100,22 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
     const percentTime = isExpired ? 100 : (elapsedDays / totalDays) * 100;
 
     return {
+      isDisabled: false,
       startStr: start.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
       endStr: end.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
       isExpired,
       percentTime
     };
+  }, [penerbitData, contractDurationYears]);
+
+  // Bersihkan catatan dari tag meta database offline-first sebelum ditampilkan
+  const visibleNotes = useMemo(() => {
+    if (!penerbitData || !penerbitData.notes) return '';
+    return penerbitData.notes
+      .replace(/Deposit:\s*\d+\r?\n?/i, '')
+      .replace(/Royalti:\s*\d+\r?\n?/i, '')
+      .replace(/Kontrak:\s*\d+\r?\n?/i, '')
+      .trim();
   }, [penerbitData]);
 
   const handleCopyText = (text: string, label: string) => {
@@ -132,43 +182,84 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
           <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Keuangan & Saldo Deposit
           </h5>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', opacity: depositStats.isDisabled ? 0.5 : 1 }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Sisa Saldo Deposit:</span>
-            <strong style={{ fontSize: '18px', color: '#f59e0b' }}>{formatPrice(depositStats.remaining)}</strong>
+            {depositStats.isDisabled ? (
+              <strong style={{ fontSize: '14px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Nonaktif (Rp 0)</strong>
+            ) : (
+              <strong style={{ fontSize: '18px', color: '#f59e0b' }}>{formatPrice(depositStats.remaining)}</strong>
+            )}
           </div>
-          <div>
+          <div style={{ opacity: depositStats.isDisabled ? 0.4 : 1 }}>
             <div style={{ width: '100%', height: '6px', background: 'var(--border)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
-              <div style={{ width: `${depositStats.percent}%`, height: '100%', background: '#f59e0b', borderRadius: '3px' }} />
+              <div style={{ width: `${depositStats.percent}%`, height: '100%', background: depositStats.isDisabled ? 'var(--text-secondary)' : '#f59e0b', borderRadius: '3px' }} />
             </div>
-            <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Tingkat kecukupan deposit: {depositStats.percent.toFixed(0)}%</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+              {depositStats.isDisabled ? 'Tingkat kecukupan deposit: Nonaktif' : `Tingkat kecukupan deposit: ${depositStats.percent.toFixed(0)}%`}
+            </span>
           </div>
           
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Estimasi Royalti Mitra:</span>
-            <strong style={{ color: 'var(--text-primary)' }}>{formatPrice(estimatedRoyalty)}</strong>
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px', opacity: isRoyaltyDisabled ? 0.5 : 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Persentase Royalti:</span>
+              {isRoyaltyDisabled ? (
+                <strong style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Nonaktif (0%)</strong>
+              ) : (
+                <strong style={{ color: 'var(--text-primary)' }}>{royaltyRate}%</strong>
+              )}
+            </div>
+            {!isRoyaltyDisabled && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px', background: 'var(--bg-surface)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Estimasi Royalti Terkumpul:</span>
+                <strong style={{ color: '#10b981', fontWeight: '700' }}>{formatPrice(estimatedRoyalty)}</strong>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Linimasa Kontrak Kerja Sama */}
         {contractTimeline && (
-          <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ 
+            background: 'var(--bg-card)', 
+            borderRadius: '12px', 
+            padding: '16px', 
+            border: '1px solid var(--border)', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '10px',
+            opacity: contractTimeline.isDisabled ? 0.5 : 1
+          }}>
             <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Linimasa Kontrak Kerja Sama
             </h5>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Status Kontrak:</span>
-              <strong style={{ color: contractTimeline.isExpired ? '#dc2626' : '#16a34a' }}>
-                {contractTimeline.isExpired ? 'Kontrak Berakhir' : 'Kontrak Aktif'}
-              </strong>
+              {contractTimeline.isDisabled ? (
+                <strong style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                  Nonaktif
+                </strong>
+              ) : (
+                <strong style={{ color: contractTimeline.isExpired ? '#dc2626' : '#16a34a' }}>
+                  {contractTimeline.isExpired ? 'Kontrak Berakhir' : 'Kontrak Aktif'}
+                </strong>
+              )}
             </div>
             <div>
               <div style={{ width: '100%', height: '6px', background: 'var(--border)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
-                <div style={{ width: `${contractTimeline.percentTime}%`, height: '100%', background: contractTimeline.isExpired ? '#dc2626' : '#16a34a', borderRadius: '3px' }} />
+                <div style={{ 
+                  width: `${contractTimeline.percentTime}%`, 
+                  height: '100%', 
+                  background: contractTimeline.isDisabled ? 'var(--text-secondary)' : (contractTimeline.isExpired ? '#dc2626' : '#16a34a'), 
+                  borderRadius: '3px' 
+                }} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-secondary)' }}>
-                <span>Mulai: {contractTimeline.startStr}</span>
-                <span>Akhir: {contractTimeline.endStr}</span>
-              </div>
+              {!contractTimeline.isDisabled && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-secondary)' }}>
+                  <span>Mulai: {contractTimeline.startStr}</span>
+                  <span>Akhir: {contractTimeline.endStr}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -323,9 +414,9 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
             padding: '12px 14px', 
             borderRadius: '8px', 
             border: '1px solid var(--border)',
-            fontStyle: penerbitData.notes ? 'normal' : 'italic'
+            fontStyle: visibleNotes ? 'normal' : 'italic'
           }}>
-            {penerbitData.notes || 'Tidak ada catatan tambahan untuk mitra penerbit ini.'}
+            {visibleNotes || 'Tidak ada catatan tambahan untuk mitra penerbit ini.'}
           </div>
         </div>
 
@@ -371,6 +462,18 @@ const PenerbitPreviewPanel: React.FC<PenerbitPreviewPanelProps> = ({ penerbitId 
             <span>Terdaftar: {penerbitData.created_at ? new Date(penerbitData.created_at).toLocaleDateString('id-ID') : '-'}</span>
           </div>
         </div>
+
+        {/* Timeline Tracking */}
+        <TimelineTracker 
+          entityType="penerbit" 
+          entityId={penerbitId} 
+          relatedIds={useMemo(() => {
+            const nskIds = penerbitId ? naskah.filter(n => n.penerbit_id === penerbitId).map(n => n.id).filter((id): id is number => id !== undefined) : [];
+            return {
+              naskahIds: nskIds
+            };
+          }, [penerbitId, naskah])}
+        />
 
       </div>
     </div>

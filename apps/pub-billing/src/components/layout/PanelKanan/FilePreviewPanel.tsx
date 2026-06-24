@@ -7,7 +7,6 @@ import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import InvoicePreview from '../../invoice/InvoicePreview';
 import { parseModifiedBy, formatBytes, getMimeLabel } from '../../../utils/gdrive';
 import { formatPrice } from '../../../utils/format';
-import { save } from '@tauri-apps/plugin-dialog';
 
 interface FilePreviewPanelProps {
   /** ID berkas yang dipilih */
@@ -35,7 +34,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     removeFileTag,
     getFileTags,
     previewInvoiceId,
-    setPreviewInvoiceId,
   } = useFileState();
 
   const { loadInvoiceToForm } = useInvoiceContext();
@@ -219,7 +217,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
         const parsed = JSON.parse(currentFile.responsible_parties);
         if (Array.isArray(parsed)) return parsed;
       }
-    } catch {}
+    } catch { }
     return [];
   };
 
@@ -227,26 +225,26 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     e.preventDefault();
     const fileObj = files.find(f => f.id === selectedFileId);
     if (!fileObj || !selectedTimId) return;
-    
+
     const timMember = tim.find(t => t.id === selectedTimId);
     if (!timMember) {
       showToast('Pilih anggota tim terlebih dahulu', 'error');
       return;
     }
-    
+
     const parties = getResponsiblePartiesList(fileObj);
-    
+
     if (parties.some(p => p.tim_id === timMember.id || p.name.toLowerCase() === timMember.name.toLowerCase())) {
       showToast('Anggota tim sudah terdaftar sebagai penanggung jawab', 'error');
       return;
     }
-    
+
     const newParty = {
       tim_id: timMember.id,
       name: timMember.name,
       timestamp: new Date().toISOString()
     };
-    
+
     const updatedParties = [...parties, newParty];
     try {
       await updateFile({ ...fileObj, responsible_parties: JSON.stringify(updatedParties) });
@@ -261,7 +259,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
   const handleRemoveResponsibleParty = async (nameToRemove: string) => {
     const fileObj = files.find(f => f.id === selectedFileId);
     if (!fileObj) return;
-    
+
     const parties = getResponsiblePartiesList(fileObj);
     const updatedParties = parties.filter(p => p.name !== nameToRemove);
     try {
@@ -273,42 +271,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     }
   };
 
-  // Aksi berkas: Buka file, Buka lokasi, Pindahkan
-  const handleOpenFile = async (path: string) => {
-    try {
-      await invoke('open_file_physically', { path });
-    } catch (err) {
-      console.error(err);
-      showToast('Gagal membuka berkas!', 'error');
-    }
-  };
 
-  const handleOpenFileLocation = async (path: string) => {
-    try {
-      await invoke('open_file_location_physically', { path });
-    } catch (err) {
-      console.error(err);
-      showToast('Gagal membuka lokasi berkas!', 'error');
-    }
-  };
-
-  const handleMoveFile = async (currentFile: any) => {
-    try {
-      const destPath = await save({
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
-        defaultPath: currentFile.filename
-      });
-      if (!destPath) return;
-      const bytes = await invoke<number[]>('read_file_bytes', { path: currentFile.path });
-      await invoke('write_binary_file', { path: destPath, bytes });
-      await invoke('remove_file_physically', { path: currentFile.path });
-      await updateFile({ ...currentFile, path: destPath });
-      showToast('Berkas berhasil dipindahkan!', 'success');
-    } catch (err) {
-      console.error(err);
-      showToast('Gagal memindahkan berkas!', 'error');
-    }
-  };
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.25));
@@ -318,7 +281,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     try {
       const { generateInvoicePDFBytes } = await import('../../../utils/pdfGenerator');
       const bytes = await generateInvoicePDFBytes('file-preview-panel-export');
-      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const blob = new Blob([bytes as any], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -337,7 +300,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
   const renderInspectorContent = (currentFile: any) => {
     // 1. Dapatkan metadata invoice tiruan jika metadata semantik null
     let resolvedMetadata = fileMetadata;
-    
+
     if (currentFile.type === 'invoice' && (!resolvedMetadata || !resolvedMetadata.summary)) {
       const invoiceId = currentFile.version_label ? parseInt(currentFile.version_label) : null;
       const invoice = invoices.find(inv => inv.id === invoiceId);
@@ -345,7 +308,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
       let customerName = 'Umum';
       let paymentStatus = 'LUNAS';
       let formattedTotal = 'Rp 0';
-      
+
       if (invoice) {
         formattedTotal = formatPrice(invoice.total);
         try {
@@ -355,7 +318,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
             customerName = metaObj.customerName || 'Umum';
             paymentStatus = metaObj.paymentStatus || 'LUNAS';
           }
-        } catch {}
+        } catch { }
       }
 
       resolvedMetadata = {
@@ -379,14 +342,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
       displayTimeline = invoiceTimeline;
     } else {
       displayRelated = relatedFiles;
-    }
-
-    if (!resolvedMetadata) {
-      return (
-        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          Pratinjau untuk berkas ini tidak tersedia
-        </div>
-      );
     }
 
     return (
@@ -463,8 +418,8 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
                           🕒 {new Date(party.timestamp).toLocaleString('id-ID')}
                         </span>
                       </div>
-                      <button 
-                        onClick={() => handleRemoveResponsibleParty(party.name)} 
+                      <button
+                        onClick={() => handleRemoveResponsibleParty(party.name)}
                         style={{ border: 'none', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', padding: '4px' }}
                         title="Hapus penanggung jawab"
                       >
@@ -505,7 +460,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
         <div>
           <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>Entitas Terdeteksi</h5>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            {!resolvedMetadata.entities || resolvedMetadata.entities.length === 0 ? (
+            {!resolvedMetadata || !resolvedMetadata.entities || resolvedMetadata.entities.length === 0 ? (
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Tidak ada entitas penerbitan khusus yang terdeteksi.</span>
             ) : (
               resolvedMetadata.entities.filter((ent: any) => ent.entity_type !== 'hash').map((ent: any, idx: number) => {
@@ -559,7 +514,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
         <div>
           <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>Ringkasan Konten Otomatis</h5>
           <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.5', fontStyle: 'italic' }}>
-            "{resolvedMetadata.summary || 'Tidak ada ringkasan teks untuk berkas ini.'}"
+            "{resolvedMetadata?.summary || 'Tidak ada ringkasan teks untuk berkas ini.'}"
           </div>
         </div>
 
@@ -576,7 +531,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
                 {displayTimeline.map((item: any, idx: number) => {
                   const isCreate = item.action === 'CREATE';
                   const isPaymentChange = item.action === 'PAYMENT_CHANGE';
-                  const isUpdate = item.action === 'UPDATE';
                   const isSync = item.action === 'SYNC' || (item.description || '').includes('sinkronisasi');
                   const dotColor = isCreate ? '#2ec27e' : isPaymentChange ? '#d97706' : isSync ? '#8b5cf6' : '#1e90ff';
                   const badgeColor = isCreate ? 'rgba(46, 194, 126, 0.15)' : isPaymentChange ? 'rgba(217, 119, 6, 0.15)' : isSync ? 'rgba(139, 92, 246, 0.15)' : 'rgba(30, 144, 255, 0.15)';
@@ -648,9 +602,9 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     const invoice = invoices.find(inv => inv.id === previewInvoiceId);
     if (invoice) {
       let meta: any = {};
-      try { if (invoice.file_path) meta = JSON.parse(invoice.file_path); } catch {}
+      try { if (invoice.file_path) meta = JSON.parse(invoice.file_path); } catch { }
       let items: any[] = [];
-      try { items = JSON.parse(invoice.items_json); } catch {}
+      try { items = JSON.parse(invoice.items_json); } catch { }
       const overrideInvoice = {
         customerName: meta.customerName || '',
         waNumber: meta.customerWa || '',
@@ -719,10 +673,10 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     }
 
     let metadata: any = { invoiceNo: '', invoiceDate: '', invoiceHal: '', invoiceLampiran: '', paymentStatus: 'LUNAS', spesifikasiFasilitas: '', customerName: '', customerWa: '', customerAddress: '' };
-    try { if (invoice.file_path) metadata = JSON.parse(invoice.file_path); } catch {}
+    try { if (invoice.file_path) metadata = JSON.parse(invoice.file_path); } catch { }
 
     let items: any[] = [];
-    try { items = JSON.parse(invoice.items_json); } catch {}
+    try { items = JSON.parse(invoice.items_json); } catch { }
 
     const overrideInvoice = {
       customerName: metadata.customerName || '',

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { AppProvider, useAppContext } from './contexts/AppContext';
-import { InvoiceProvider } from './contexts/InvoiceContext';
 import { DataMasterProvider } from './contexts/DataMasterContext';
 import { WorkflowProvider } from './contexts/WorkflowContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -18,9 +17,7 @@ function AppContent({ showSplash }: { showSplash: boolean }) {
     <AuthProvider>
       <DataMasterProvider>
         <WorkflowProvider isDbInitialized={isDbInitialized}>
-          <InvoiceProvider>
-            {showSplash ? <SplashScreen /> : <MainLayoutInner />}
-          </InvoiceProvider>
+          {showSplash ? <SplashScreen /> : <MainLayoutInner />}
         </WorkflowProvider>
       </DataMasterProvider>
     </AuthProvider>

@@ -16,7 +16,7 @@ import { findBestDuplicate, formatDuplicateReason } from '@pubhub/shared-utils';
 
 const TaskFormPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const { showToast, setActiveModule, selectedTaskId, appState, contacts } = useAppContext();
+  const { showToast, setActiveModule, selectedTaskId, appState, contacts, addContact } = useAppContext();
   const { naskah, addNaskah, tim } = useDataMasterContext();
   const { addTask, updateTask, tasks } = useWorkflowContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,11 +37,23 @@ const TaskFormPage: React.FC = () => {
   const [customStepsInput, setCustomStepsInput] = useState('');
   const [inputMode, setInputMode] = useState<'naskah' | 'pesanan'>('naskah');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [judulPesananInput, setJudulPesananInput] = useState('');
 
   // SmartRelation quick-create state
   const [naskahCreateForm, setNaskahCreateForm] = useState({ title: '', penulis_id: '', copies: 0 });
   const [naskahDuplicateWarning, setNaskahDuplicateWarning] = useState<{
+    matchedOption: SmartRelationOption;
+    similarity: number;
+    reason: string;
+  } | null>(null);
+
+  const [customerCreateForm, setCustomerCreateForm] = useState({
+    name: '',
+    wa_number: '',
+    email: '',
+    address: '',
+    type: 'both'
+  });
+  const [customerDuplicateWarning, setCustomerDuplicateWarning] = useState<{
     matchedOption: SmartRelationOption;
     similarity: number;
     reason: string;
@@ -75,16 +87,38 @@ const TaskFormPage: React.FC = () => {
     }));
   }, [naskah, selectedCustomerId]);
 
-  const contactOptions: SmartRelationOption[] = useMemo(
-    () => contacts.map((c) => ({
-      value: String(c.id),
-      label: `${c.name} (${c.type === 'both' ? 'Penulis & Pelanggan' : c.type === 'penulis' ? 'Penulis' : 'Pelanggan'})`,
-      wa_number: c.wa_number,
-      email: c.email,
-      isPenulis: c.type === 'penulis' || c.type === 'both'
-    })),
-    [contacts]
-  );
+  const allNaskahOptions: SmartRelationOption[] = useMemo(() => {
+    return naskah.map(n => ({
+      value: String(n.id),
+      label: `${n.title} (${n.naskah_id_code || `ID: ${n.id}`})`,
+      penulis_id: n.penulis_id
+    }));
+  }, [naskah]);
+
+  const contactOptions: SmartRelationOption[] = useMemo(() => {
+    // Deduplicate berdasarkan wa_number atau email untuk cegah duplikat data
+    const seen = new Set<string>();
+    return contacts
+      .filter((c) => {
+        // Gunakan kombinasi nama + wa sebagai key dedup
+        const key = `${c.name?.toLowerCase().trim()}|${c.wa_number ?? ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((c) => ({
+        value: String(c.id),
+        label: `${c.name} (${
+          c.type === 'both' ? 'Penulis & Pelanggan' :
+          c.type === 'penulis' ? 'Penulis' :
+          // Handle alias 'customer' = 'pelanggan'
+          'Pelanggan'
+        })`,
+        wa_number: c.wa_number,
+        email: c.email,
+        isPenulis: c.type === 'penulis' || c.type === 'both',
+      }));
+  }, [contacts]);
 
   const penulisOptionsFiltered: SmartRelationOption[] = useMemo(
     () => contactOptions.filter(o => o.isPenulis),
@@ -96,6 +130,29 @@ const TaskFormPage: React.FC = () => {
     [tim]
   );
 
+  const productionSteps = useMemo(() => [
+    { value: 'Penulisan', label: 'Penulisan', icon: '✍️', desc: 'Proses menulis naskah' },
+    { value: 'Editing', label: 'Editing', icon: '📝', desc: 'Penyuntingan bahasa & ejaan' },
+    { value: 'Layouting', label: 'Layouting', icon: '📐', desc: 'Tata letak halaman & naskah' },
+    { value: 'Desain Cover', label: 'Desain Cover', icon: '🎨', desc: 'Desain sampul depan & belakang' },
+    { value: 'Proofreading', label: 'Proofreading', icon: '🔍', desc: 'Pengecekan akhir cetakan' },
+    { value: 'Legalitas', label: 'Legalitas', icon: '⚖️', desc: 'Pengurusan ISBN / QRCBN' },
+    { value: 'Cetak', label: 'Cetak', icon: '🖨️', desc: 'Produksi fisik buku & jilid' },
+    { value: 'Distribusi', label: 'Distribusi', icon: '🚚', desc: 'Pemasaran & penyaluran buku' }
+  ], []);
+
+  const handleSelectAll = () => {
+    setSelectedSteps(productionSteps.map(s => s.value));
+  };
+
+  const handleClearAll = () => {
+    setSelectedSteps([]);
+  };
+
+  const handleSelectDefault = () => {
+    setSelectedSteps(['Editing', 'Layouting', 'Desain Cover', 'Proofreading', 'Legalitas']);
+  };
+
   const checkNaskahDuplicate = (title: string) => {
     const result = findBestDuplicate(
       { id: undefined, title },
@@ -105,7 +162,7 @@ const TaskFormPage: React.FC = () => {
     );
     if (result) {
       setNaskahDuplicateWarning({
-        matchedOption: filteredNaskahOptions.find((o) => o.value === result.item.id) || { value: result.item.id, label: result.item.title },
+        matchedOption: allNaskahOptions.find((o) => o.value === result.item.id) || { value: result.item.id, label: result.item.title },
         similarity: result.score,
         reason: formatDuplicateReason(result, 'title'),
       });
@@ -131,10 +188,57 @@ const TaskFormPage: React.FC = () => {
       });
       setNaskahId(String(id));
       if (penulis_id) setSelectedCustomerId(penulis_id);
+      setInputMode('naskah');
       setNaskahDuplicateWarning(null);
       onSuccess();
     } catch (err) {
       console.error('Gagal membuat naskah:', err);
+    }
+  };
+
+  const checkCustomerDuplicate = (name: string, wa_number?: string, email?: string) => {
+    const result = findBestDuplicate(
+      { id: undefined, name, wa_number, email },
+      contacts.map((c) => ({ id: String(c.id), name: c.name, wa_number: c.wa_number, email: c.email })),
+      [
+        { key: 'name', weight: 0.6, threshold: 0.85 },
+        { key: 'wa_number', weight: 0.25, isPhone: true, threshold: 0.95 },
+        { key: 'email', weight: 0.15, threshold: 0.95 },
+      ],
+      0.7
+    );
+    if (result) {
+      setCustomerDuplicateWarning({
+        matchedOption: contactOptions.find((o) => o.value === result.item.id) || { value: result.item.id, label: result.item.name },
+        similarity: result.score,
+        reason: formatDuplicateReason(result),
+      });
+      return true;
+    }
+    setCustomerDuplicateWarning(null);
+    return false;
+  };
+
+  const createCustomer = async (onSuccess: () => void) => {
+    const { name, wa_number, email, address, type } = customerCreateForm;
+    if (!name.trim()) return;
+    if (!customerDuplicateWarning && checkCustomerDuplicate(name, wa_number, email)) return;
+    try {
+      const id = await addContact({
+        name: name.trim(),
+        wa_number: wa_number.trim(),
+        email: email.trim(),
+        address: address.trim(),
+        type: type,
+        email_valid: 0,
+        wa_valid: 0,
+        created_at: new Date().toISOString()
+      });
+      setSelectedCustomerId(String(id));
+      setCustomerDuplicateWarning(null);
+      onSuccess();
+    } catch (err) {
+      console.error('Gagal membuat kontak/pelanggan baru:', err);
     }
   };
 
@@ -185,52 +289,17 @@ const TaskFormPage: React.FC = () => {
       setCustomStepsInput('');
       setInputMode('naskah');
       setSelectedCustomerId('');
-      setJudulPesananInput('');
     }
   }, [isEdit, selectedTaskId, tasks, currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEdit) {
-      let finalNaskahId = '';
-
-      if (inputMode === 'naskah') {
-        if (!naskahId.trim()) {
-          showToast('Pilih naskah terlebih dahulu!', 'error');
-          return;
-        }
-        finalNaskahId = naskahId;
-      } else {
-        if (!judulPesananInput.trim()) {
-          showToast('Judul pesanan tidak boleh kosong!', 'error');
-          return;
-        }
-        setIsSubmitting(true);
-        try {
-          // Membuat naskah baru secara otomatis
-          const newNaskahId = await addNaskah({
-            title: judulPesananInput.trim(),
-            penulis_id: selectedCustomerId ? Number(selectedCustomerId) : undefined,
-            copies: 0,
-            book_size: '14x20',
-            legal_type: 'Tanpa ISBN',
-            order_type: 'Baru',
-            status: 'Belum Dimulai'
-          });
-          if (newNaskahId) {
-            finalNaskahId = String(newNaskahId);
-          } else {
-            showToast('Gagal membuat pesanan naskah baru', 'error');
-            setIsSubmitting(false);
-            return;
-          }
-        } catch (err) {
-          console.error(err);
-          showToast('Terjadi kesalahan saat membuat pesanan naskah', 'error');
-          setIsSubmitting(false);
-          return;
-        }
+      if (!naskahId.trim()) {
+        showToast('Pilih naskah atau daftarkan judul baru terlebih dahulu!', 'error');
+        return;
       }
+      const finalNaskahId = naskahId;
 
       const customSteps = customStepsInput
         .split(',')
@@ -348,10 +417,203 @@ const TaskFormPage: React.FC = () => {
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <Accordion>
           <AccordionSection index={1} title={isEdit ? "📝 Detail Tugas" : "➕ Tambah Tugas"} expandedSection={expandedSection} onToggle={setExpandedSection}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.2fr', gap: '24px', alignItems: 'start' }}>
-                {/* Kolom Kiri: Identitas Pelanggan dan Naskah/Pesanan */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* 1. BAGIAN ATAS: Pilihan Tugas Produksi (1 Kolom Penuh) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                {isEdit ? (
+                  <TextField
+                    label="Nama Langkah (Tahap Tugas)"
+                    placeholder="Contoh: Penulisan, Desain Cover..."
+                    value={stepName}
+                    onChange={e => setStepName(e.target.value)}
+                    required
+                    fullWidth
+                  />
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                        <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                          Tugas Produksi (Pilih beberapa)
+                        </label>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={handleSelectAll}
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: 'var(--text-secondary)',
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border)',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--text-secondary)'}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                          >
+                            ☑️ Semua
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSelectDefault}
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: 'var(--text-secondary)',
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border)',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--text-secondary)'}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                          >
+                            ⚙️ Default Alur
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleClearAll}
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: 'var(--text-secondary)',
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border)',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                          >
+                            🗑️ Hapus
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(2, 1fr)', 
+                        gap: '10px',
+                        background: 'var(--bg-panel)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: '10px', 
+                        padding: '12px' 
+                      }}>
+                        {productionSteps.map(step => {
+                          const isChecked = selectedSteps.includes(step.value);
+                          return (
+                            <div
+                              key={step.value}
+                              onClick={() => {
+                                  if (isChecked) {
+                                    setSelectedSteps(selectedSteps.filter(s => s !== step.value));
+                                  } else {
+                                    setSelectedSteps([...selectedSteps, step.value]);
+                                  }
+                                }}
+                              style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                  padding: '10px 12px',
+                                  borderRadius: '8px',
+                                  background: isChecked ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.02)',
+                                  border: isChecked ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                                  boxShadow: isChecked ? '0 4px 12px rgba(192, 28, 28, 0.05)' : 'none',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  userSelect: 'none'
+                                }}
+                              onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-1px)';
+                                  if (!isChecked) {
+                                    e.currentTarget.style.borderColor = 'var(--text-secondary)';
+                                    e.currentTarget.style.background = 'var(--bg-card)';
+                                  }
+                                }}
+                              onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  if (!isChecked) {
+                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.02)';
+                                  }
+                                }}
+                            >
+                              <div style={{
+                                  width: '18px',
+                                  height: '18px',
+                                  borderRadius: '50%',
+                                  border: isChecked ? '2px solid var(--accent)' : '2px solid var(--border)',
+                                  background: isChecked ? 'var(--accent)' : 'transparent',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transition: 'all 0.15s ease',
+                                  flexShrink: 0
+                                }}>
+                                {isChecked && (
+                                  <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '20px', flexShrink: 0 }}>
+                                {step.icon}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                                <span style={{ 
+                                    fontSize: '13px', 
+                                    fontWeight: '600', 
+                                    color: isChecked ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                    transition: 'color 0.15s ease'
+                                  }}>
+                                  {step.label}
+                                </span>
+                                <span style={{ 
+                                    fontSize: '11px', 
+                                    color: 'var(--text-secondary)', 
+                                    opacity: 0.75,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}>
+                                  {step.desc}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <TextField
+                      type="text"
+                      label="Tugas Kustom Tambahan (Opsional, pisahkan koma jika banyak)"
+                      placeholder="Misal: Review Akhir, Layouting Tambahan"
+                      value={customStepsInput}
+                      onChange={e => setCustomStepsInput(e.target.value)}
+                      fullWidth
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Divider Pemisah */}
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '4px 0' }} />
+
+              {/* 2. BAGIAN BAWAH: Grid 2 Kolom untuk Identitas (Kiri) dan Parameter Pengerjaan (Kanan) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
+                
+                {/* Kolom Kiri: Identitas Pelanggan & Naskah */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
+                    👤 Identitas Pelanggan & Naskah
+                  </h3>
+
                   <SmartRelationField
                     label="Pelanggan / Penulis (Relasi CRM)"
                     options={contactOptions}
@@ -361,7 +623,60 @@ const TaskFormPage: React.FC = () => {
                     emptyMessage="Tidak ada pelanggan yang cocok"
                     entityLabel="Penulis"
                     fullWidth
-                    allowCreate={false}
+                    allowCreate={true}
+                    renderCreateForm={({ onSave, onCancel }) => (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <input
+                          type="text"
+                          placeholder="Nama penulis / pelanggan baru"
+                          value={customerCreateForm.name}
+                          onChange={(e) => setCustomerCreateForm((prev) => ({ ...prev, name: e.target.value }))}
+                          style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Nomor WhatsApp"
+                          value={customerCreateForm.wa_number}
+                          onChange={(e) => setCustomerCreateForm((prev) => ({ ...prev, wa_number: e.target.value }))}
+                          style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          value={customerCreateForm.email}
+                          onChange={(e) => setCustomerCreateForm((prev) => ({ ...prev, email: e.target.value }))}
+                          style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Alamat"
+                          value={customerCreateForm.address}
+                          onChange={(e) => setCustomerCreateForm((prev) => ({ ...prev, address: e.target.value }))}
+                          style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                        />
+                        <Select
+                          label="Tipe Kontak"
+                          options={[
+                            { value: 'both', label: 'Penulis & Pelanggan' },
+                            { value: 'penulis', label: 'Penulis saja' },
+                            { value: 'pelanggan', label: 'Pelanggan saja' }
+                          ]}
+                          value={customerCreateForm.type}
+                          onChange={(e) => setCustomerCreateForm((prev) => ({ ...prev, type: e.target.value }))}
+                          fullWidth
+                        />
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                          <button className="btn-primary" type="button" onClick={() => createCustomer(() => onSave(customerCreateForm))}>Simpan</button>
+                        </div>
+                      </div>
+                    )}
+                    duplicateWarning={customerDuplicateWarning}
+                    onSelectExisting={(val) => {
+                      setSelectedCustomerId(val);
+                      setCustomerDuplicateWarning(null);
+                    }}
+                    onConfirmCreateAnyway={() => createCustomer(() => {})}
                   />
 
                   {!isEdit && (
@@ -465,159 +780,129 @@ const TaskFormPage: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <TextField
+                    <SmartRelationField
                       label="Judul Pesanan"
-                      placeholder="Ketik judul pesanan langsung..."
-                      value={judulPesananInput}
-                      onChange={e => setJudulPesananInput(e.target.value)}
-                      required
+                      options={allNaskahOptions}
+                      value={naskahId}
+                      onChange={(val, opt) => {
+                        setNaskahId(val);
+                        if (opt && opt.penulis_id) {
+                          setSelectedCustomerId(String(opt.penulis_id));
+                        }
+                        setInputMode('naskah');
+                        showToast(`Menggunakan naskah: ${opt ? opt.label : val}`, 'info');
+                      }}
+                      placeholder="Cari naskah atau ketik judul pesanan baru..."
+                      emptyMessage="Judul baru (klik '+ Judul Baru' untuk mendaftarkan naskah)"
+                      entityLabel="Judul"
                       fullWidth
-                    />
-                  )}
-                </div>
-
-                {/* Kolom Kanan: Checklist Tugas Produksi (Add) ATAU Nama Langkah (Edit) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {isEdit ? (
-                    <TextField
-                      label="Nama Langkah (Tahap Tugas)"
-                      placeholder="Contoh: Penulisan, Desain Cover..."
-                      value={stepName}
-                      onChange={e => setStepName(e.target.value)}
-                      required
-                      fullWidth
-                    />
-                  ) : (
-                    <>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                          Tugas Produksi (Pilih beberapa)
-                        </label>
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(2, 1fr)', 
-                          gap: '8px', 
-                          background: 'var(--bg-panel)', 
-                          border: '1px solid var(--border)', 
-                          borderRadius: '8px', 
-                          padding: '12px' 
-                        }}>
-                          {[
-                            { value: 'Penulisan', label: 'Penulisan' },
-                            { value: 'Editing', label: 'Editing (Penyuntingan)' },
-                            { value: 'Layouting', label: 'Layouting (Tata Letak)' },
-                            { value: 'Desain Cover', label: 'Desain Cover (Sampul)' },
-                            { value: 'Proofreading', label: 'Proofreading (Koreksi)' },
-                            { value: 'Legalitas', label: 'Legalitas (ISBN/QRCBN)' },
-                            { value: 'Cetak', label: 'Cetak (Produksi Fisik)' },
-                            { value: 'Distribusi', label: 'Distribusi / Pemasaran' }
-                          ].map(step => {
-                            const isChecked = selectedSteps.includes(step.value);
-                            return (
-                              <label 
-                                key={step.value} 
-                                style={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  gap: '8px', 
-                                  fontSize: '13px', 
-                                  color: 'var(--text-primary)', 
-                                  cursor: 'pointer',
-                                  padding: '6px 8px',
-                                  borderRadius: '6px',
-                                  background: isChecked ? 'var(--bg-card)' : 'transparent',
-                                  border: isChecked ? '1px solid var(--accent)' : '1px solid transparent',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                <input 
-                                  type="checkbox" 
-                                  checked={isChecked}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedSteps([...selectedSteps, step.value]);
-                                    } else {
-                                      setSelectedSteps(selectedSteps.filter(s => s !== step.value));
-                                    }
-                                  }}
-                                  style={{ cursor: 'pointer' }}
-                                />
-                                {step.label}
-                              </label>
-                            );
-                          })}
+                      allowCreate={true}
+                      renderCreateForm={({ onSave, onCancel }) => (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <input
+                            type="text"
+                            placeholder="Judul pesanan baru"
+                            value={naskahCreateForm.title}
+                            onChange={(e) => setNaskahCreateForm((prev) => ({ ...prev, title: e.target.value }))}
+                            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                          />
+                          <Select
+                            label="Penulis / Pelanggan"
+                            options={[{ value: '', label: '-- Pilih Penulis --' }, ...contactOptions]}
+                            value={naskahCreateForm.penulis_id || selectedCustomerId}
+                            onChange={(e) => setNaskahCreateForm((prev) => ({ ...prev, penulis_id: e.target.value }))}
+                            fullWidth
+                          />
+                          <input
+                            type="number"
+                            placeholder="Jumlah cetak"
+                            value={naskahCreateForm.copies || ''}
+                            onChange={(e) => setNaskahCreateForm((prev) => ({ ...prev, copies: Number(e.target.value) || 0 }))}
+                            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                          />
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button className="btn-secondary" type="button" onClick={onCancel}>Batal</button>
+                            <button className="btn-primary" type="button" onClick={() => createNaskahFromTask(() => onSave(naskahCreateForm))}>Simpan</button>
+                          </div>
                         </div>
-                      </div>
-                      <TextField
-                        type="text"
-                        label="Tugas Kustom Tambahan (Opsional, pisahkan koma jika banyak)"
-                        placeholder="Misal: Review Akhir, Layouting Tambahan"
-                        value={customStepsInput}
-                        onChange={e => setCustomStepsInput(e.target.value)}
-                        fullWidth
-                      />
-                    </>
+                      )}
+                      duplicateWarning={naskahDuplicateWarning}
+                      onSelectExisting={(val) => {
+                        setNaskahId(val);
+                        const opt = allNaskahOptions.find(o => o.value === val);
+                        if (opt && opt.penulis_id) {
+                          setSelectedCustomerId(String(opt.penulis_id));
+                        }
+                        setInputMode('naskah');
+                        setNaskahDuplicateWarning(null);
+                      }}
+                      onConfirmCreateAnyway={() => createNaskahFromTask(() => {})}
+                    />
                   )}
                 </div>
-              </div>
 
-              {/* Baris Bawah: Penanggung Jawab dan Deadline */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <SmartRelationField
-                  label="Penanggung Jawab (PJ)"
-                  options={timOptions}
-                  value={assignedTeamId}
-                  onChange={(val) => {
-                    setAssignedTeamId(val);
-                    const selected = tim.find(t => t.id === Number(val));
-                    if (selected) {
-                      setPicName(selected.name);
-                    } else {
-                      setPicName('');
-                    }
-                  }}
-                  placeholder="Cari anggota tim..."
-                  emptyMessage="Tidak ada tim yang cocok"
-                  entityLabel="Tim"
-                  fullWidth
-                  allowCreate={false}
-                />
-                <DatePicker 
-                  label="Deadline" 
-                  value={dueDate} 
-                  onChange={setDueDate} 
-                  fullWidth
-                />
-              </div>
+                {/* Kolom Kanan: Parameter Pengerjaan & Catatan */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
+                    ⚙️ Parameter Pengerjaan & Detail
+                  </h3>
 
-              {/* Baris Prioritas dan Status */}
-              <div style={{ display: 'grid', gridTemplateColumns: isEdit ? '1fr 1fr' : '1fr', gap: '16px' }}>
-                <Select
-                  label="Prioritas"
-                  value={priority}
-                  onChange={e => setPriority(e.target.value)}
-                  options={priorityOptions}
-                  fullWidth
-                />
-                {isEdit && (
-                  <Select
-                    label="Status"
-                    value={status}
-                    onChange={e => setStatus(e.target.value)}
-                    options={statusOptions}
+                  <SmartRelationField
+                    label="Penanggung Jawab (PJ)"
+                    options={timOptions}
+                    value={assignedTeamId}
+                    onChange={(val) => {
+                      setAssignedTeamId(val);
+                      const selected = tim.find(t => t.id === Number(val));
+                      if (selected) {
+                        setPicName(selected.name);
+                      } else {
+                        setPicName('');
+                      }
+                    }}
+                    placeholder="Cari anggota tim..."
+                    emptyMessage="Tidak ada tim yang cocok"
+                    entityLabel="Tim"
+                    fullWidth
+                    allowCreate={false}
+                  />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <DatePicker 
+                      label="Deadline" 
+                      value={dueDate} 
+                      onChange={setDueDate} 
+                      fullWidth
+                    />
+                    <Select
+                      label="Prioritas"
+                      value={priority}
+                      onChange={e => setPriority(e.target.value)}
+                      options={priorityOptions}
+                      fullWidth
+                    />
+                  </div>
+
+                  {isEdit && (
+                    <Select
+                      label="Status"
+                      value={status}
+                      onChange={e => setStatus(e.target.value)}
+                      options={statusOptions}
+                      fullWidth
+                    />
+                  )}
+
+                  <TextArea
+                    label="Catatan"
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Catatan tambahan..."
+                    style={{ height: '90px' }}
                     fullWidth
                   />
-                )}
+                </div>
               </div>
-
-              <TextArea
-                label="Catatan"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Catatan tambahan..."
-                style={{ height: '100px' }}
-                fullWidth
-              />
             </div>
           </AccordionSection>
         </Accordion>

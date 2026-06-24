@@ -8,8 +8,9 @@ import { useAppContext } from '../../contexts/AppContext';
 import PenulisManager from '../data-master/PenulisManager';
 import PenerbitManager from '../data-master/PenerbitManager';
 import NaskahOrdersManager from '../data-master/NaskahOrdersManager';
-import LegalitasManager from '../data-master/LegalitasManager';
 import ActivityLog from '../data-master/ActivityLog';
+import ServiceManager from '../data-master/ServiceManager';
+import LegalitasManager from '../data-master/LegalitasManager';
 
 // Modul Produksi (Workflow)
 import PekerjaanSaya from '../produksi/PekerjaanSaya';
@@ -78,30 +79,6 @@ const MainLayout = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  // Helper untuk render halaman setelan dengan header seragam
-  const renderSettingsModule = (title: string, icon: string, component: React.ReactNode) => {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '10px 16px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg-panel)',
-          height: 44,
-          boxSizing: 'border-box',
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: '16px' }}>{icon}</span>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{title}</span>
-        </div>
-        <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
-          {component}
-        </div>
-      </div>
-    );
-  };
 
   const renderModule = () => {
     switch (appState.activeModule) {
@@ -134,6 +111,8 @@ const MainLayout = () => {
         return <NaskahOrdersManager searchQuery={fileSearchQuery} />;
       case 'legalitas':
         return <LegalitasManager searchQuery={fileSearchQuery} />;
+      case 'services':
+        return <ServiceManager searchQuery={fileSearchQuery} />;
       case 'activity-log':
         return <ActivityLog />;
       case 'tambah-tugas':

@@ -239,14 +239,6 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
     // Linimasa Versi
     let displayRelated: any[] = relatedFiles;
 
-    if (!resolvedMetadata) {
-      return (
-        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          Pratinjau untuk berkas ini tidak tersedia
-        </div>
-      );
-    }
-
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Status Berkas */}
@@ -363,7 +355,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
         <div>
           <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>Entitas Terdeteksi</h5>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            {!resolvedMetadata.entities || resolvedMetadata.entities.length === 0 ? (
+            {!resolvedMetadata || !resolvedMetadata.entities || resolvedMetadata.entities.length === 0 ? (
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Tidak ada entitas penerbitan khusus yang terdeteksi.</span>
             ) : (
               resolvedMetadata.entities.filter((ent: any) => ent.entity_type !== 'hash').map((ent: any, idx: number) => {
@@ -417,7 +409,7 @@ const FilePreviewPanel: React.FC<FilePreviewPanelProps> = ({ selectedFileId }) =
         <div>
           <h5 style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px' }}>Ringkasan Konten Otomatis</h5>
           <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: '1.5', fontStyle: 'italic' }}>
-            "{resolvedMetadata.summary || 'Tidak ada ringkasan teks untuk berkas ini.'}"
+            "{resolvedMetadata?.summary || 'Tidak ada ringkasan teks untuk berkas ini.'}"
           </div>
         </div>
 

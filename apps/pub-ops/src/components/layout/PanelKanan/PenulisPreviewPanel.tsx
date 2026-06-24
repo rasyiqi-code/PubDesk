@@ -1,17 +1,26 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge, getStatusVariant } from '../../../ui/atoms/Badge';
 import { Button } from '../../../ui/atoms/Button';
 import { getWhatsAppLink, formatPrice } from '../../../utils/format';
+import { TimelineTracker } from '@pubhub/shared-ui';
+import { invoke } from '@tauri-apps/api/core';
 
 interface PenulisPreviewPanelProps {
   penulisId: number | null;
 }
 
 const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) => {
-  const { contacts, addContact, showToast, showConfirm, invoices } = useAppContext();
+  const { contacts, addContact, showToast, showConfirm } = useAppContext();
   const { penulis, naskah } = useDataMasterContext();
+  const [invoices, setInvoices] = useState<any[]>([]);
+
+  useEffect(() => {
+    invoke<any[]>('get_invoices')
+      .then(data => setInvoices(data))
+      .catch(err => console.error('Gagal mengambil data invoices:', err));
+  }, []);
 
   // Cari data penulis terpilih (penulisId bisa negatif jika dari database pelanggan murni)
   const penulisData = useMemo(() => {
@@ -465,6 +474,21 @@ const PenulisPreviewPanel: React.FC<PenulisPreviewPanelProps> = ({ penulisId }) 
             </Button>
           )}
         </div>
+
+        {/* Timeline Tracking */}
+        <TimelineTracker 
+          entityType="contact" 
+          entityId={penulisId ? (penulisId < 0 ? -penulisId : penulisId) : null} 
+          relatedIds={useMemo(() => {
+            const actualId = penulisId && penulisId > 0 ? penulisId : null;
+            const nskIds = actualId ? naskah.filter(n => n.penulis_id === actualId).map(n => n.id).filter((id): id is number => id !== undefined) : [];
+            const invIds = penulisInvoices.map(inv => inv.id).filter((id): id is number => id !== undefined);
+            return {
+              naskahIds: nskIds,
+              invoiceIds: invIds
+            };
+          }, [penulisId, naskah, penulisInvoices])}
+        />
 
       </div>
     </div>

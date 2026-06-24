@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge } from '../../../ui/atoms/Badge';
 import { Button } from '../../../ui/atoms/Button';
+import { TimelineTracker } from '@pubhub/shared-ui';
 
 const LegalitasPreviewPanel: React.FC = () => {
   const { selectedLegalitasId, setRightPanelVisible } = useAppContext();
@@ -134,6 +135,17 @@ const LegalitasPreviewPanel: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Timeline Tracking */}
+        <TimelineTracker 
+          entityType="legalitas" 
+          entityId={selectedLegalitasId} 
+          relatedIds={useMemo(() => {
+            return {
+              naskahIds: data.naskah_id ? [data.naskah_id] : []
+            };
+          }, [data])}
+        />
         
       </div>
     </div>

@@ -72,11 +72,26 @@ impl Database {
         cloud_file_url: &str,
     ) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
+
+        // Ambil sync_status lama untuk audit trail
+        let old_sync: Option<String> = self.conn
+            .query_row("SELECT sync_status FROM invoices WHERE id = ?1", params![id], |row| row.get(0))
+            .ok();
+
         self.conn.execute(
             "UPDATE invoices SET sync_status = ?1, cloud_file_url = ?2, updated_at = ?3 WHERE id = ?4",
             params![sync_status, cloud_file_url, now, id],
         )?;
-        self.log_activity("invoice", Some(id), "UPDATE", "Memperbarui status sinkronisasi invoice")?;
+
+        let old_val = old_sync.as_deref().unwrap_or("-");
+        self.log_activity_audit(
+            "invoice", Some(id), "UPDATE",
+            "Memperbarui status sinkronisasi invoice",
+            None, None,
+            Some(&format!("sync_status: {}", old_val)),
+            Some(&format!("sync_status: {}", sync_status)),
+            Some("pub-ops"),
+        )?;
         Ok(())
     }
 
@@ -112,12 +127,26 @@ impl Database {
             self.conn.execute(&query, params![sync_status, now, id])?;
         }
 
-        self.log_activity(table_name, Some(id), "UPDATE", &format!("Memperbarui status sinkronisasi cloud ke '{}'", sync_status))?;
+        self.log_activity_audit(
+            table_name, Some(id), "UPDATE",
+            &format!("Memperbarui status sinkronisasi cloud ke '{}'", sync_status),
+            None, None,
+            None,
+            Some(&format!("sync_status: {}", sync_status)),
+            Some("pub-ops"),
+        )?;
         Ok(())
     }
 
     pub fn update_invoice(&self, invoice: &Invoice) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
+        // Ambil payment_status lama untuk audit trail
+        let old_payment: Option<String> = invoice.id.and_then(|inv_id| {
+            self.conn
+                .query_row("SELECT payment_status FROM invoices WHERE id = ?1", params![inv_id], |row| row.get(0))
+                .ok()
+        });
+
         self.conn.execute(
             "UPDATE invoices SET customer_id = ?1, items_json = ?2, shipping_cost = ?3, admin_fee = ?4, total = ?5, export_format = ?6, file_path = ?7, sync_status = ?8, cloud_file_url = ?9, naskah_id = ?10, payment_status = ?11, paid_amount = ?12, remaining_amount = ?13, payment_notes = ?14, updated_at = ?15, customer_snapshot = ?16 WHERE id = ?17",
             params![
@@ -140,7 +169,17 @@ impl Database {
                 invoice.id
             ]
         )?;
-        self.log_activity("invoice", invoice.id, "UPDATE", &format!("Memperbarui invoice total={}", invoice.total))?;
+
+        let new_payment = invoice.payment_status.as_deref().unwrap_or("Draft");
+        let old_val = old_payment.as_deref().unwrap_or("-");
+        self.log_activity_audit(
+            "invoice", invoice.id, "UPDATE",
+            &format!("Memperbarui invoice total={}", invoice.total),
+            None, None,
+            Some(&format!("payment_status: {}", old_val)),
+            Some(&format!("payment_status: {}", new_payment)),
+            Some("pub-ops"),
+        )?;
         Ok(())
     }
 

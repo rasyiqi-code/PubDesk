@@ -6,23 +6,21 @@ const CARDS_CONFIG = [
   { key: 'penulis', label: 'Kontak & Penulis', color: '#3b82f6', icon: '👤', module: 'kontak' as const, desc: 'Kelola database penulis & kontak pelanggan' },
   { key: 'penerbit', label: 'Penerbit', color: '#10b981', icon: '🏢', module: 'penerbit' as const, desc: 'Kelola data instansi & penerbit mitra' },
   { key: 'naskah', label: 'Order Naskah', color: '#f59e0b', icon: '📚', module: 'naskah' as const, desc: 'Pantau pesanan & naskah masuk' },
-  { key: 'tim', label: 'Anggota Tim', color: '#8b5cf6', icon: '👨‍💼', module: 'tim' as const, desc: 'Kelola tim produksi & penugasan' },
   { key: 'legalitas', label: 'Legalitas', color: '#ec4899', icon: '⚖️', module: 'legalitas' as const, desc: 'Kelola dokumen perjanjian & MoU' },
   { key: 'services', label: 'Layanan & Jasa', color: '#06b6d4', icon: '🛠️', module: 'services' as const, desc: 'Daftar layanan operasional penerbitan' },
 ] as const;
 
 const DashboardMasterData: React.FC = () => {
-  const { penulis, penerbit, naskah, tim, legalitas } = useDataMasterContext();
+  const { penulis, penerbit, naskah, legalitas } = useDataMasterContext();
   const { services, setActiveModule } = useAppContext();
 
   const counts = useMemo(() => ({
     penulis: penulis.length,
     penerbit: penerbit.length,
     naskah: naskah.length,
-    tim: tim.length,
     legalitas: legalitas.length,
     services: services.length,
-  }), [penulis, penerbit, naskah, tim, legalitas, services]);
+  }), [penulis, penerbit, naskah, legalitas, services]);
 
   const totalData = Object.values(counts).reduce((acc, curr) => acc + curr, 0);
 

@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppState } from '../types/app.types';
-import { Book } from '../types/book.types';
 import { Contact } from '../types/contact.types';
-import { Invoice } from '../types/invoice.types';
 import { File } from '../types/file.types';
 import { Service } from '../types/service.types';
 import { invoke } from '@tauri-apps/api/core';
@@ -10,9 +8,7 @@ import { listen } from '@tauri-apps/api/event';
 
 // Import hooks
 import { useUIState, ConfirmOptions, ImportExportActions } from '../hooks/useUIState';
-import { useBookState } from '../hooks/useBookState';
 import { useContactState } from '../hooks/useContactState';
-import { useInvoiceState } from '../hooks/useInvoiceState';
 import { useServiceState } from '../hooks/useServiceState';
 import { useFileState } from '../hooks/useFileState';
 import { useGDriveState, GDriveAccount } from '../hooks/useGDriveState';
@@ -30,9 +26,7 @@ export interface WatchFolder {
 interface AppContextType {
   appState: AppState;
   setActiveModule: (module: AppState['activeModule']) => void;
-  books: Book[];
   contacts: Contact[];
-  invoices: Invoice[];
   files: File[];
   services: Service[];
   toast: { message: string; type: 'success' | 'error' | 'info' } | null;
@@ -41,20 +35,12 @@ interface AppContextType {
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   fileCategory: 'all' | 'invoice' | 'service' | 'other' | 'gdrive' | 'pdf' | 'spreadsheet' | 'text' | 'image' | 'presentation';
   setFileCategory: (category: 'all' | 'invoice' | 'service' | 'other' | 'gdrive' | 'pdf' | 'spreadsheet' | 'text' | 'image' | 'presentation') => void;
-  loadBooks: () => Promise<void>;
   loadContacts: () => Promise<void>;
-  loadInvoices: () => Promise<void>;
   loadFiles: () => Promise<void>;
   loadServices: () => Promise<void>;
-  addBook: (book: Book) => Promise<number>;
-  deleteBook: (id: number) => Promise<void>;
-  updateBook: (book: Book) => Promise<void>;
   addContact: (contact: Contact) => Promise<number>;
   updateContact: (contact: Contact) => Promise<void>;
   deleteContact: (id: number) => Promise<void>;
-  addInvoice: (invoice: Invoice) => Promise<number>;
-  updateInvoice: (invoice: Invoice) => Promise<void>;
-  deleteInvoice: (id: number) => Promise<void>;
   addFile: (file: File) => Promise<number>;
   deleteFile: (id: number) => Promise<void>;
   updateFile: (file: File) => Promise<void>;
@@ -63,12 +49,8 @@ interface AppContextType {
   deleteService: (id: number) => Promise<void>;
   rightPanelVisible: boolean;
   setRightPanelVisible: (visible: boolean) => void;
-  selectedBookId: number | null;
-  setSelectedBookId: (id: number | null) => void;
   selectedServiceId: number | null;
   setSelectedServiceId: (id: number | null) => void;
-  activeSettingsTab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'data-reset';
-  setActiveSettingsTab: (tab: 'invoice' | 'local-folders' | 'google-drive' | 'google-apps-script' | 'data-reset') => void;
   confirmOptions: ConfirmOptions | null;
   showConfirm: (options: ConfirmOptions) => void;
   hideConfirm: () => void;
@@ -156,10 +138,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [directAddNewModule, setDirectAddNewModule] = useState<string | null>(null);
   const [isDbInitialized, setIsDbInitialized] = useState(false);
 
-
-  const booksState = useBookState({ showToast: ui.showToast });
   const contactsState = useContactState({ showToast: ui.showToast });
-  const invoicesState = useInvoiceState({ showToast: ui.showToast });
   const servicesState = useServiceState({ 
     showToast: ui.showToast, 
     selectedServiceId: ui.selectedServiceId, 
@@ -177,14 +156,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const syncState = useSyncState({
     contacts: contactsState.contacts,
     loadContacts: contactsState.loadContacts,
-    books: booksState.books,
-    loadBooks: booksState.loadBooks,
     services: servicesState.services,
     loadServices: servicesState.loadServices,
     files: filesState.files,
     loadFiles: filesState.loadFiles,
-    invoices: invoicesState.invoices,
-    loadInvoices: invoicesState.loadInvoices
   });
 
   useEffect(() => {
@@ -199,9 +174,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.warn('[GAS] Gagal sinkronisasi konfigurasi cloud saat startup:', err);
         });
         setIsDbInitialized(true);
-        await booksState.loadBooks();
         await contactsState.loadContacts();
-        await invoicesState.loadInvoices();
         await filesState.loadFiles();
         await servicesState.loadServices();
         await filesState.loadWatchFolders();
@@ -238,9 +211,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider value={{
       appState: ui.appState,
       setActiveModule: ui.setActiveModule,
-      books: booksState.books,
       contacts: contactsState.contacts,
-      invoices: invoicesState.invoices,
       files: filesState.files,
       services: servicesState.services,
       toast: ui.toast,
@@ -249,14 +220,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       showToast: ui.showToast,
       fileCategory,
       setFileCategory,
-      loadBooks: booksState.loadBooks,
       loadContacts: contactsState.loadContacts,
-      loadInvoices: invoicesState.loadInvoices,
       loadFiles: filesState.loadFiles,
       loadServices: servicesState.loadServices,
-      addBook: booksState.addBook,
-      deleteBook: booksState.deleteBook,
-      updateBook: booksState.updateBook,
       addContact: contactsState.addContact,
       updateContact: contactsState.updateContact,
       deleteContact: contactsState.deleteContact,
@@ -276,9 +242,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSelectedLegalitasId: ui.setSelectedLegalitasId,
       selectedTaskId: ui.selectedTaskId,
       setSelectedTaskId: ui.setSelectedTaskId,
-      addInvoice: invoicesState.addInvoice,
-      updateInvoice: invoicesState.updateInvoice,
-      deleteInvoice: invoicesState.deleteInvoice,
       addFile: filesState.addFile,
       deleteFile: filesState.deleteFile,
       updateFile: filesState.updateFile,
@@ -287,8 +250,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       deleteService: servicesState.deleteService,
       rightPanelVisible: ui.rightPanelVisible,
       setRightPanelVisible: ui.setRightPanelVisible,
-      selectedBookId: ui.selectedBookId,
-      setSelectedBookId: ui.setSelectedBookId,
       selectedServiceId: ui.selectedServiceId,
       setSelectedServiceId: ui.setSelectedServiceId,
       confirmOptions: ui.confirmOptions,
@@ -309,8 +270,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       navigateModuleForward: ui.navigateModuleForward,
       canNavigateModuleBack: ui.canNavigateModuleBack,
       canNavigateModuleForward: ui.canNavigateModuleForward,
-      activeSettingsTab: ui.activeSettingsTab,
-      setActiveSettingsTab: ui.setActiveSettingsTab,
       connectedUser: gdriveState.connectedUser,
       setConnectedUser: gdriveState.setConnectedUser,
       testConnection: gdriveState.testConnection,

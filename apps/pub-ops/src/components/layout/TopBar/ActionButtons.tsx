@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useFileState } from '../../../contexts/FileContext';
 import { useAppContext } from '../../../contexts/AppContext';
 import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { useWorkflowContext } from '../../../contexts/WorkflowContext';
@@ -9,20 +8,15 @@ interface ActionButtonsProps {
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) => {
-  const {
-    rightPanelVisible,
-    setRightPanelVisible,
-  } = useFileState();
-  
   const { 
     importExportActions,
     syncModuleDataToCloud,
     showToast,
-    loadBooks,
     loadContacts,
-    loadInvoices,
     loadServices,
-    services
+    services,
+    rightPanelVisible,
+    setRightPanelVisible,
   } = useAppContext();
 
   const { 
@@ -58,8 +52,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ activeModule }) =>
         loadLegalitas(),
         loadTasks(),
         loadContacts(),
-        loadBooks(),
-        loadInvoices(),
         loadServices(),
       ]);
       showToast('Data produksi & CRM berhasil disegarkan!', 'success');

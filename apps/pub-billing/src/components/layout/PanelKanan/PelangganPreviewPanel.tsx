@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useAppContext } from '../../../contexts/AppContext';
 import { Button } from '../../../ui/atoms/Button';
 import { formatPrice } from '../../../utils/format';
+import { TimelineTracker } from '@pubhub/shared-ui';
 
 const PelangganPreviewPanel: React.FC = () => {
   const { contacts, selectedCustomerId, setRightPanelVisible, invoices } = useAppContext();
@@ -205,6 +206,18 @@ const PelangganPreviewPanel: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Timeline Tracking */}
+        <TimelineTracker 
+          entityType="contact" 
+          entityId={selectedCustomerId} 
+          relatedIds={useMemo(() => {
+            const invIds = customerInvoices.map(inv => inv.id).filter((id): id is number => id !== undefined);
+            return {
+              invoiceIds: invIds
+            };
+          }, [customerInvoices])}
+        />
         
       </div>
     </div>

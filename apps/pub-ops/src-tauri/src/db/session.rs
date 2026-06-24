@@ -159,6 +159,14 @@ impl Database {
 
     pub fn update_workflow_event(&self, e: &WorkflowEvent) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
+
+        // Ambil status lama sebelum diupdate untuk audit trail
+        let old_status: Option<String> = e.id.and_then(|eid| {
+            self.conn
+                .query_row("SELECT status FROM workflow_events WHERE id = ?1", params![eid], |row| row.get(0))
+                .ok()
+        });
+
         self.conn.execute(
             "UPDATE workflow_events SET completed_date = ?1, pic_name = ?2, notes = ?3, proof_path_or_link = ?4, status = ?5, updated_at = ?6 WHERE id = ?7",
             params![
@@ -171,7 +179,17 @@ impl Database {
                 e.id
             ]
         )?;
-        self.log_activity("workflow_event", e.id, "UPDATE", &format!("Memperbarui event '{}'", e.event_name))?;
+
+        let new_status = &e.status;
+        let old_val = old_status.as_deref().unwrap_or("-");
+        self.log_activity_audit(
+            "workflow_event", e.id, "UPDATE",
+            &format!("Memperbarui event '{}'", e.event_name),
+            None, None,
+            Some(&format!("status: {}", old_val)),
+            Some(&format!("status: {}", new_status)),
+            Some("pub-ops"),
+        )?;
         Ok(())
     }
 
@@ -234,6 +252,14 @@ impl Database {
 
     pub fn update_legalitas(&self, l: &Legalitas) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
+
+        // Ambil status lama sebelum diupdate untuk audit trail
+        let old_status: Option<String> = l.id.and_then(|lid| {
+            self.conn
+                .query_row("SELECT status FROM legalitas WHERE id = ?1", params![lid], |row| row.get(0))
+                .ok()
+        });
+
         self.conn.execute(
             "UPDATE legalitas SET naskah_id = ?1, judul_buku = ?2, nama_penulis = ?3, tipe = ?4, tanggal_pengajuan = ?5, keterangan = ?6, status = ?7, nomor_dokumen = ?8, tanggal_keluar = ?9, tanggal_revisi = ?10, pic_id = ?11, rejection_reason = ?12, proof_path_or_link = ?13, updated_at = ?14 WHERE id = ?15",
             params![
@@ -254,7 +280,17 @@ impl Database {
                 l.id
             ]
         )?;
-        self.log_activity("legalitas", l.id, "UPDATE", &format!("Memperbarui legalitas '{}'", l.judul_buku))?;
+
+        let new_status = &l.status;
+        let old_val = old_status.as_deref().unwrap_or("-");
+        self.log_activity_audit(
+            "legalitas", l.id, "UPDATE",
+            &format!("Memperbarui legalitas '{}'", l.judul_buku),
+            None, None,
+            Some(&format!("status: {}", old_val)),
+            Some(&format!("status: {}", new_status)),
+            Some("pub-ops"),
+        )?;
         Ok(())
     }
 

@@ -5,13 +5,14 @@ import { useAppContext } from '../../../contexts/AppContext';
 import { Badge, getStatusVariant } from '../../../ui/atoms/Badge';
 import { InfoRow } from '../../../ui/molecules/InfoRow';
 import { SectionCard } from '../../../ui/molecules/SectionCard';
+import { TimelineTracker } from '@pubhub/shared-ui';
 
 interface NaskahPreviewPanelProps {
   naskahId: number | null;
 }
 
 const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => {
-  const { naskah, penulis, penerbit } = useDataMasterContext();
+  const { naskah, penulis, penerbit, legalitas } = useDataMasterContext();
   const { tasks, setSelectedTaskId } = useWorkflowContext();
   const { setActiveModule, setRightPanelVisible } = useAppContext();
 
@@ -303,6 +304,22 @@ const NaskahPreviewPanel: React.FC<NaskahPreviewPanelProps> = ({ naskahId }) => 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
           <span>ID: <strong style={{ fontFamily: 'monospace' }}>#{naskahData.id}</strong></span>
           <span>Dibuat: <strong>{naskahData.created_at ? new Date(naskahData.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</strong></span>
+        </div>
+
+        {/* Timeline Tracking */}
+        <div style={{ padding: '0 4px' }}>
+          <TimelineTracker 
+            entityType="naskah" 
+            entityId={naskahId} 
+            relatedIds={useMemo(() => {
+              const tIds = naskahId ? tasks.filter(t => t.naskah_id === naskahId).map(t => t.id).filter((id): id is number => id !== undefined) : [];
+              const legIds = naskahId ? legalitas.filter(l => l.naskah_id === naskahId).map(l => l.id).filter((id): id is number => id !== undefined) : [];
+              return {
+                taskIds: tIds,
+                legalitasIds: legIds
+              };
+            }, [naskahId, tasks, legalitas])}
+          />
         </div>
       </div>
     </div>

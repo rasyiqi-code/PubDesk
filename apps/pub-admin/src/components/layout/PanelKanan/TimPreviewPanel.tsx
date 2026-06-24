@@ -3,6 +3,7 @@ import { useDataMasterContext } from '../../../contexts/DataMasterContext';
 import { Badge } from '../../../ui/atoms/Badge';
 import { InfoRow } from '../../../ui/molecules/InfoRow';
 import { SectionCard } from '../../../ui/molecules/SectionCard';
+import { TimelineTracker } from '@pubhub/shared-ui';
 
 interface TimPreviewPanelProps {
   timId: number | null;
@@ -140,6 +141,17 @@ const TimPreviewPanel: React.FC<TimPreviewPanelProps> = ({ timId }) => {
             </strong>
           </span>
         </div>
+
+        {/* Timeline Tracking */}
+        <TimelineTracker 
+          entityType="tim" 
+          entityId={timId} 
+          relatedIds={useMemo(() => {
+            return {
+              performedByTimId: timId
+            };
+          }, [timId])}
+        />
       </div>
     </div>
   );

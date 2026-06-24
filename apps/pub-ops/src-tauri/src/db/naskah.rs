@@ -62,6 +62,14 @@ impl Database {
 
     pub fn update_penerbit(&self, p: &Penerbit) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
+
+        // Ambil status lama sebelum diupdate untuk audit trail
+        let old_status: Option<String> = p.id.and_then(|pid| {
+            self.conn
+                .query_row("SELECT cooperation_status FROM penerbit WHERE id = ?1", params![pid], |row| row.get(0))
+                .ok()
+        });
+
         self.conn.execute(
             "UPDATE penerbit SET name = ?1, instagram = ?2, facebook = ?3, email = ?4, wa_number = ?5, linkedin = ?6, twitter = ?7, tiktok = ?8, wa_valid = ?9, email_valid = ?10, cooperation_status = ?11, address = ?12, notes = ?13, updated_at = ?14 WHERE id = ?15",
             params![
@@ -82,7 +90,17 @@ impl Database {
                 p.id
             ]
         )?;
-        self.log_activity("penerbit", p.id, "UPDATE", &format!("Memperbarui penerbit '{}'", p.name))?;
+
+        let new_status = p.cooperation_status.as_deref().unwrap_or("-");
+        let old_val = old_status.as_deref().unwrap_or("-");
+        self.log_activity_audit(
+            "penerbit", p.id, "UPDATE",
+            &format!("Memperbarui penerbit '{}'", p.name),
+            None, None,
+            Some(&format!("cooperation_status: {}", old_val)),
+            Some(&format!("cooperation_status: {}", new_status)),
+            Some("pub-ops"),
+        )?;
         Ok(())
     }
 
@@ -186,6 +204,14 @@ impl Database {
 
     pub fn update_naskah(&self, n: &Naskah) -> Result<(), DbError> {
         let now = chrono::Local::now().to_rfc3339();
+
+        // Ambil status lama sebelum diupdate untuk audit trail
+        let old_status: Option<String> = n.id.and_then(|nid| {
+            self.conn
+                .query_row("SELECT status FROM naskah WHERE id = ?1", params![nid], |row| row.get(0))
+                .ok()
+        });
+
         self.conn.execute(
             "UPDATE naskah SET naskah_id_code = ?1, title = ?2, penulis_id = ?3, penerbit_id = ?4, genre = ?5, total_pages = ?6, synopsis = ?7, order_type = ?8, copies = ?9, book_size = ?10, legal_type = ?11, assigned_team_ids = ?12, initial_request = ?13, revised_request = ?14, shipping_address = ?15, store_links = ?16, status = ?17, updated_at = ?18 WHERE id = ?19",
             params![
@@ -210,7 +236,17 @@ impl Database {
                 n.id
             ]
         )?;
-        self.log_activity("naskah", n.id, "UPDATE", &format!("Memperbarui naskah '{}'", n.title))?;
+
+        let new_status = &n.status;
+        let old_val = old_status.as_deref().unwrap_or("-");
+        self.log_activity_audit(
+            "naskah", n.id, "UPDATE",
+            &format!("Memperbarui naskah '{}'", n.title),
+            None, None,
+            Some(&format!("status: {}", old_val)),
+            Some(&format!("status: {}", new_status)),
+            Some("pub-ops"),
+        )?;
         Ok(())
     }
 

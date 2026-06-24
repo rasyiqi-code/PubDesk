@@ -1,34 +1,24 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Book } from '../types/book.types';
 import { Contact } from '../types/contact.types';
 import { Service } from '../types/service.types';
 import { File } from '../types/file.types';
-import { Invoice } from '../types/invoice.types';
 
 interface UseSyncStateProps {
   contacts: Contact[];
   loadContacts: () => Promise<void>;
-  books: Book[];
-  loadBooks: () => Promise<void>;
   services: Service[];
   loadServices: () => Promise<void>;
   files: File[];
   loadFiles: () => Promise<void>;
-  invoices: Invoice[];
-  loadInvoices: () => Promise<void>;
 }
 
 export function useSyncState({
   contacts,
   loadContacts,
-  books,
-  loadBooks,
   services,
   loadServices,
   files,
   loadFiles,
-  invoices,
-  loadInvoices
 }: UseSyncStateProps) {
   
   const updateSyncStatus = async (tableName: string, id: number, syncStatus: string, cloudFileUrl?: string) => {
@@ -40,10 +30,8 @@ export function useSyncState({
         cloudFileUrl: cloudFileUrl || null
       });
       if (tableName === 'contacts') await loadContacts();
-      else if (tableName === 'books') await loadBooks();
       else if (tableName === 'services') await loadServices();
       else if (tableName === 'files') await loadFiles();
-      else if (tableName === 'invoices') await loadInvoices();
     } catch (error) {
       console.error(`Failed to update sync status for ${tableName} id ${id}:`, error);
     }
@@ -92,80 +80,7 @@ export function useSyncState({
         await loadContacts();
       }
 
-      // 2. Books
-      if (books.length > 0) {
-        const processedBooks = [];
-        for (const b of books) {
-          let currentCoverPath = b.cover_path || '';
-          
-          // Jika cover_path berupa gambar base64, unggah ke Google Drive (Covers folder) terlebih dahulu
-          if (currentCoverPath.startsWith('data:')) {
-            try {
-              const match = currentCoverPath.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
-              if (match) {
-                const mimeType = match[1];
-                const base64Data = match[2];
-                const fileExt = mimeType.split('/')[1] || 'png';
-                const fileName = `Cover-${b.id || 'new'}-${b.title.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExt}`;
-                
-                console.log(`[Sync Books] Mengunggah cover base64 ke Google Drive untuk: ${b.title}`);
-                const uploadResult = await googleAppsScriptService.uploadFileToCloud(
-                  fileName,
-                  base64Data,
-                  'Covers',
-                  mimeType
-                );
-                
-                if (uploadResult && uploadResult.file_url) {
-                  currentCoverPath = uploadResult.file_url;
-                  
-                  // Perbarui cover_path lokal di SQLite menjadi URL cloud
-                  if (b.id) {
-                    await invoke('update_book', {
-                      book: {
-                        ...b,
-                        cover_path: currentCoverPath
-                      }
-                    });
-                  }
-                }
-              }
-            } catch (uploadErr) {
-              console.error(`Gagal mengunggah cover untuk buku ${b.title}:`, uploadErr);
-              // Lanjutkan sinkronisasi meskipun upload cover gagal
-              currentCoverPath = '';
-            }
-          }
-          
-          processedBooks.push({
-            id: b.id,
-            title: b.title,
-            isbn: b.isbn || '',
-            regular_price: b.regular_price,
-            po_price: b.po_price,
-            weight_grams: b.weight_grams,
-            author_id: b.author_id || '',
-            cover_path: currentCoverPath,
-            created_at: b.created_at || new Date().toISOString(),
-            updated_at: b.updated_at || b.created_at || new Date().toISOString()
-          });
-        }
-
-        await googleAppsScriptService.upsertRecordsToCloud('Books', processedBooks);
-        for (const pb of processedBooks) {
-          if (pb.id) {
-            await invoke('update_sync_status', { 
-              tableName: 'books', 
-              id: pb.id, 
-              syncStatus: 'synced', 
-              cloudFileUrl: pb.cover_path || null 
-            });
-          }
-        }
-        await loadBooks();
-      }
-
-      // 3. Services
+      // 2. Services
       if (services.length > 0) {
         const payload = services.map(s => ({
           id: s.id,
@@ -185,7 +100,7 @@ export function useSyncState({
         await loadServices();
       }
 
-      // 4. Files
+      // 3. Files
       const cloudFiles = files.filter(f => f.path.startsWith('gdrive://') || f.path.startsWith('http://') || f.path.startsWith('https://'));
       if (cloudFiles.length > 0) {
         const payload = cloudFiles.map(f => ({
@@ -211,30 +126,6 @@ export function useSyncState({
           }
         }
         await loadFiles();
-      }
-
-      // 5. Invoices
-      if (invoices.length > 0) {
-        const payload = invoices.map(inv => ({
-          id: inv.id,
-          created_at: inv.created_at,
-          customer_id: inv.customer_id || '',
-          items_json: inv.items_json,
-          shipping_cost: inv.shipping_cost,
-          admin_fee: inv.admin_fee,
-          total: inv.total,
-          export_format: inv.export_format || '',
-          file_path: inv.file_path || '',
-          sync_status: 'synced',
-          cloud_file_url: inv.cloud_file_url || ''
-        }));
-        await googleAppsScriptService.upsertRecordsToCloud('Invoices', payload);
-        for (const inv of invoices) {
-          if (inv.id) {
-            await invoke('update_sync_status', { tableName: 'invoices', id: inv.id, syncStatus: 'synced', cloudFileUrl: inv.cloud_file_url || null });
-          }
-        }
-        await loadInvoices();
       }
 
       // 6. Penerbit
@@ -407,10 +298,6 @@ export function useSyncState({
           sheetName = 'Contacts';
           tableName = 'contacts';
           break;
-        case 'books':
-          sheetName = 'Books';
-          tableName = 'books';
-          break;
         case 'services':
           sheetName = 'Services';
           tableName = 'services';
@@ -418,11 +305,6 @@ export function useSyncState({
         case 'files':
           sheetName = 'Files';
           tableName = 'files';
-          break;
-        case 'invoice':
-        case 'invoice-manager':
-          sheetName = 'Invoices';
-          tableName = 'invoices';
           break;
         case 'penerbit':
           sheetName = 'Penerbit';
@@ -483,71 +365,7 @@ export function useSyncState({
         await loadContacts();
       }
 
-      // 2. Books
-      if (tableName === 'books' && books.length > 0) {
-        const processedBooks = [];
-        for (const b of books) {
-          let currentCoverPath = b.cover_path || '';
-          if (currentCoverPath.startsWith('data:')) {
-            try {
-              const match = currentCoverPath.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
-              if (match) {
-                const mimeType = match[1];
-                const base64Data = match[2];
-                const fileExt = mimeType.split('/')[1] || 'png';
-                const fileName = `Cover-${b.id || 'new'}-${b.title.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExt}`;
-                
-                console.log(`[Sync Books] Mengunggah cover base64 ke Google Drive untuk: ${b.title}`);
-                const uploadResult = await googleAppsScriptService.uploadFileToCloud(
-                  fileName,
-                  base64Data,
-                  'Covers',
-                  mimeType
-                );
-                
-                if (uploadResult && uploadResult.file_url) {
-                  currentCoverPath = uploadResult.file_url;
-                  if (b.id) {
-                    await invoke('update_book', {
-                      book: {
-                        ...b,
-                        cover_path: currentCoverPath
-                      }
-                    });
-                  }
-                }
-              }
-            } catch (uploadErr) {
-              console.error(`Gagal mengunggah cover untuk buku ${b.title}:`, uploadErr);
-              currentCoverPath = '';
-            }
-          }
-          processedBooks.push({
-            id: b.id,
-            title: b.title,
-            isbn: b.isbn || '',
-            regular_price: b.regular_price,
-            po_price: b.po_price,
-            weight_grams: b.weight_grams,
-            author_id: b.author_id || '',
-            cover_path: currentCoverPath,
-            created_at: b.created_at || new Date().toISOString(),
-            updated_at: b.updated_at || b.created_at || new Date().toISOString()
-          });
-        }
-        await googleAppsScriptService.upsertRecordsToCloud('Books', processedBooks);
-        for (const pb of processedBooks) {
-          if (pb.id) {
-            await invoke('update_sync_status', { 
-              tableName: 'books', 
-              id: pb.id, 
-              syncStatus: 'synced', 
-              cloudFileUrl: pb.cover_path || null 
-            });
-          }
-        }
-        await loadBooks();
-      }
+
 
       // 3. Services
       if (tableName === 'services' && services.length > 0) {
@@ -599,29 +417,7 @@ export function useSyncState({
         }
       }
 
-      // 5. Invoices
-      if (tableName === 'invoices' && invoices.length > 0) {
-        const payload = invoices.map(inv => ({
-          id: inv.id,
-          created_at: inv.created_at,
-          customer_id: inv.customer_id || '',
-          items_json: inv.items_json,
-          shipping_cost: inv.shipping_cost,
-          admin_fee: inv.admin_fee,
-          total: inv.total,
-          export_format: inv.export_format || '',
-          file_path: inv.file_path || '',
-          sync_status: 'synced',
-          cloud_file_url: inv.cloud_file_url || ''
-        }));
-        await googleAppsScriptService.upsertRecordsToCloud('Invoices', payload);
-        for (const inv of invoices) {
-          if (inv.id) {
-            await invoke('update_sync_status', { tableName: 'invoices', id: inv.id, syncStatus: 'synced', cloudFileUrl: inv.cloud_file_url || null });
-          }
-        }
-        await loadInvoices();
-      }
+
 
       // 6. Penerbit
       if (tableName === 'penerbit' && dataMaster.penerbit.length > 0) {

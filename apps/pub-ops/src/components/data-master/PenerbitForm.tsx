@@ -30,6 +30,9 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
   const [emailValid, setEmailValid] = useState(0);
   const [waValid, setWaValid] = useState(0);
   const [cooperationStatus, setCooperationStatus] = useState('Aktif');
+  const [deposit, setDeposit] = useState(10000000);
+  const [royalty, setRoyalty] = useState(10);
+  const [contract, setContract] = useState(2);
 
   const [expandedSection, setExpandedSection] = useState<number | null>(1);
 
@@ -37,7 +40,6 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
     if (initialData) {
       setName(initialData.name);
       setAddress(initialData.address || '');
-      setNotes(initialData.notes || '');
       setEmail(initialData.email || '');
       setWaNumber(initialData.wa_number || '');
       setInstagram(initialData.instagram || '');
@@ -48,6 +50,28 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
       setEmailValid(initialData.email_valid);
       setWaValid(initialData.wa_valid);
       setCooperationStatus(initialData.cooperation_status || 'Aktif');
+
+      // Parse custom fields from notes
+      const rawNotes = initialData.notes || '';
+      const depositMatch = rawNotes.match(/Deposit:\s*(\d+)/i);
+      const parsedDeposit = depositMatch ? parseInt(depositMatch[1]) : 10000000;
+      setDeposit(parsedDeposit);
+
+      const royaltyMatch = rawNotes.match(/Royalti:\s*(\d+)/i);
+      const parsedRoyalty = royaltyMatch ? parseInt(royaltyMatch[1]) : 10;
+      setRoyalty(parsedRoyalty);
+
+      const contractMatch = rawNotes.match(/Kontrak:\s*(\d+)/i);
+      const parsedContract = contractMatch ? parseInt(contractMatch[1]) : 2;
+      setContract(parsedContract);
+
+      // Clean visible notes from tags
+      let visibleNotes = rawNotes
+        .replace(/Deposit:\s*\d+\r?\n?/i, '')
+        .replace(/Royalti:\s*\d+\r?\n?/i, '')
+        .replace(/Kontrak:\s*\d+\r?\n?/i, '')
+        .trim();
+      setNotes(visibleNotes);
     } else {
       setName('');
       setAddress('');
@@ -62,6 +86,9 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
       setEmailValid(0);
       setWaValid(0);
       setCooperationStatus('Aktif');
+      setDeposit(10000000);
+      setRoyalty(10);
+      setContract(2);
     }
   }, [initialData]);
 
@@ -72,11 +99,14 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
       return;
     }
 
+    let finalNotes = notes.trim();
+    finalNotes += `\n\nDeposit: ${deposit}\nRoyalti: ${royalty}\nKontrak: ${contract}`;
+
     onSubmit({
       id: initialData?.id,
       name: name.trim(),
       address: address.trim() || undefined,
-      notes: notes.trim() || undefined,
+      notes: finalNotes.trim() || undefined,
       email: email.trim() || undefined,
       wa_number: waNumber.trim() || undefined,
       instagram: instagram.trim() || undefined,
@@ -253,6 +283,37 @@ const PenerbitForm: React.FC<PenerbitFormProps> = ({ initialData, onSubmit, onCa
               style={{ height: '80px' }}
               fullWidth
             />
+          </AccordionSection>
+
+          <AccordionSection index={4} title="💲 Setelan Finansial &amp; Kontrak" expandedSection={expandedSection} onToggle={setExpandedSection}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <TextField
+                  label="Deposit Awal (Rp)"
+                  type="number"
+                  placeholder="Contoh: 10000000 (0 untuk Nonaktif)"
+                  value={deposit}
+                  onChange={(e) => setDeposit(Number(e.target.value))}
+                  fullWidth
+                />
+                <TextField
+                  label="Persentase Royalti (%)"
+                  type="number"
+                  placeholder="Contoh: 10 (0 untuk Nonaktif)"
+                  value={royalty}
+                  onChange={(e) => setRoyalty(Number(e.target.value))}
+                  fullWidth
+                />
+              </div>
+              <TextField
+                label="Durasi Kontrak (Tahun)"
+                type="number"
+                placeholder="Contoh: 2 (0 untuk Nonaktif)"
+                value={contract}
+                onChange={(e) => setContract(Number(e.target.value))}
+                fullWidth
+              />
+            </div>
           </AccordionSection>
         </Accordion>
 

@@ -49,7 +49,7 @@ const ServicePreviewPanel: React.FC<ServicePreviewPanelProps> = ({ serviceId, se
         width: '100%',
         padding: '24px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, #c01c1c 0%, #e04a4a 100%)',
+        background: 'linear-gradient(135deg, var(--accent) 0%, #e04a4a 100%)',
         boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
         color: '#ffffff',
         marginBottom: '24px',
@@ -99,25 +99,23 @@ const ServicePreviewPanel: React.FC<ServicePreviewPanelProps> = ({ serviceId, se
 
         {service.description && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>Deskripsi Layanan</span>
+            <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)' }}>
+              Deskripsi Layanan
+            </span>
             <div style={{
               background: 'var(--bg-card)',
-              padding: '14px',
-              borderRadius: '12px',
               border: '1px solid var(--border)',
+              borderRadius: '12px',
+              padding: '16px',
               fontSize: '13px',
               color: 'var(--text-primary)',
-              lineHeight: '1.5',
+              lineHeight: '1.6',
               whiteSpace: 'pre-wrap'
             }}>
               {service.description}
             </div>
           </div>
         )}
-
-        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic', marginTop: '12px' }}>
-          Layanan ini dapat digabungkan dalam katalog penawaran atau invoice jasa penerbitan.
-        </div>
 
         <div style={{ width: '100%' }}>
           <TimelineTracker entityType="service" entityId={serviceId} />

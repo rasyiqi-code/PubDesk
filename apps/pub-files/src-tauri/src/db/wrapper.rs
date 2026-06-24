@@ -184,6 +184,7 @@ impl From<rusqlite::Connection> for PubhubConnection {
     }
 }
 
+#[allow(dead_code)]
 pub struct PubhubTransaction<'conn> {
     tx: rusqlite::Transaction<'conn>,
 }
@@ -195,6 +196,7 @@ impl<'conn> PubhubTransaction<'conn> {
         stmt.raw_execute()
     }
 
+    #[allow(dead_code)]
     pub fn last_insert_rowid(&self) -> i64 {
         self.tx.last_insert_rowid()
     }

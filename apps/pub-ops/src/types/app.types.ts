@@ -4,7 +4,6 @@
 
 export type AppModule =
   | 'home'
-  | 'settings'
   | 'kontak'
   | 'penulis'
   | 'penerbit'
